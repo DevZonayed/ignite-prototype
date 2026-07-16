@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IGNITE — Working Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --brand:#2563EB;--brand-700:#1D4ED8;--brand-soft:#EFF6FF;--ink:#172554;
+  --ignite:#F97316;--ignite-amber:#FBBF24;--ignite-grad:linear-gradient(135deg,#FBBF24,#F97316);
+  --violet:#7C3AED;--teal:#14B8A6;--success:#16A34A;
+  --bg:#F1F5F9;--surface:#FFFFFF;--surface-2:#F8FAFC;--border:#E2E8F0;
+  --text:#0F172A;--text-muted:#475569;--text-subtle:#64748B;
+  --hero1:#0b1220;--hero2:#122a5c;
+  --fd:"Nunito",system-ui,sans-serif;--fu:"Inter",system-ui,sans-serif;
+}
+[data-theme="dark"]{--brand:#3B82F6;--brand-soft:#17233f;--bg:#0A0F1C;--surface:#111a2e;--surface-2:#0e1626;--border:#243049;--text:#E7EDF7;--text-muted:#A6B4CE;--text-subtle:#7686A5;--hero1:#05070d;--hero2:#0e1e42;}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--fu);background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+h1,h2,h3{font-family:var(--fd);color:var(--text);line-height:1.12;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1160px;margin:0 auto;padding:0 24px}
+.nav{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav .wrap{display:flex;align-items:center;gap:14px;height:64px}
+.brandmark{display:flex;align-items:center;gap:10px;font-family:var(--fd);font-weight:900;font-size:19px}
+.nav .sp{flex:1}
+.nav .link{font-weight:600;font-size:14px;color:var(--text-muted);padding:8px 12px;border-radius:8px}.nav .link:hover{color:var(--text);background:var(--surface-2)}
+.iconbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-muted);cursor:pointer}.iconbtn:hover{color:var(--text)}
+.hero{position:relative;overflow:hidden;background:radial-gradient(1100px 460px at 82% -12%,#1e3a8a 0,transparent 60%),linear-gradient(160deg,var(--hero1),var(--hero2));color:#fff;padding:78px 0 84px}
+.hero .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#93c5fd;background:rgba(147,197,253,.12);border:1px solid rgba(147,197,253,.25);padding:7px 14px;border-radius:999px}
+.hero h1{color:#fff;font-size:54px;font-weight:900;margin:22px 0 16px;max-width:16ch}
+.hero h1 .spark{background:var(--ignite-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:19px;color:#c7d2e6;max-width:60ch}
+.hero .metrics{display:flex;gap:38px;margin-top:44px;flex-wrap:wrap}
+.hero .metrics div{border-left:2px solid rgba(147,197,253,.4);padding-left:15px}
+.hero .metrics b{font-family:var(--fd);font-weight:900;font-size:26px;display:block}.hero .metrics span{font-size:13px;color:#93c5fd}
+section{padding:66px 0}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);margin-bottom:10px}
+.stitle{font-size:32px;font-weight:900;margin-bottom:8px}.ssub{color:var(--text-muted);max-width:64ch;font-size:16px;margin-bottom:34px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:20px}
+.card{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:24px;box-shadow:0 1px 2px rgba(15,23,42,.05);transition:transform .2s,box-shadow .2s;display:block}
+.card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(15,23,42,.12)}
+.card .ic{width:52px;height:52px;border-radius:15px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;color:#fff}
+.card h3{font-size:21px;font-weight:800;margin-bottom:6px;display:flex;align-items:center;gap:9px}
+.card .tag{font-size:10.5px;font-weight:800;color:var(--success);background:color-mix(in srgb,var(--success) 14%,transparent);padding:3px 9px;border-radius:999px;letter-spacing:.03em}
+.card p{color:var(--text-muted);font-size:14.5px;margin-bottom:14px}
+.card .routes{font-size:12.5px;color:var(--text-subtle);font-weight:600;line-height:1.6}
+.card .go{margin-top:15px;font-weight:800;color:var(--brand);font-size:14px;display:flex;align-items:center;gap:6px}
+.platform{font-size:11px;font-weight:700;color:var(--text-subtle);position:absolute;top:24px;right:24px}
+.found{margin-top:20px;background:var(--ink);color:#fff;border-radius:22px;padding:34px;display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+[data-theme="dark"] .found{background:#060b16;border:1px solid var(--border)}
+.found h3{color:#fff;font-size:22px;margin-bottom:8px}.found p{color:#c7d2e6;font-size:14px;max-width:52ch}
+.found .sp{flex:1}
+.found a.br{background:#fff;color:var(--ink);font-weight:800;padding:12px 22px;border-radius:11px;font-size:14px;white-space:nowrap}
+.swrow{display:flex;gap:9px;margin-top:14px}.sw{width:40px;height:40px;border-radius:11px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+footer{border-top:1px solid var(--border);padding:34px 0;color:var(--text-subtle);font-size:13px}
+@media(max-width:800px){.hero h1{font-size:38px}.nav .link{display:none}}
+svg{display:block}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="wrap">
+    <span class="brandmark"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2c1 4-2 5-2 8a4 4 0 0 0 8 0c0-1-.4-2-1-3 .3 2-1 3-1 3 .5-3-2-5-4-8z" fill="#2563EB"/><path d="M12 9c.5 2-1 3-1 4.4a2.3 2.3 0 0 0 4.6 0c0-1.4-1.1-2.1-1.4-3.6-.5 1.2-1.7 1.3-2.2-.8z" fill="#F97316"/></svg> IGNITE</span>
+    <span class="sp"></span>
+    <a class="link" href="#apps">Apps</a>
+    <a class="link" href="/design/pages/brand.html">Brand</a>
+    <a class="link" href="/design/pages/auth.html" style="color:var(--brand)">Sign in</a>
+    <button class="iconbtn" id="themeBtn" title="Toggle theme"><svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg></button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow">● Working prototype · Phase 1</span>
+    <h1>The <span class="spark">Digital Innovation</span> platform, running.</h1>
+    <p>Five connected apps — coding, robotics &amp; STEAM captured once by the teacher, seen everywhere it matters. Open any app below: the navigation, screens, accordions and light/dark themes all work.</p>
+    <div class="metrics">
+      <div><b>5</b><span>working apps</span></div>
+      <div><b>20</b><span>pilot schools</span></div>
+      <div><b>10,000</b><span>learners</span></div>
+      <div><b>Light + Dark</b><span>every app</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="apps">
+  <div class="wrap">
+    <div class="kicker">Open a portal</div>
+    <h2 class="stitle">Five working apps</h2>
+    <p class="ssub">Each is a real, navigable prototype in one page — click sidebar/tabs to move between screens, expand units, rate rubrics, switch theme. Everything works.</p>
+    <div class="grid">
+
+      <a class="card" href="/design/pages/teacher.html">
+        <span class="platform">Android</span>
+        <div class="ic" style="background:linear-gradient(135deg,#3B82F6,#2563EB)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></div>
+        <h3>Teacher <span class="tag">WORKS</span></h3>
+        <p>Deliver Scratch/robotics lessons; capture attendance &amp; evidence; rate the 10-dimension LQS rubric; AI assistant.</p>
+        <div class="routes">Home · Lessons (accordion) · Active lesson · Attendance · LQS rubric · AI · Homework · Sync · Profile</div>
+        <div class="go">Open app →</div>
+      </a>
+
+      <a class="card" href="/design/pages/learner.html">
+        <span class="platform">Android</span>
+        <div class="ic" style="background:linear-gradient(135deg,#A78BFA,#7C3AED)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg></div>
+        <h3>Learner <span class="tag">WORKS</span></h3>
+        <p>A lifelong portfolio of Scratch, Python &amp; robotics work, the LQS as a live radar, badges and certificates.</p>
+        <div class="routes">Home · Portfolio → item · Projects · Skills (radar/table) · Badges &amp; certificate</div>
+        <div class="go">Open app →</div>
+      </a>
+
+      <a class="card" href="/design/pages/parent.html">
+        <span class="platform">Android</span>
+        <div class="ic" style="background:linear-gradient(135deg,#2DD4BF,#14B8A6)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+        <h3>Parent <span class="tag">WORKS</span></h3>
+        <p>Your child only — a working child switcher, attendance, Scratch homework upload, and the teacher-reviewed AI report.</p>
+        <div class="routes">Home/Child switcher · Child (tabs) · Homework · AI report · Profile</div>
+        <div class="go">Open app →</div>
+      </a>
+
+      <a class="card" href="/design/pages/school.html">
+        <span class="platform">Web</span>
+        <div class="ic" style="background:linear-gradient(135deg,#60A5FA,#2563EB)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg></div>
+        <h3>School web <span class="tag">WORKS</span></h3>
+        <p>Principal dashboard — the exact Phase-1 tiles, coverage accordion, attendance heat-map / assessment tabs.</p>
+        <div class="routes">Overview · Teachers · Learners · Classes · Curriculum · Attendance · Reports · Settings</div>
+        <div class="go">Open portal →</div>
+      </a>
+
+      <a class="card" href="/design/pages/admin.html">
+        <span class="platform">Web</span>
+        <div class="ic" style="background:linear-gradient(135deg,#FBBF24,#F97316)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8M4.6 9a1.6 1.6 0 0 0-.3-1.8"/></svg></div>
+        <h3>IGNITE Admin <span class="tag">WORKS</span></h3>
+        <p>Curriculum authoring, bulk onboarding, scoring, <b>AI services</b>, monitoring &amp; audit; Phase-3 items gated.</p>
+        <div class="routes">Overview · Schools · Users · Imports · Curriculum · Media · Scoring · AI · Monitoring · Security</div>
+        <div class="go">Open portal →</div>
+      </a>
+
+      <a class="card" href="/design/pages/brand.html">
+        <span class="platform">Reference</span>
+        <div class="ic" style="background:var(--ignite-grad);color:#3b1d05"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b1d05" stroke-width="2"><path d="M12 2l2.4 7.2H22l-6 4.4 2.3 7.2L12 16.4 5.7 20.8 8 13.6 2 9.2h7.6z"/></svg></div>
+        <h3>Brand board</h3>
+        <p>The design system — colour, type, components and the signature patterns behind every app.</p>
+        <div class="routes">Foundations · tokens · component seeds</div>
+        <div class="go">Open brand board →</div>
+      </a>
+
+    </div>
+
+    <div class="found">
+      <div>
+        <h3>One system, light &amp; dark</h3>
+        <p>Ignite Blue for trust, an amber→orange spark for energy. Nunito carries warmth; Inter carries the work. Every app ships both themes.</p>
+        <div class="swrow"><span class="sw" style="background:#2563EB"></span><span class="sw" style="background:#F97316"></span><span class="sw" style="background:#FBBF24"></span><span class="sw" style="background:#14B8A6"></span><span class="sw" style="background:#7C3AED"></span><span class="sw" style="background:#16A34A"></span></div>
+      </div>
+      <span class="sp"></span>
+      <a class="br" href="/design/pages/brand.html">Open the brand board →</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">IGNITE — Digital Innovation Learning Platform · Phase-1 working prototype · realistic sample content, no real learner data · confidential.</div>
+</footer>
+
+<script>
+(function(){
+  var sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+  var moon='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+  function applyTheme(t){document.documentElement.dataset.theme=t;try{localStorage.ignite_theme=t;}catch(e){}document.getElementById('themeIcon').innerHTML=t==='dark'?sun:moon;}
+  document.getElementById('themeBtn').addEventListener('click',function(){applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');});
+  var saved;try{saved=localStorage.ignite_theme;}catch(e){}
+  applyTheme(saved||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));
+})();
+</script>
+</body>
+</html>

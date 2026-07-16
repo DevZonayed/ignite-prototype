@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IGNITE — Global States</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --brand:#2563EB;--ink:#172554;--blue-50:#EFF6FF;--blue-100:#DBEAFE;
+  --bg:#F8FAFC;--surface:#fff;--surface-2:#F1F5F9;--border:#E2E8F0;
+  --text:#0F172A;--text-muted:#475569;--text-subtle:#64748B;--success:#16A34A;--warning:#D97706;--danger:#DC2626;
+  --e2:0 18px 44px rgba(15,23,42,.14);
+  --fd:"Nunito",system-ui,sans-serif;--fu:"Inter",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fu);background:var(--bg);color:var(--text);line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--fd);color:var(--ink);line-height:1.14;letter-spacing:-.01em}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav .wrap{display:flex;align-items:center;gap:14px;height:60px}
+.back{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--text-muted);padding:8px 12px;border-radius:9px}
+.back:hover{background:var(--surface-2);color:var(--ink)}
+.brandmark{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:900;color:var(--ink)}
+.brandmark img{height:24px}
+.nav .spacer{flex:1}
+.head{padding:56px 0 26px}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand)}
+.head h1{font-size:42px;font-weight:900;margin:12px 0 12px}
+.head p{font-size:18px;color:var(--text-muted);max-width:74ch}
+.board{border-radius:14px;overflow:hidden;box-shadow:var(--e2);border:1px solid var(--border);margin-bottom:34px}
+.board img{display:block;width:100%}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;padding-bottom:80px}
+.c{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 1px 2px rgba(15,23,42,.06)}
+.c h3{font-size:17px;font-weight:800;margin-bottom:6px}
+.c .gc{font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:600;color:var(--brand);background:var(--blue-50);padding:3px 8px;border-radius:6px}
+.c p{color:var(--text-muted);font-size:14px;margin-top:10px}
+footer{border-top:1px solid var(--border);padding:36px 0;color:var(--text-subtle);font-size:13px}
+@media(max-width:720px){.head h1{font-size:30px}}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="wrap">
+    <a class="back" href="/design/index.html">← All surfaces</a>
+    <span class="spacer"></span>
+    <a class="brandmark" href="/design/index.html"><img src="/design/assets/brand/logo.png" alt="" onerror="this.style.display='none'">Global states</a>
+  </div>
+</nav>
+<header class="head">
+  <div class="wrap">
+    <div class="kicker">Cross-surface · the interaction contract, made visible</div>
+    <h1>The states that build trust.</h1>
+    <p>Every surface shares one honest language for success, error, danger, emptiness, waiting and being offline — so the product feels consistent and never lies about your data.</p>
+  </div>
+</header>
+<main class="wrap">
+  <div class="board"><img src="/design/assets/states/global-states-v1.png" alt="Global states board: toasts, modal, empty, loading, offline"></div>
+  <div class="grid">
+    <div class="c"><span class="gc">GC-17 · Toast</span><h3>Success</h3><p>Confirms the affected record (“Attendance saved · 32 learners”). A toast never holds the only copy of essential information.</p></div>
+    <div class="c"><span class="gc">GC-11 · Retry</span><h3>Error</h3><p>Names a recovery action (“Couldn't sync — tap to retry”). Re-fetch never duplicates a completed mutation.</p></div>
+    <div class="c"><span class="gc">GC-12 · Destructive</span><h3>Confirm</h3><p>Shows object, impact and reversibility; <b>default focus is Cancel</b>; permanent loss uses stronger wording.</p></div>
+    <div class="c"><span class="gc">GC-18 · Empty</span><h3>Empty state</h3><p>Explains why there's nothing here and offers one authorised next step — never a dead button.</p></div>
+    <div class="c"><span class="gc">Perf · CLS</span><h3>Loading</h3><p>Skeletons reserve space so layout doesn't shift; the shape hints at the content that's coming.</p></div>
+    <div class="c"><span class="gc">GC-20 · Offline</span><h3>Offline banner</h3><p>Truthful by design — “saved locally and will sync”. Never claims server persistence while data is local.</p></div>
+  </div>
+</main>
+<footer>
+  <div class="wrap">Global states · <a href="/design/index.html" style="color:var(--brand);font-weight:600">← back to all surfaces</a> · every production control maps to a requirement ID, permission rule, error state and acceptance test.</div>
+</footer>
+</body>
+</html>

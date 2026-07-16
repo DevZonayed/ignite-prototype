@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IGNITE — Sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --brand:#2563EB;--brand-700:#1D4ED8;--brand-soft:#EFF6FF;--ink:#172554;--on-brand:#fff;
+  --ignite:#F97316;--ignite-amber:#FBBF24;--ignite-grad:linear-gradient(135deg,#FBBF24,#F97316);
+  --success:#16A34A;--warning:#D97706;--danger:#DC2626;
+  --bg:#EEF2F8;--surface:#FFFFFF;--surface-2:#F1F5F9;--border:#E2E8F0;
+  --text:#0F172A;--text-muted:#475569;--text-subtle:#64748B;
+  --panel1:#0b1220;--panel2:#122a5c;
+  --fd:"Nunito",system-ui,sans-serif;--fu:"Inter",system-ui,sans-serif;
+}
+[data-theme="dark"]{--brand:#3B82F6;--brand-700:#2563EB;--brand-soft:#17233f;--bg:#070c16;--surface:#111a2e;--surface-2:#16223b;--border:#243049;--text:#E7EDF7;--text-muted:#A6B4CE;--text-subtle:#7686A5;--panel1:#05070d;--panel2:#0e1e42;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fu);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh;transition:background .25s}
+h1,h2,h3{font-family:var(--fd);color:var(--text);line-height:1.15;letter-spacing:-.01em}
+a{color:var(--brand);text-decoration:none;font-weight:600}
+button{font-family:var(--fu);cursor:pointer}
+.shell{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+/* brand panel */
+.brandpanel{position:relative;overflow:hidden;background:radial-gradient(900px 420px at 80% -10%,#1e3a8a 0,transparent 60%),linear-gradient(160deg,var(--panel1),var(--panel2));color:#fff;padding:56px 54px;display:flex;flex-direction:column}
+.brandpanel .logo{display:flex;align-items:center;gap:12px;font-family:var(--fd);font-weight:900;font-size:24px}
+.brandpanel h2{color:#fff;font-size:38px;font-weight:900;margin-top:auto;max-width:14ch;line-height:1.1}
+.brandpanel h2 .spark{background:var(--ignite-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.brandpanel p{color:#c7d2e6;font-size:16px;margin-top:14px;max-width:44ch}
+.brandpanel .feats{margin-top:26px;display:flex;flex-direction:column;gap:12px}
+.brandpanel .feat{display:flex;align-items:center;gap:11px;font-size:14px;color:#dbe5f5}
+.brandpanel .feat .fi{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:#93c5fd;flex:none}
+/* form side */
+.formside{display:flex;align-items:center;justify-content:center;padding:40px 24px;position:relative}
+.themeswitch{position:absolute;top:22px;right:24px;width:40px;height:40px;border-radius:11px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-muted)}
+.card{width:100%;max-width:400px}
+.mobilelogo{display:none;align-items:center;gap:10px;font-family:var(--fd);font-weight:900;font-size:20px;margin-bottom:22px;justify-content:center}
+.pane{display:none}.pane.on{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.h{font-size:27px;font-weight:900;margin-bottom:6px}
+.sub{font-size:14px;color:var(--text-muted);margin-bottom:24px}
+.field{margin-bottom:16px}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
+label .req{color:var(--danger)}
+.inputwrap{position:relative}
+.input{width:100%;font-family:var(--fu);font-size:15px;padding:13px 14px;border:1.5px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text);transition:border .15s,box-shadow .15s}
+.input::placeholder{color:var(--text-subtle)}
+.input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.input.err{border-color:var(--danger)}
+.reveal{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:none;background:none;color:var(--text-subtle);display:flex;align-items:center;justify-content:center;border-radius:8px}
+.reveal:hover{color:var(--text);background:var(--surface-2)}
+.errmsg{display:none;color:var(--danger);font-size:12.5px;margin-top:6px;align-items:center;gap:6px}
+.errmsg.on{display:flex}
+.rolegrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px}
+.role{border:1.5px solid var(--border);border-radius:11px;padding:11px 8px;text-align:center;font-size:12px;font-weight:700;color:var(--text-muted);background:var(--surface);cursor:pointer;transition:.15s}
+.role .ri{width:22px;height:22px;margin:0 auto 5px;color:var(--text-subtle)}
+.role.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand)}.role.on .ri{color:var(--brand)}
+.rowbetween{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;font-size:13px}
+.remember{display:flex;align-items:center;gap:8px;color:var(--text-muted);font-weight:600;cursor:pointer}
+.chk{width:18px;height:18px;border:1.5px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--surface)}
+.chk.on{background:var(--brand);border-color:var(--brand)}
+.btn{width:100%;background:var(--brand);color:var(--on-brand);font-weight:800;font-size:15px;padding:14px;border:none;border-radius:11px;font-family:var(--fd);transition:background .15s}
+.btn:hover{background:var(--brand-700)}
+.btn.ghost{background:var(--surface);color:var(--brand);border:1.5px solid var(--border)}
+.hr{display:flex;align-items:center;gap:12px;color:var(--text-subtle);font-size:12px;margin:20px 0}
+.hr::before,.hr::after{content:"";flex:1;height:1px;background:var(--border)}
+.foot{text-align:center;font-size:13px;color:var(--text-muted);margin-top:22px}
+.legal{text-align:center;font-size:11.5px;color:var(--text-subtle);margin-top:18px}
+.pwrules{font-size:12px;color:var(--text-subtle);margin-top:8px;display:flex;flex-direction:column;gap:4px}
+.pwrules .r{display:flex;align-items:center;gap:7px}.pwrules .r.ok{color:var(--success)}
+.notice{display:flex;gap:10px;background:var(--brand-soft);border:1px solid var(--border);border-radius:11px;padding:12px;font-size:12.5px;color:var(--text-muted);margin-bottom:20px}
+.success-ic{width:64px;height:64px;border-radius:50%;background:color-mix(in srgb,var(--success) 15%,transparent);color:var(--success);display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+.consent-box{max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:11px;padding:14px;font-size:12.5px;color:var(--text-muted);line-height:1.6;margin-bottom:16px}
+.consent-box h4{font-size:13px;margin:10px 0 5px;color:var(--text)}
+.backlink{display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-bottom:18px;cursor:pointer}
+@media(max-width:840px){.shell{grid-template-columns:1fr}.brandpanel{display:none}.mobilelogo{display:flex}}
+svg{display:block}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="brandpanel">
+    <div class="logo"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M12 2c1 4-2 5-2 8a4 4 0 0 0 8 0c0-1-.4-2-1-3 .3 2-1 3-1 3 .5-3-2-5-4-8z" fill="#fff"/><path d="M12 9c.5 2-1 3-1 4.4a2.3 2.3 0 0 0 4.6 0c0-1.4-1.1-2.1-1.4-3.6-.5 1.2-1.7 1.3-2.2-.8z" fill="#FBBF24"/></svg> IGNITE</div>
+    <h2>Spark the innovator in <span class="spark">every child.</span></h2>
+    <p>The Digital Innovation platform — coding, robotics &amp; STEAM, captured once and seen everywhere it matters.</p>
+    <div class="feats">
+      <div class="feat"><span class="fi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></span>One lifelong learner portfolio</div>
+      <div class="feat"><span class="fi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></span>Works offline, syncs when back online</div>
+      <div class="feat"><span class="fi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></span>Private by design for every child</div>
+    </div>
+  </aside>
+
+  <main class="formside">
+    <button class="themeswitch" id="themeBtn" aria-label="Toggle light or dark theme"><svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg></button>
+    <div class="card">
+      <div class="mobilelogo"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 2c1 4-2 5-2 8a4 4 0 0 0 8 0c0-1-.4-2-1-3 .3 2-1 3-1 3 .5-3-2-5-4-8z" fill="#2563EB"/><path d="M12 9c.5 2-1 3-1 4.4a2.3 2.3 0 0 0 4.6 0c0-1.4-1.1-2.1-1.4-3.6-.5 1.2-1.7 1.3-2.2-.8z" fill="#F97316"/></svg> IGNITE</div>
+
+      <!-- SIGN IN -->
+      <section class="pane on" id="p-signin">
+        <h1 class="h">Welcome back</h1>
+        <p class="sub">Sign in to your IGNITE account.</p>
+        <form id="signinForm" novalidate>
+          <div class="field">
+            <label for="si-id">Email or phone <span class="req">*</span></label>
+            <input class="input" id="si-id" type="text" autocomplete="username" placeholder="m.okafor@school.ng" />
+            <div class="errmsg" id="si-id-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg> Enter your email or phone.</div>
+          </div>
+          <div class="field">
+            <label for="si-pw">Password <span class="req">*</span></label>
+            <div class="inputwrap">
+              <input class="input" id="si-pw" type="password" autocomplete="current-password" placeholder="••••••••" />
+              <button type="button" class="reveal" data-reveal="si-pw" aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+            <div class="errmsg" id="si-pw-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg> Enter your password.</div>
+          </div>
+          <label style="font-size:13px">Sign in as <span class="req">*</span></label>
+          <div class="rolegrid" style="margin-top:7px" id="roleGrid">
+            <div class="role" data-role="teacher"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg></div>Teacher</div>
+            <div class="role" data-role="learner"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/></svg></div>Learner</div>
+            <div class="role" data-role="parent"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>Parent</div>
+            <div class="role" data-role="school"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V9l9-6 9 6v12"/></svg></div>School</div>
+            <div class="role" data-role="admin"><div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8M4.6 9a1.6 1.6 0 0 0-.3-1.8"/></svg></div>Admin</div>
+          </div>
+          <div class="errmsg" id="role-err" style="margin-bottom:8px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg> Choose which portal to open.</div>
+          <div class="rowbetween">
+            <span class="remember" id="remember"><span class="chk on" id="rememberChk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span> Keep me signed in</span>
+            <a href="#" data-go="forgot">Forgot password?</a>
+          </div>
+          <button class="btn" type="submit">Sign in</button>
+        </form>
+        <div class="foot">New to IGNITE? <a href="#" data-go="activate">Activate your account</a></div>
+        <div class="legal">By continuing you agree to our <a href="#" data-go="consent">Terms &amp; Privacy</a>. Accounts are provisioned by your school — no public sign-up in the pilot.</div>
+      </section>
+
+      <!-- ACTIVATE / SIGN UP -->
+      <section class="pane" id="p-activate">
+        <span class="backlink" data-go="signin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back to sign in</span>
+        <h1 class="h">Activate your account</h1>
+        <p class="sub">Your school created your account. Enter your invite and set a password.</p>
+        <div class="notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2" style="flex:none"><path d="M12 16v-4M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg> Phase-1 accounts are created by IGNITE/your school. Use the invite you received by email or SMS.</div>
+        <form id="activateForm" novalidate>
+          <div class="field"><label for="ac-id">Email or phone <span class="req">*</span></label><input class="input" id="ac-id" type="text" placeholder="you@school.ng" /><div class="errmsg" id="ac-id-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Enter a valid email or phone.</div></div>
+          <div class="field"><label for="ac-code">Invite code <span class="req">*</span></label><input class="input" id="ac-code" type="text" placeholder="e.g. IGN-8F3A" /><div class="errmsg" id="ac-code-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Enter your invite code.</div></div>
+          <div class="field"><label for="ac-pw">Create password <span class="req">*</span></label>
+            <div class="inputwrap"><input class="input" id="ac-pw" type="password" placeholder="At least 8 characters" /><button type="button" class="reveal" data-reveal="ac-pw" aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+            <div class="pwrules"><div class="r" id="ac-r1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> At least 8 characters</div><div class="r" id="ac-r2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> A letter and a number</div></div>
+          </div>
+          <label class="remember" id="ac-consent" style="margin-bottom:18px"><span class="chk" id="ac-consentChk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span> <span style="font-size:12.5px">I agree to the <a href="#" data-go="consent">Terms &amp; Privacy</a></span></label>
+          <div class="errmsg" id="ac-consent-err" style="margin:-12px 0 14px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Please accept the Terms &amp; Privacy.</div>
+          <button class="btn" type="submit">Activate account</button>
+        </form>
+      </section>
+
+      <!-- FORGOT -->
+      <section class="pane" id="p-forgot">
+        <span class="backlink" data-go="signin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back to sign in</span>
+        <h1 class="h">Reset your password</h1>
+        <p class="sub">Enter your email or phone and we'll send reset instructions.</p>
+        <form id="forgotForm" novalidate>
+          <div class="field"><label for="fg-id">Email or phone <span class="req">*</span></label><input class="input" id="fg-id" type="text" placeholder="you@school.ng" /><div class="errmsg" id="fg-id-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Enter a valid email or phone.</div></div>
+          <button class="btn" type="submit">Send reset instructions</button>
+        </form>
+      </section>
+
+      <!-- SENT -->
+      <section class="pane" id="p-sent">
+        <div class="success-ic"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg></div>
+        <h1 class="h" style="text-align:center">Check your inbox</h1>
+        <p class="sub" style="text-align:center">If an account matches, we've sent reset instructions. The link expires in 30 minutes.</p>
+        <button class="btn" type="button" data-go="reset">I have the reset link</button>
+        <div class="foot"><a href="#" data-go="signin">Back to sign in</a></div>
+      </section>
+
+      <!-- RESET -->
+      <section class="pane" id="p-reset">
+        <h1 class="h">Set a new password</h1>
+        <p class="sub">Choose a strong password you don't use elsewhere.</p>
+        <form id="resetForm" novalidate>
+          <div class="field"><label for="rs-pw">New password <span class="req">*</span></label>
+            <div class="inputwrap"><input class="input" id="rs-pw" type="password" placeholder="At least 8 characters" /><button type="button" class="reveal" data-reveal="rs-pw" aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+            <div class="pwrules"><div class="r" id="rs-r1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> At least 8 characters</div><div class="r" id="rs-r2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> A letter and a number</div></div>
+          </div>
+          <div class="field"><label for="rs-pw2">Confirm password <span class="req">*</span></label><input class="input" id="rs-pw2" type="password" placeholder="Re-enter password" /><div class="errmsg" id="rs-pw2-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Passwords don't match.</div></div>
+          <button class="btn" type="submit">Save password</button>
+        </form>
+      </section>
+
+      <!-- SUCCESS -->
+      <section class="pane" id="p-success">
+        <div class="success-ic"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <h1 class="h" style="text-align:center" id="successTitle">All set!</h1>
+        <p class="sub" style="text-align:center" id="successMsg">Your password has been updated. You can sign in now.</p>
+        <button class="btn" type="button" data-go="signin">Continue to sign in</button>
+      </section>
+
+      <!-- CONSENT -->
+      <section class="pane" id="p-consent">
+        <span class="backlink" data-back><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back</span>
+        <h1 class="h">Terms &amp; Privacy</h1>
+        <p class="sub">IGNITE · Phase 1 pilot · v1.0</p>
+        <div class="consent-box">
+          <h4>Who this is for</h4>Accounts are provisioned by IGNITE and participating schools. There is no public self-registration during the pilot.
+          <h4>Child privacy by design</h4>All child data is private by default and role-scoped. Guardians are verified and linked only to their own children. Media access is signed; sensitive changes are audited.
+          <h4>What we collect</h4>Classroom activity captured by teachers (attendance, evidence, assessment, projects), used to build each learner's portfolio and skills profile, and shown only to authorised roles.
+          <h4>AI</h4>AI assists teachers and generates parent reports; a teacher reviews reports before they are published. AI never makes punitive decisions on its own.
+          <h4>Your rights</h4>Guardians can request access to, export of, or deletion of their child's record through a verified request.
+        </div>
+        <button class="btn" type="button" data-back>I understand</button>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  var back=['signin'];
+  function go(id,record){var cur=document.querySelector('.pane.on');if(record!==false&&cur){back.push(cur.id.replace('p-',''));}
+    document.querySelectorAll('.pane').forEach(function(p){p.classList.toggle('on',p.id==='p-'+id);});
+    document.title='IGNITE — '+(id==='signin'?'Sign in':id.charAt(0).toUpperCase()+id.slice(1));
+    var c=document.querySelector('.card');if(c)c.scrollTop=0;window.scrollTo(0,0);}
+  function goBack(){var prev=back.pop()||'signin';go(prev,false);}
+  var role=null;
+  document.body.addEventListener('click',function(e){
+    var g=e.target.closest('[data-go]');if(g){e.preventDefault();go(g.getAttribute('data-go'));return;}
+    var b=e.target.closest('[data-back]');if(b){e.preventDefault();goBack();return;}
+    var rv=e.target.closest('[data-reveal]');if(rv){var inp=document.getElementById(rv.getAttribute('data-reveal'));inp.type=inp.type==='password'?'text':'password';rv.setAttribute('aria-label',inp.type==='password'?'Show password':'Hide password');return;}
+    var r=e.target.closest('.role');if(r){role=r.dataset.role;document.querySelectorAll('.role').forEach(function(x){x.classList.toggle('on',x===r);});hide('role-err');return;}
+    var rem=e.target.closest('#remember');if(rem){document.getElementById('rememberChk').classList.toggle('on');return;}
+    var cc=e.target.closest('#ac-consent');if(cc && !e.target.closest('a')){document.getElementById('ac-consentChk').classList.toggle('on');hide('ac-consent-err');return;}
+  });
+  function show(id){var el=document.getElementById(id);if(el)el.classList.add('on');}
+  function hide(id){var el=document.getElementById(id);if(el)el.classList.remove('on');}
+  function markErr(inp,on){inp.classList.toggle('err',on);}
+  var reEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/,rePhone=/^[+]?[0-9\s-]{7,}$/;
+  function validId(v){v=(v||'').trim();return reEmail.test(v)||rePhone.test(v);}
+  // sign in
+  document.getElementById('signinForm').addEventListener('submit',function(e){e.preventDefault();var id=document.getElementById('si-id'),pw=document.getElementById('si-pw');var ok=true;
+    if(!id.value.trim()){show('si-id-err');markErr(id,true);ok=false;}else{hide('si-id-err');markErr(id,false);}
+    if(!pw.value){show('si-pw-err');markErr(pw,true);ok=false;}else{hide('si-pw-err');markErr(pw,false);}
+    if(!role){show('role-err');ok=false;}
+    if(ok){var btn=this.querySelector('.btn');btn.textContent='Signing in…';setTimeout(function(){window.location.href='/design/pages/'+role+'.html';},450);}
+  });
+  // activate
+  var acPw=document.getElementById('ac-pw');
+  function pwRules(pw,r1,r2){var v=pw.value;document.getElementById(r1).classList.toggle('ok',v.length>=8);document.getElementById(r2).classList.toggle('ok',/[a-zA-Z]/.test(v)&&/[0-9]/.test(v));}
+  acPw.addEventListener('input',function(){pwRules(acPw,'ac-r1','ac-r2');});
+  document.getElementById('activateForm').addEventListener('submit',function(e){e.preventDefault();var id=document.getElementById('ac-id'),code=document.getElementById('ac-code');var ok=true;
+    if(!validId(id.value)){show('ac-id-err');markErr(id,true);ok=false;}else{hide('ac-id-err');markErr(id,false);}
+    if(!code.value.trim()){show('ac-code-err');markErr(code,true);ok=false;}else{hide('ac-code-err');markErr(code,false);}
+    if(!(acPw.value.length>=8&&/[a-zA-Z]/.test(acPw.value)&&/[0-9]/.test(acPw.value))){markErr(acPw,true);ok=false;}else{markErr(acPw,false);}
+    if(!document.getElementById('ac-consentChk').classList.contains('on')){show('ac-consent-err');ok=false;}
+    if(ok){document.getElementById('successTitle').textContent='Account activated 🎉';document.getElementById('successMsg').textContent='Welcome to IGNITE. Sign in to get started.';go('success');}
+  });
+  // forgot
+  document.getElementById('forgotForm').addEventListener('submit',function(e){e.preventDefault();var id=document.getElementById('fg-id');if(!validId(id.value)){show('fg-id-err');markErr(id,true);return;}hide('fg-id-err');markErr(id,false);go('sent');});
+  // reset
+  var rsPw=document.getElementById('rs-pw');rsPw.addEventListener('input',function(){pwRules(rsPw,'rs-r1','rs-r2');});
+  document.getElementById('resetForm').addEventListener('submit',function(e){e.preventDefault();var pw=rsPw,pw2=document.getElementById('rs-pw2');var ok=true;
+    if(!(pw.value.length>=8&&/[a-zA-Z]/.test(pw.value)&&/[0-9]/.test(pw.value))){markErr(pw,true);ok=false;}else{markErr(pw,false);}
+    if(pw.value!==pw2.value||!pw2.value){show('rs-pw2-err');markErr(pw2,true);ok=false;}else{hide('rs-pw2-err');markErr(pw2,false);}
+    if(ok){document.getElementById('successTitle').textContent='Password updated';document.getElementById('successMsg').textContent='Your password has been changed. You can sign in now.';go('success');}
+  });
+  // theme
+  var sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';var moon='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+  function applyTheme(t){document.documentElement.dataset.theme=t;try{localStorage.ignite_theme=t;}catch(e){}document.getElementById('themeIcon').innerHTML=t==='dark'?sun:moon;}
+  document.getElementById('themeBtn').addEventListener('click',function(){applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');});
+  var saved;try{saved=localStorage.ignite_theme;}catch(e){}applyTheme(saved||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));
+  // deep-link (e.g. #activate)
+  var h=(location.hash||'').replace('#','');if(['signin','activate','forgot','reset','consent'].indexOf(h)>=0)go(h,false);
+})();
+</script>
+</body>
+</html>

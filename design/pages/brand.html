@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IGNITE — Brand Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --brand:#2563EB; --brand-700:#1D4ED8; --ink:#172554; --on-brand:#FFFFFF;
+  --blue-50:#EFF6FF; --blue-100:#DBEAFE; --blue-200:#BFDBFE; --blue-500:#3B82F6;
+  --ignite:#F97316; --ignite-amber:#FBBF24; --ignite-deep:#EA580C;
+  --ignite-grad:linear-gradient(135deg,#FBBF24 0%,#F97316 100%);
+  --skill-teal:#14B8A6; --skill-violet:#7C3AED; --skill-pink:#EC4899;
+  --skill-green:#16A34A; --skill-blue:#2563EB; --skill-amber:#F59E0B;
+  --skill-cyan:#0891B2; --skill-rose:#E11D48;
+  --bg:#F8FAFC; --surface:#FFFFFF; --surface-2:#F1F5F9; --border:#E2E8F0;
+  --text:#0F172A; --text-muted:#475569; --text-subtle:#64748B;
+  --success:#16A34A; --warning:#D97706; --danger:#DC2626; --info:#2563EB;
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px; --r-full:999px;
+  --e1:0 1px 2px rgba(15,23,42,.06); --e2:0 4px 12px rgba(15,23,42,.08); --e3:0 12px 28px rgba(15,23,42,.10);
+  --font-display:"Nunito",system-ui,sans-serif; --font-ui:"Inter",Roboto,system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-ui);background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+h1,h2,h3,h4{font-family:var(--font-display);color:var(--ink);line-height:1.15}
+.muted{color:var(--text-muted)} .subtle{color:var(--text-subtle)}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:12px}
+.topbar{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar .wrap{display:flex;align-items:center;height:56px;gap:12px}
+.topbar a.back{font-weight:600;font-size:14px;color:var(--text-muted);padding:8px 12px;border-radius:9px}
+.topbar a.back:hover{background:var(--surface-2);color:var(--ink)}
+.hero{background:linear-gradient(180deg,#fff 0%,var(--blue-50) 100%);border-bottom:1px solid var(--border);padding:48px 0 44px}
+.hero-top{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.hero img{height:60px;width:auto}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--brand-700);background:var(--blue-100);border-radius:var(--r-full);padding:6px 14px}
+.hero h1{font-size:44px;font-weight:800;margin:22px 0 10px;letter-spacing:-.5px}
+.hero p.lede{font-size:20px;max-width:760px;color:var(--text-muted)}
+.essence{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.trait{font-family:var(--font-display);font-weight:800;font-size:14px;color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:var(--r-full);padding:8px 16px;box-shadow:var(--e1)}
+.trait .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+section{padding:52px 0;border-bottom:1px solid var(--border)}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);margin-bottom:8px}
+.sec-title{font-size:30px;font-weight:800;margin-bottom:6px}
+.sec-sub{color:var(--text-muted);max-width:720px;margin-bottom:28px}
+.swatch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.sw{border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;background:var(--surface);box-shadow:var(--e1)}
+.sw .chip{height:78px;display:flex;align-items:flex-end;padding:8px}
+.sw .chip .ac{font-size:11px;font-weight:600;background:rgba(255,255,255,.85);border-radius:6px;padding:2px 6px;color:#0f172a}
+.sw .meta{padding:9px 11px}
+.sw .meta .name{font-weight:600;font-size:13px}
+.sw .meta .hex{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--text-subtle)}
+.grad-chip{background:var(--ignite-grad)}
+.row-label{font-family:var(--font-display);font-weight:800;font-size:15px;margin:26px 0 12px;color:var(--ink)}
+.type-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e1);padding:26px;margin-bottom:18px}
+.scale-row{display:flex;align-items:baseline;gap:18px;padding:14px 0;border-top:1px dashed var(--border)}
+.scale-row:first-of-type{border-top:none}
+.scale-tag{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--text-subtle);width:170px;flex:none}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--e1);padding:22px}
+.panel h4{font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-subtle);margin-bottom:16px;font-family:var(--font-ui);font-weight:700}
+.btn{font-family:var(--font-ui);font-weight:600;font-size:15px;border:none;border-radius:var(--r-md);padding:12px 20px;min-height:44px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .18s cubic-bezier(.2,.8,.2,1)}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{background:var(--brand);color:#fff} .btn-primary:hover{background:var(--brand-700)}
+.btn-ignite{background:var(--ignite-grad);color:#1A1206}
+.btn-secondary{background:var(--surface);color:var(--brand-700);border:1.5px solid var(--border)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-disabled{background:var(--surface-2);color:var(--text-subtle);cursor:not-allowed}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hint{font-size:12px;color:var(--text-subtle);margin-top:8px}
+label.fl{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+label.fl .req{color:var(--danger)}
+.inp{width:100%;font-family:var(--font-ui);font-size:15px;padding:11px 13px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--surface);color:var(--text)}
+.inp:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--blue-100)}
+.inp.err{border-color:var(--danger)}
+.err-msg{color:var(--danger);font-size:13px;margin-top:6px;display:flex;gap:6px}
+.lcard{background:linear-gradient(135deg,#fff,var(--blue-50));border:1px solid var(--blue-200);border-radius:var(--r-xl);padding:20px;box-shadow:var(--e2)}
+.badge{width:56px;height:56px;border-radius:var(--r-full);background:var(--ignite-grad);display:flex;align-items:center;justify-content:center;box-shadow:var(--e2);font-size:26px}
+.skill-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.stag{font-size:12px;font-weight:600;color:#fff;border-radius:var(--r-full);padding:5px 12px}
+.pills{display:flex;flex-direction:column;gap:10px}
+.spill{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;padding:10px 14px;border-radius:var(--r-md);border:1px solid var(--border);background:var(--surface)}
+.spill .ic{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;flex:none}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:18px;box-shadow:var(--e1)}
+.stat .n{font-family:var(--font-display);font-weight:900;font-size:34px;color:var(--ink);font-variant-numeric:tabular-nums}
+.stat .src{font-size:12px;color:var(--text-subtle);margin-top:6px}
+.shape-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px}
+.shape{background:var(--surface);border:1px solid var(--border);padding:18px;text-align:center;font-size:12px;color:var(--text-subtle)}
+.demo-box{height:60px;background:var(--blue-100);border:1.5px solid var(--brand);margin-bottom:10px}
+.elev{height:70px;background:var(--surface);border-radius:var(--r-md);margin-bottom:10px}
+.imgcard img{width:100%;border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--e2);display:block}
+footer{padding:34px 0;color:var(--text-subtle);font-size:13px}
+@media(max-width:600px){.hero h1{font-size:32px}.sec-title{font-size:24px}.scale-tag{width:100%}}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="wrap"><a class="back" href="/design/index.html">← All surfaces</a></div></div>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-top">
+      <img src="/design/assets/brand/logo.png" alt="IGNITE logo — blue and amber flame mark with wordmark" />
+      <span class="pill">● Brand Board · v1</span>
+    </div>
+    <h1>Spark the innovator in every child.</h1>
+    <p class="lede">The one platform that is warm and motivating to children &amp; parents — and precise and dependable to teachers, schools and administrators. Even offline.</p>
+    <div class="essence">
+      <span class="trait"><span class="dot" style="background:var(--ignite)"></span>Warm</span>
+      <span class="trait"><span class="dot" style="background:var(--brand)"></span>Trustworthy</span>
+      <span class="trait"><span class="dot" style="background:var(--ignite-amber)"></span>Energetic</span>
+      <span class="trait"><span class="dot" style="background:var(--skill-teal)"></span>Clear</span>
+      <span class="trait"><span class="dot" style="background:var(--success)"></span>Dependable</span>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">01 · Colour</div>
+    <h2 class="sec-title">Colour system</h2>
+    <p class="sec-sub">Light-mode-first. Ignite Blue for trust, the Ignite amber→orange spark for energy &amp; celebration. Every text pairing meets WCAG 2.2 AA.</p>
+    <div class="row-label">Brand — Ignite Blue</div>
+    <div class="swatch-grid">
+      <div class="sw"><div class="chip" style="background:var(--blue-50)"></div><div class="meta"><div class="name">blue-50</div><div class="hex">#EFF6FF</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--blue-100)"></div><div class="meta"><div class="name">blue-100</div><div class="hex">#DBEAFE</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--blue-500)"><span class="ac" style="color:#fff;background:rgba(0,0,0,.25)">AA</span></div><div class="meta"><div class="name">blue-500</div><div class="hex">#3B82F6</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--brand)"><span class="ac" style="color:#fff;background:rgba(0,0,0,.25)">On #FFF · 7.0:1</span></div><div class="meta"><div class="name">brand / blue-600</div><div class="hex">#2563EB</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--brand-700)"></div><div class="meta"><div class="name">blue-700</div><div class="hex">#1D4ED8</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--ink)"><span class="ac" style="color:#fff;background:rgba(0,0,0,.25)">Ink</span></div><div class="meta"><div class="name">blue-900 / ink</div><div class="hex">#172554</div></div></div>
+    </div>
+    <div class="row-label">Accent — Ignite (energy &amp; celebration)</div>
+    <div class="swatch-grid">
+      <div class="sw"><div class="chip" style="background:var(--ignite-amber)"><span class="ac">dark text</span></div><div class="meta"><div class="name">ignite-amber</div><div class="hex">#FBBF24</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--ignite)"><span class="ac" style="color:#fff;background:rgba(0,0,0,.25)">CTA</span></div><div class="meta"><div class="name">ignite</div><div class="hex">#F97316</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--ignite-deep)"></div><div class="meta"><div class="name">ignite-deep</div><div class="hex">#EA580C</div></div></div>
+      <div class="sw"><div class="chip grad-chip"><span class="ac">celebration</span></div><div class="meta"><div class="name">ignite-grad</div><div class="hex">135° amber→orange</div></div></div>
+    </div>
+    <div class="row-label">Skill / categorical (10-dim LQS · charts · badges)</div>
+    <div class="swatch-grid">
+      <div class="sw"><div class="chip" style="background:var(--skill-teal)"></div><div class="meta"><div class="name">teal</div><div class="hex">#14B8A6</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--skill-violet)"></div><div class="meta"><div class="name">violet</div><div class="hex">#7C3AED</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--skill-pink)"></div><div class="meta"><div class="name">pink</div><div class="hex">#EC4899</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--skill-green)"></div><div class="meta"><div class="name">green</div><div class="hex">#16A34A</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--skill-blue)"></div><div class="meta"><div class="name">blue</div><div class="hex">#2563EB</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--skill-amber)"></div><div class="meta"><div class="name">amber</div><div class="hex">#F59E0B</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--skill-cyan)"></div><div class="meta"><div class="name">cyan</div><div class="hex">#0891B2</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--skill-rose)"></div><div class="meta"><div class="name">rose</div><div class="hex">#E11D48</div></div></div>
+    </div>
+    <div class="row-label">Neutrals &amp; functional</div>
+    <div class="swatch-grid">
+      <div class="sw"><div class="chip" style="background:var(--bg);border-bottom:1px solid var(--border)"></div><div class="meta"><div class="name">bg</div><div class="hex">#F8FAFC</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--surface-2)"></div><div class="meta"><div class="name">surface-2</div><div class="hex">#F1F5F9</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--border)"></div><div class="meta"><div class="name">border</div><div class="hex">#E2E8F0</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--text)"><span class="ac" style="color:#fff;background:rgba(255,255,255,.15)">16:1</span></div><div class="meta"><div class="name">text</div><div class="hex">#0F172A</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--success)"><span class="ac" style="color:#fff;background:rgba(0,0,0,.2)">success</span></div><div class="meta"><div class="name">success</div><div class="hex">#16A34A</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--warning)"><span class="ac" style="color:#fff;background:rgba(0,0,0,.2)">warning</span></div><div class="meta"><div class="name">warning</div><div class="hex">#D97706</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--danger)"><span class="ac" style="color:#fff;background:rgba(0,0,0,.2)">danger</span></div><div class="meta"><div class="name">danger</div><div class="hex">#DC2626</div></div></div>
+      <div class="sw"><div class="chip" style="background:var(--info)"><span class="ac" style="color:#fff;background:rgba(0,0,0,.2)">info</span></div><div class="meta"><div class="name">info</div><div class="hex">#2563EB</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">02 · Typography</div>
+    <h2 class="sec-title">Type system</h2>
+    <p class="sec-sub">Nunito carries the warmth (display, headings, celebration, badges). Inter carries the work (body, forms, tables, tabular numbers). Both variable, diacritic-ready for future Hausa / Yoruba / Igbo.</p>
+    <div class="type-card">
+      <div class="subtle mono">Nunito · Display 800</div>
+      <div style="font-family:var(--font-display);font-weight:800;font-size:44px;color:var(--ink)">Every learner has a spark.</div>
+      <div class="subtle mono" style="margin-top:18px">Inter · Body 400 / 16px</div>
+      <p style="max-width:640px;margin-top:6px">A teacher captures a lesson once — attendance, evidence, assessment, a project — and that single record becomes the learner's portfolio, the parent's window, and the school's dashboard. Numbers stay legible and aligned: <strong style="font-variant-numeric:tabular-nums">18 / 20 present · 92% coverage · ₦0 to families</strong>.</p>
+    </div>
+    <div class="type-card">
+      <div class="scale-row"><span class="scale-tag">Display · Nunito 800 · 44/52</span><span style="font-family:var(--font-display);font-weight:800;font-size:44px;color:var(--ink)">Aa Ignite</span></div>
+      <div class="scale-row"><span class="scale-tag">H1 · Nunito 800 · 32/40</span><span style="font-family:var(--font-display);font-weight:800;font-size:32px;color:var(--ink)">Term progress</span></div>
+      <div class="scale-row"><span class="scale-tag">H2 · Nunito 700 · 24/32</span><span style="font-family:var(--font-display);font-weight:700;font-size:24px;color:var(--ink)">Active lesson workspace</span></div>
+      <div class="scale-row"><span class="scale-tag">Body · Inter 400 · 16/24</span><span style="font-size:16px">Mark attendance, add evidence, assess learners.</span></div>
+      <div class="scale-row"><span class="scale-tag">Caption · Inter 500 · 13/18</span><span style="font-size:13px;font-weight:500;color:var(--text-subtle)">Updated 2 min ago · source: lesson records</span></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">03 · Shape &amp; space</div>
+    <h2 class="sec-title">Radii, elevation, rhythm</h2>
+    <p class="sec-sub">Rounded and soft — deliberately not claymorphism, so it stays fast on low-end Android and calm on dense web. 4px spacing scale, ≥44px touch targets.</p>
+    <div class="shape-grid">
+      <div class="shape"><div class="demo-box" style="border-radius:8px"></div>r-sm · 8px</div>
+      <div class="shape"><div class="demo-box" style="border-radius:12px"></div>r-md · 12px</div>
+      <div class="shape"><div class="demo-box" style="border-radius:16px"></div>r-lg · 16px</div>
+      <div class="shape"><div class="demo-box" style="border-radius:24px"></div>r-xl · 24px</div>
+      <div class="shape"><div class="elev" style="box-shadow:var(--e1)"></div>e1 · card</div>
+      <div class="shape"><div class="elev" style="box-shadow:var(--e2)"></div>e2 · sheet</div>
+      <div class="shape"><div class="elev" style="box-shadow:var(--e3)"></div>e3 · dialog</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="eyebrow">04 · Components</div>
+    <h2 class="sec-title">Component seeds</h2>
+    <p class="sec-sub">Built from the live tokens above — buttons, form field, sync-status, learner celebration card and an evidence-linked stat.</p>
+    <div class="cols">
+      <div class="panel">
+        <h4>Buttons</h4>
+        <div class="btnrow" style="margin-bottom:14px"><button class="btn btn-primary">Save attendance</button><button class="btn btn-secondary">Cancel</button></div>
+        <div class="btnrow" style="margin-bottom:14px"><button class="btn btn-ignite">Claim badge</button><button class="btn btn-danger">Remove item</button></div>
+        <div class="btnrow"><button class="btn btn-disabled" disabled>Complete lesson</button></div>
+        <p class="hint">Disabled explains the missing prerequisite nearby: “Mark attendance first”.</p>
+      </div>
+      <div class="panel">
+        <h4>Form field</h4>
+        <label class="fl" for="e">Learner score <span class="req">*</span></label>
+        <input id="e" class="inp" type="text" value="8" />
+        <p class="hint">Focus ring = brand blue. Tabular numerics for scores &amp; counts.</p>
+        <label class="fl" for="e2" style="margin-top:16px">Guardian email <span class="req">*</span></label>
+        <input id="e2" class="inp err" type="text" value="parent@" />
+        <div class="err-msg">⚠ Enter a valid email address.</div>
+      </div>
+      <div class="panel">
+        <h4>Sync / offline status</h4>
+        <div class="pills">
+          <div class="spill"><span class="ic" style="background:var(--text-subtle)">✕</span>Offline — working locally</div>
+          <div class="spill"><span class="ic" style="background:var(--warning)">⏱</span>Queued · 3 items</div>
+          <div class="spill"><span class="ic" style="background:var(--info)">↻</span>Syncing…</div>
+          <div class="spill"><span class="ic" style="background:var(--success)">✓</span>Synced</div>
+          <div class="spill"><span class="ic" style="background:var(--danger)">!</span>Action required</div>
+        </div>
+        <p class="hint">Never colour alone — always icon + label. “Synced” only after server confirmation.</p>
+      </div>
+      <div class="panel lcard">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="badge">🔥</div>
+          <div><div style="font-family:var(--font-display);font-weight:800;font-size:18px;color:var(--ink)">Maker · Level 2</div><div class="subtle" style="font-size:13px">Amara earned a new badge</div></div>
+        </div>
+        <div class="skill-tags">
+          <span class="stag" style="background:var(--skill-teal)">Collaboration</span>
+          <span class="stag" style="background:var(--skill-violet)">Creativity</span>
+          <span class="stag" style="background:var(--skill-blue)">Digital skills</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h4>Evidence-over-vanity stat</h4>
+        <div class="stat"><div class="n">92%</div><div style="font-weight:600">Curriculum coverage</div><div class="src">= delivered ÷ assigned · updated 2 min ago · <span style="color:var(--brand)">view records →</span></div></div>
+        <p class="hint">Every metric links to its source and shows freshness + formula.</p>
+      </div>
+      <div class="panel imgcard">
+        <h4>Illustration direction</h4>
+        <img src="/design/assets/brand/illustration.png" alt="Warm, Nigerian classroom illustration in the IGNITE palette" />
+        <p class="hint">Warm, dignified, authentically Nigerian · on-palette · spark motif.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">IGNITE — Digital Innovation Learning Platform · Brand Board v1 · <a href="/design/index.html" style="color:var(--brand);font-weight:600">← back to all surfaces</a> · Confidential.</div>
+</footer>
+
+</body>
+</html>
