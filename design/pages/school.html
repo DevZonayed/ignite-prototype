@@ -114,6 +114,26 @@ tr:hover td{background:var(--surface-2)}.strong{font-weight:700}
 .toggle{width:44px;height:26px;border-radius:99px;background:var(--brand);position:relative;flex:none;cursor:pointer}.toggle span{position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
 .toggle.off{background:var(--surface-3)}.toggle.off span{right:21px}
 @media(max-width:1000px){.tiles{grid-template-columns:repeat(2,1fr)}.grid2,.grid2.even{grid-template-columns:1fr}.app{grid-template-columns:64px 1fr}.side .brand span,.side a span,.side .userchip .un,.side .userchip .ur{display:none}.search{display:none}}
+.drawerback{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;z-index:60}
+.drawerback.on{display:block}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:430px;max-width:94vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-16px 0 44px rgba(15,23,42,.18);z-index:61;transform:translateX(102%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.drawer .dh{display:flex;align-items:center;gap:12px;padding:20px 22px;border-bottom:1px solid var(--border)}
+.drawer .dav{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:16px;flex:none}
+.drawer .dn{font-family:var(--fd);font-weight:900;font-size:19px}
+.drawer .dr{font-size:12.5px;color:var(--text-subtle)}
+.drawer .dclose{margin-left:auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-muted);cursor:pointer}
+.drawer .dbody{padding:20px 22px;overflow-y:auto}
+.dstat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px}
+.dstat .ds{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:13px}
+.dstat .ds .dsl{font-size:11.5px;color:var(--text-muted)}
+.dstat .ds .dsv{font-family:var(--fd);font-weight:900;font-size:21px;margin-top:3px}
+.dsec{font-family:var(--fd);font-weight:800;font-size:14px;margin:18px 0 8px}
+.dlist .di{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13.5px}
+.dlist .di:first-child{border-top:none}
+.dlist .di .dil{flex:1;color:var(--text-muted)}
+.dlist .di .dv{font-weight:700}
+.dchip{display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:999px;padding:5px 11px;margin:0 5px 5px 0}
 svg{display:block}
 </style>
 </head>
@@ -253,6 +273,12 @@ svg{display:block}
   </div>
 </div>
 
+<div class="drawerback" id="drawerBack"></div>
+<aside class="drawer" id="drawer">
+  <div class="dh"><span class="dav" id="dAv">–</span><div><div class="dn" id="dName">–</div><div class="dr" id="dRole">–</div></div><button class="dclose" id="dClose"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="dbody" id="dBody"></div>
+</aside>
+
 <script>
 (function(){
   var titles={overview:'Overview',teachers:'Teachers',learners:'Learners',classes:'Classes',curriculum:'Curriculum coverage',attendance:'Attendance & assessment',reports:'Reports',settings:'Settings'};
@@ -261,12 +287,12 @@ svg{display:block}
   document.getElementById('ovTiles').innerHTML=tiles.map(function(t){return '<div class="tile"><div class="th"><span class="ti" style="background:color-mix(in srgb,'+t[2]+' 15%,transparent);color:'+t[2]+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></span><span class="tl">'+t[0]+'</span></div><div class="tn">'+t[1]+'</div><div class="tf">'+t[3]+'</div></div>';}).join('');
   // teachers
   var tch=[['Adewale Balogun','JSS 1, JSS 2',28,92,'Today 10:24','Active'],['Funke Okafor','JSS 1',24,90,'Today 08:57','Active'],['Chinedu Nwosu','JSS 3',19,75,'Yesterday','Active'],['Aisha Bello','P 5, P 6',22,88,'Today 09:40','Active'],['Ibrahim Musa','JSS 2',16,70,'2 days','On leave']];
-  document.getElementById('teachersBody').innerHTML=tch.map(function(t){var st=t[5]==='Active'?'b-green':'b-amber';return '<tr><td class="strong">Mr/Mrs '+t[0]+'</td><td>'+t[1]+'</td><td>'+t[2]+'</td><td><span class="cbar"><i style="width:'+t[3]+'%;'+(t[3]<80?'background:var(--warning)':'')+'"></i></span>'+t[3]+'%</td><td>'+t[4]+'</td><td><span class="badge '+st+'">'+t[5]+'</span></td><td><span class="rowbtn">View</span></td></tr>';}).join('');
+  document.getElementById('teachersBody').innerHTML=tch.map(function(t){var st=t[5]==='Active'?'b-green':'b-amber';return '<tr><td class="strong">Mr/Mrs '+t[0]+'</td><td>'+t[1]+'</td><td>'+t[2]+'</td><td><span class="cbar"><i style="width:'+t[3]+'%;'+(t[3]<80?'background:var(--warning)':'')+'"></i></span>'+t[3]+'%</td><td>'+t[4]+'</td><td><span class="badge '+st+'">'+t[5]+'</span></td><td><span class="rowbtn" data-detail="teacher" data-name="Mr/Mrs '+t[0]+'" data-classes="'+t[1]+'" data-lessons="'+t[2]+'" data-cov="'+t[3]+'" data-last="'+t[4]+'" data-status="'+t[5]+'">View</span></td></tr>';}).join('');
   // learners
   var names=['Amara Eze','Chidi Okonkwo','Ngozi Bello','Emeka Nwosu','Fatima Sani','Tunde Adeyemi','Zainab Yusuf','Kelechi Obi','Blessing Ade','David Okoro'];
   var lb=document.getElementById('learnersBody');
   names.forEach(function(n,i){var lqs=62+((i*9)%34);var att=80+((i*5)%18);var cls=['JSS 1','JSS 2','JSS 3','P 6'][i%4];
-    lb.insertAdjacentHTML('beforeend','<tr><td class="strong">'+n+'</td><td>'+cls+'</td><td><span class="badge '+(lqs>=75?'b-green':(lqs>=65?'b-blue':'b-amber'))+'">'+lqs+'/100</span></td><td>'+att+'%</td><td>'+(2+i%5)+'</td><td><span class="rowbtn">View</span></td></tr>');});
+    lb.insertAdjacentHTML('beforeend','<tr><td class="strong">'+n+'</td><td>'+cls+'</td><td><span class="badge '+(lqs>=75?'b-green':(lqs>=65?'b-blue':'b-amber'))+'">'+lqs+'/100</span></td><td>'+att+'%</td><td>'+(2+i%5)+'</td><td><span class="rowbtn" data-detail="learner" data-name="'+n+'" data-class="'+cls+'" data-lqs="'+lqs+'" data-att="'+att+'" data-projects="'+(2+i%5)+'">View</span></td></tr>');});
   // classes
   var cls=[['JSS 1','Mr. Balogun',32,95],['JSS 2','Mr. Musa',29,88],['JSS 3','Mr. Nwosu',27,75],['P 6','Ms. Bello',34,91],['P 5','Ms. Bello',31,83],['P 4','Mrs. Okafor',30,86]];
   document.getElementById('classGrid').innerHTML=cls.map(function(c){return '<div class="classcard"><div class="cc">'+c[0]+'</div><div class="ct">'+c[1]+' · Digital Innovation</div><div class="cm"><div>Learners<b>'+c[2]+'</b></div><div>Coverage<b>'+c[3]+'%</b></div></div></div>';}).join('');
@@ -286,6 +312,37 @@ svg{display:block}
   document.body.addEventListener('click',function(e){var h=e.target.closest('.acc .ah');if(h){h.parentElement.classList.toggle('open');}});
   // tabs
   document.body.addEventListener('click',function(e){var tb=e.target.closest('.tab');if(tb){document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x===tb);});document.querySelectorAll('.tabpanel').forEach(function(p){p.classList.toggle('on',p.id==='tp-'+tb.dataset.tab);});}});
+  // detail drawer
+  function openDrawer(html,name,role,avText,avBg,avColor){document.getElementById('dName').textContent=name;document.getElementById('dRole').textContent=role;var av=document.getElementById('dAv');av.textContent=avText;av.style.background=avBg;av.style.color=avColor;document.getElementById('dBody').innerHTML=html;document.getElementById('drawer').classList.add('on');document.getElementById('drawerBack').classList.add('on');}
+  function closeDrawer(){document.getElementById('drawer').classList.remove('on');document.getElementById('drawerBack').classList.remove('on');}
+  document.getElementById('dClose').addEventListener('click',closeDrawer);
+  document.getElementById('drawerBack').addEventListener('click',closeDrawer);
+  function initials(s){return s.replace(/^Mr\/Mrs\s/,'').split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();}
+  document.body.addEventListener('click',function(e){var d=e.target.closest('[data-detail]');if(!d)return;var ds=d.dataset;
+    if(ds.detail==='teacher'){
+      var ev=12+(parseInt(ds.lessons,10)%7);
+      var html='<div class="dstat"><div class="ds"><div class="dsl">Lessons delivered</div><div class="dsv">'+ds.lessons+'</div></div><div class="ds"><div class="dsl">Curriculum coverage</div><div class="dsv">'+ds.cov+'%</div></div></div>'+
+        '<div class="dsec">What the principal can see</div><div class="dlist">'+
+        '<div class="di"><span class="dil">Classes</span><span class="dv">'+ds.classes+'</span></div>'+
+        '<div class="di"><span class="dil">Attendance marking</span><span class="dv">On time</span></div>'+
+        '<div class="di"><span class="dil">Evidence uploaded</span><span class="dv">'+ev+' items</span></div>'+
+        '<div class="di"><span class="dil">Last active</span><span class="dv">'+ds.last+'</span></div>'+
+        '<div class="di"><span class="dil">Status</span><span class="dv">'+ds.status+'</span></div>'+
+        '<div class="di"><span class="dil">Teacher Quality Score</span><span class="dv" style="color:var(--text-subtle)">Phase 2</span></div></div>';
+      openDrawer(html, ds.name, 'Teacher · Digital Innovation', initials(ds.name), '#dbeafe', '#1d4ed8');
+    } else {
+      var skills=[['Coding','2563EB'],['Creativity','7C3AED'],['Robotics','E11D48'],['Digital Literacy','6366F1']].map(function(p){return '<span class="dchip" style="background:#'+p[1]+'">'+p[0]+'</span>';}).join('');
+      var html='<div class="dstat"><div class="ds"><div class="dsl">Learner Quality Score</div><div class="dsv" style="color:var(--brand)">'+ds.lqs+'/100</div></div><div class="ds"><div class="dsl">Attendance</div><div class="dsv">'+ds.att+'%</div></div></div>'+
+        '<div class="dsec">What the principal can see</div><div class="dlist">'+
+        '<div class="di"><span class="dil">Class</span><span class="dv">'+ds.class+'</span></div>'+
+        '<div class="di"><span class="dil">Projects</span><span class="dv">'+ds.projects+' in portfolio</span></div>'+
+        '<div class="di"><span class="dil">Badges</span><span class="dv">4 earned</span></div>'+
+        '<div class="di"><span class="dil">Certificate</span><span class="dv">Term 2 · issued</span></div>'+
+        '<div class="di"><span class="dil">Homework</span><span class="dv">2 pending</span></div></div>'+
+        '<div class="dsec">Skills growing</div><div>'+skills+'</div>';
+      openDrawer(html, ds.name, ds.class+' · Digital Innovation', initials(ds.name), '#dcfce7', '#166534');
+    }
+  });
   // theme
   var sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
   var moon='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
