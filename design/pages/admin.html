@@ -181,6 +181,28 @@ tr:hover td{background:var(--surface-2)}
 .mcard .mm{padding:9px 11px}.mcard .mn{font-size:12.5px;font-weight:700}.mcard .ms{font-size:10.5px;color:var(--text-subtle);font-family:ui-monospace,Menlo,monospace}
 
 @media(max-width:1000px){.tiles{grid-template-columns:repeat(2,1fr)}.grid2,.grid2.even{grid-template-columns:1fr}.auth{grid-template-columns:1fr}.app{grid-template-columns:64px 1fr}.side .brand span,.side a span,.side .navlabel,.side .userchip .un,.side .userchip .ur,.side a .p3{display:none}.search{width:150px}}
+.drawerback{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;z-index:60}
+.drawerback.on{display:block}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:430px;max-width:94vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-16px 0 44px rgba(15,23,42,.2);z-index:61;transform:translateX(102%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.drawer .dh{display:flex;align-items:center;gap:12px;padding:20px 22px;border-bottom:1px solid var(--border)}
+.drawer .dav{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:16px;flex:none}
+.drawer .dn{font-family:var(--fd);font-weight:900;font-size:19px}
+.drawer .dr{font-size:12.5px;color:var(--text-subtle)}
+.drawer .dclose{margin-left:auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--text-muted);cursor:pointer}
+.drawer .dbody{padding:20px 22px;overflow-y:auto}
+.dstat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px}
+.dstat .ds{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:13px}
+.dstat .ds .dsl{font-size:11.5px;color:var(--text-muted)}
+.dstat .ds .dsv{font-family:var(--fd);font-weight:900;font-size:21px;margin-top:3px}
+.dsec{font-family:var(--fd);font-weight:800;font-size:14px;margin:18px 0 8px}
+.dlist .di{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);font-size:13.5px}
+.dlist .di:first-child{border-top:none}
+.dlist .di .dil{flex:1;color:var(--text-muted)}
+.dlist .di .dv{font-weight:700}
+.drowbtns{display:flex;gap:10px;margin-top:18px}
+.drowbtns .db{flex:1;text-align:center;font-weight:700;font-size:13px;padding:11px;border-radius:10px;cursor:pointer;border:1.5px solid var(--border);background:var(--surface)}
+.drowbtns .db.pri{background:var(--brand);color:#fff;border-color:var(--brand)}
 svg{display:block}
 </style>
 </head>
@@ -431,6 +453,12 @@ svg{display:block}
   </div>
 </div>
 
+<div class="drawerback" id="drawerBack"></div>
+<aside class="drawer" id="drawer">
+  <div class="dh"><span class="dav" id="dAv">–</span><div><div class="dn" id="dName">–</div><div class="dr" id="dRole">–</div></div><button class="dclose" id="dClose"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+  <div class="dbody" id="dBody"></div>
+</aside>
+
 <script>
 (function(){
   var titles={overview:'All-schools overview',schools:'Schools',users:'Users',imports:'Bulk onboarding',curriculum:'Curriculum authoring',media:'Media library',scoring:'Scoring configuration',ai:'AI services',monitoring:'Monitoring',security:'Security & Audit'};
@@ -439,11 +467,11 @@ svg{display:block}
   var schoolNames=['Bright Future Academy','Unity College','Hillcrest Schools','Greenfield Model','Sunrise International','Cornerstone Academy','Royal Heritage','Peace Model School','New Era College','Little Stars School','Excel Academy','Trinity International','Grace Foundation','Kings & Queens','Pathfinder School','Beacon Light','Crown Academy','Harmony Schools','Nobel Model','Zenith College'];
   var sb=document.getElementById('schoolsBody');
   schoolNames.forEach(function(n,i){var cov=68+((i*7)%30);var st=cov<75?'b-amber':'b-green';var stt=cov<75?'Needs attention':'Active';
-    sb.insertAdjacentHTML('beforeend','<tr><td class="strong">'+n+'</td><td>'+regions[i%regions.length]+'</td><td>'+(2+i%4)+'/'+(3+i%4)+'</td><td>'+(380+i*23)+'</td><td><span class="cbar"><i style="width:'+cov+'%;'+(cov<75?'background:var(--warning)':'')+'"></i></span>'+cov+'%</td><td><span class="badge '+st+'">'+stt+'</span></td><td><span class="rowbtn">Manage</span></td></tr>');});
+    sb.insertAdjacentHTML('beforeend','<tr><td class="strong">'+n+'</td><td>'+regions[i%regions.length]+'</td><td>'+(2+i%4)+'/'+(3+i%4)+'</td><td>'+(380+i*23)+'</td><td><span class="cbar"><i style="width:'+cov+'%;'+(cov<75?'background:var(--warning)':'')+'"></i></span>'+cov+'%</td><td><span class="badge '+st+'">'+stt+'</span></td><td><span class="rowbtn" data-detail="school" data-name="'+n+'" data-region="'+regions[i%regions.length]+'" data-teachers="'+(2+i%4)+'/'+(3+i%4)+'" data-learners="'+(380+i*23)+'" data-cov="'+cov+'" data-status="'+stt+'">Manage</span></td></tr>');});
   var users=[['Zonayed Ahamad','Platform Admin','—','Active','now'],['Funke Okafor','Teacher','Bright Future','Active','8 min'],['Adewale Balogun','Teacher','Bright Future','Active','24 min'],['Ngozi Bello','Principal','Unity College','Active','1 hr'],['Chinedu Nwosu','Teacher','Hillcrest','Suspended','2 days'],['Aisha Bello','Teacher','Greenfield','Active','15 min'],['Emeka Obi','Curriculum Admin','—','Active','40 min'],['Tunde Ade','Parent','Bright Future','Active','3 hr']];
   var ub=document.getElementById('usersBody');
   users.forEach(function(u){var st=u[3]==='Active'?'b-green':(u[3]==='Suspended'?'b-amber':'b-grey');var role=u[1].includes('Admin')?'b-blue':(u[1]==='Principal'?'b-blue':'b-grey');
-    ub.insertAdjacentHTML('beforeend','<tr><td class="strong">'+u[0]+'</td><td><span class="badge '+role+'">'+u[1]+'</span></td><td>'+u[2]+'</td><td><span class="badge '+st+'">'+u[3]+'</span></td><td>'+u[4]+'</td><td><span class="rowbtn">Edit</span></td></tr>');});
+    ub.insertAdjacentHTML('beforeend','<tr><td class="strong">'+u[0]+'</td><td><span class="badge '+role+'">'+u[1]+'</span></td><td>'+u[2]+'</td><td><span class="badge '+st+'">'+u[3]+'</span></td><td>'+u[4]+'</td><td><span class="rowbtn" data-detail="user" data-name="'+u[0]+'" data-role="'+u[1]+'" data-school="'+u[2]+'" data-status="'+u[3]+'" data-last="'+u[4]+'">Edit</span></td></tr>');});
   var dims=[['Coding','#2563EB',15],['Creativity','#7C3AED',10],['Collaboration','#14B8A6',10],['Communication','#EC4899',10],['Critical Thinking','#0891B2',10],['Problem Solving','#16A34A',10],['Attendance','#F59E0B',10],['Digital Literacy','#6366F1',10],['Robotics','#E11D48',8],['STEAM','#059669',7]];
   var dl=document.getElementById('dimList');
   dims.forEach(function(d){dl.insertAdjacentHTML('beforeend','<div class="dimrow"><span class="dimdot" style="background:'+d[1]+'"></span><span class="dimname">'+d[0]+'</span><span class="dimtrack"><i style="width:'+(d[2]*5)+'%;background:'+d[1]+'"></i></span><span class="dimw">'+d[2]+'%</span></div>');});
@@ -467,6 +495,35 @@ svg{display:block}
     document.querySelector('.content').scrollTop=0;
   }
   document.body.addEventListener('click',function(e){var t=e.target.closest('[data-view]');if(t){e.preventDefault();show(t.dataset.view);}});
+  // ---- detail drawer ----
+  function openDrawer(html,name,role,avText,avBg,avColor){document.getElementById('dName').textContent=name;document.getElementById('dRole').textContent=role;var av=document.getElementById('dAv');av.textContent=avText;av.style.background=avBg;av.style.color=avColor;document.getElementById('dBody').innerHTML=html;document.getElementById('drawer').classList.add('on');document.getElementById('drawerBack').classList.add('on');}
+  function closeDrawer(){document.getElementById('drawer').classList.remove('on');document.getElementById('drawerBack').classList.remove('on');}
+  document.getElementById('dClose').addEventListener('click',closeDrawer);
+  document.getElementById('drawerBack').addEventListener('click',closeDrawer);
+  function inits(s){return s.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();}
+  document.body.addEventListener('click',function(e){var d=e.target.closest('[data-detail]');if(!d)return;var ds=d.dataset;
+    if(ds.detail==='school'){
+      var html='<div class="dstat"><div class="ds"><div class="dsl">Learners</div><div class="dsv">'+ds.learners+'</div></div><div class="ds"><div class="dsl">Coverage</div><div class="dsv"'+(+ds.cov<75?' style="color:var(--warning)"':'')+'>'+ds.cov+'%</div></div></div>'+
+        '<div class="dsec">School overview</div><div class="dlist">'+
+        '<div class="di"><span class="dil">Region</span><span class="dv">'+ds.region+'</span></div>'+
+        '<div class="di"><span class="dil">Teachers active</span><span class="dv">'+ds.teachers+'</span></div>'+
+        '<div class="di"><span class="dil">Status</span><span class="dv">'+ds.status+'</span></div>'+
+        '<div class="di"><span class="dil">Curriculum</span><span class="dv">Digital Innovation v4</span></div>'+
+        '<div class="di"><span class="dil">Last sync</span><span class="dv">a few min ago</span></div></div>'+
+        '<div class="dsec">Needs attention</div><div class="dlist"><div class="di"><span class="dil">'+(+ds.cov<75?'JSS 3 behind sequence · nudge teacher':'No issues — on track')+'</span></div></div>'+
+        '<div class="drowbtns"><span class="db">Open school portal</span><span class="db pri">Manage users</span></div>';
+      openDrawer(html, ds.name, ds.region+' · Digital Innovation', '🏫', '#e0e7ff', '#4338ca');
+    } else {
+      var html='<div class="dsec">Account</div><div class="dlist">'+
+        '<div class="di"><span class="dil">Role</span><span class="dv">'+ds.role+'</span></div>'+
+        '<div class="di"><span class="dil">School</span><span class="dv">'+ds.school+'</span></div>'+
+        '<div class="di"><span class="dil">Status</span><span class="dv">'+ds.status+'</span></div>'+
+        '<div class="di"><span class="dil">Last active</span><span class="dv">'+ds.last+'</span></div>'+
+        '<div class="di"><span class="dil">Access scope</span><span class="dv">'+(ds.role.indexOf('Admin')>=0?'All schools':(ds.role==='Principal'?'Own school':'Assigned classes/child'))+'</span></div></div>'+
+        '<div class="drowbtns"><span class="db">Reset password</span><span class="db pri">Edit roles</span></div>';
+      openDrawer(html, ds.name, ds.role, inits(ds.name), '#dbeafe', '#1d4ed8');
+    }
+  });
   // ---- theme ----
   var sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
   var moon='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
