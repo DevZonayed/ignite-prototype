@@ -146,6 +146,7 @@ svg{display:block}
     <a data-view="learners"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg><span>Learners</span></a>
     <a data-view="classes"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg><span>Classes</span></a>
     <a data-view="curriculum"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10"/><path d="M9 4v6h6"/></svg><span>Curriculum</span></a>
+    <a data-view="homework"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span>Homework</span></a>
     <a data-view="attendance"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg><span>Attendance</span></a>
     <a data-view="reports"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><span>Reports</span></a>
     <a data-view="settings"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 0 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H1a2 2 0 0 1 0-4h.1A1.6 1.6 0 0 0 2.6 7"/></svg><span>Settings</span></a>
@@ -198,6 +199,7 @@ svg{display:block}
           <div class="panel">
             <div class="ph"><h3>Needs attention</h3></div>
             <div class="alert"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" style="flex:none"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div><div class="an">JSS 3 · 2 lessons behind sequence</div><div style="font-size:12px;color:var(--text-muted)">Robotics unit — nudge sent to teacher</div></div></div>
+            <div class="alert" data-view="homework" style="cursor:pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" style="flex:none"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><div style="flex:1"><div class="an">Homework · 14 pending, 9 late this week</div><div style="font-size:12px;color:var(--text-muted)">JSS 3 lowest at 68% — open compliance →</div></div></div>
           </div>
         </div>
       </section>
@@ -223,6 +225,20 @@ svg{display:block}
       <section class="view" id="view-curriculum">
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">Coverage by unit — click a unit to expand its lessons.</p>
         <div id="accWrap"></div>
+      </section>
+
+      <!-- HOMEWORK COMPLIANCE -->
+      <section class="view" id="view-homework">
+        <div class="toolbar"><div class="filter">Class: All</div><div class="filter">This week</div><span class="sp"></span><button class="btnP" data-toast="Reminders sent to parents of pending learners"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg> Send reminders</button></div>
+        <div class="tiles" id="hwTiles"></div>
+        <div class="grid2">
+          <div class="panel" style="padding:6px 8px"><div class="ph" style="padding:12px 12px 8px"><h3>Compliance by class — this week</h3></div><table><thead><tr><th>Class</th><th>Set</th><th>Submitted</th><th>Pending</th><th>Late</th><th>On&nbsp;time</th></tr></thead><tbody id="hwClassBody"></tbody></table></div>
+          <div class="panel">
+            <div class="ph"><h3>Needs a nudge</h3><span class="link" data-view="learners">All learners →</span></div>
+            <div id="hwAlerts"></div>
+          </div>
+        </div>
+        <div class="panel" style="padding:6px 8px"><div class="ph" style="padding:12px 12px 8px"><h3>Recent submissions</h3></div><table><thead><tr><th>Learner</th><th>Class</th><th>Homework</th><th>Submitted</th><th>Status</th></tr></thead><tbody id="hwSubsBody"></tbody></table></div>
       </section>
 
       <!-- ATTENDANCE (tabs: chart / table) -->
@@ -281,7 +297,7 @@ svg{display:block}
 
 <script>
 (function(){
-  var titles={overview:'Overview',teachers:'Teachers',learners:'Learners',classes:'Classes',curriculum:'Curriculum coverage',attendance:'Attendance & assessment',reports:'Reports',settings:'Settings'};
+  var titles={overview:'Overview',teachers:'Teachers',learners:'Learners',classes:'Classes',curriculum:'Curriculum coverage',homework:'Homework compliance',attendance:'Attendance & assessment',reports:'Reports',settings:'Settings'};
   // overview tiles (exact PRD set)
   var tiles=[['Teachers active','12/14','#16a34a','updated 4 min ago'],['Children reached','486','#7c3aed','of 512 enrolled'],['Lessons completed today','37','#2563EB','started & completed'],['Media uploaded','148','#14b8a6','this week'],['Projects completed','64','#f97316','Scratch · Python · robotics'],['Curriculum completion','88%','#2563EB','= done ÷ published'],['Learner engagement','92%','#16a34a','active this week'],['Schools active','1','#4f46e5','this campus']];
   document.getElementById('ovTiles').innerHTML=tiles.map(function(t){return '<div class="tile"><div class="th"><span class="ti" style="background:color-mix(in srgb,'+t[2]+' 15%,transparent);color:'+t[2]+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></span><span class="tl">'+t[0]+'</span></div><div class="tn">'+t[1]+'</div><div class="tf">'+t[3]+'</div></div>';}).join('');
@@ -305,6 +321,20 @@ svg{display:block}
   function heatColor(v){return v>=95?'#16a34a':(v>=88?'#86efac':'#dcfce7');}
   document.getElementById('heatBody').innerHTML=weeks.map(function(w){return '<tr><th style="text-align:left;font-size:12px;color:var(--text-muted)">'+w[0]+'</th>'+[w[1],w[2],w[3]].map(function(v){return '<td style="background:'+heatColor(v)+'">'+v+'%</td>';}).join('')+'</tr>';}).join('');
 
+  // homework compliance
+  var hwTiles=[['On-time rate','84%','#16a34a','+3% vs last week'],['Pending','22','#f59e0b','across 5 classes'],['Late','9','#ef4444','reminders available'],['Not started','5','#ef4444','JSS 3 highest']];
+  var htEl=document.getElementById('hwTiles');
+  if(htEl)htEl.innerHTML=hwTiles.map(function(t){return '<div class="tile"><div class="th"><span class="ti" style="background:color-mix(in srgb,'+t[2]+' 15%,transparent);color:'+t[2]+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></span><span class="tl">'+t[0]+'</span></div><div class="tn">'+t[1]+'</div><div class="tf">'+t[3]+'</div></div>';}).join('');
+  var hwClasses=[['JSS 1',32,28,3,1,88],['JSS 2',30,24,4,2,80],['JSS 3',28,19,6,3,68],['P 6',26,24,1,1,92],['P 5',24,20,3,1,83]];
+  function otColor(v){return v>=85?'var(--success)':(v>=75?'var(--warning)':'var(--danger,#ef4444)');}
+  var hcEl=document.getElementById('hwClassBody');
+  if(hcEl)hcEl.innerHTML=hwClasses.map(function(c){return '<tr><td class="strong">'+c[0]+'</td><td>'+c[1]+'</td><td>'+c[2]+'</td><td>'+(c[3]>0?'<span style="color:var(--warning);font-weight:700">'+c[3]+'</span>':'0')+'</td><td>'+(c[4]>0?'<span style="color:#ef4444;font-weight:700">'+c[4]+'</span>':'0')+'</td><td><span style="font-weight:800;color:'+otColor(c[5])+'">'+c[5]+'%</span></td></tr>';}).join('');
+  var hwAlerts=[['Chidi Okonkwo','JSS 3','Smart Reading Lamp','3 days late','#ef4444'],['Amara Eze','JSS 3','Smart Reading Lamp','Not started','#ef4444'],['Tunde Bello','JSS 2','Smart Reading Lamp','1 day late','var(--warning)']];
+  var haEl=document.getElementById('hwAlerts');
+  if(haEl)haEl.innerHTML=hwAlerts.map(function(a){return '<div class="alert"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="'+a[4]+'" stroke-width="2" style="flex:none"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div style="flex:1"><div class="an">'+a[0]+' · '+a[1]+'</div><div style="font-size:12px;color:var(--text-muted)">'+a[2]+' — '+a[3]+'</div></div><span class="rowbtn" data-toast="Reminder sent to parent of '+a[0]+'">Remind</span></div>';}).join('');
+  var hwSubs=[['Ngozi Adeyemi','P 6','Smart Reading Lamp','Today, 09:12','On time','var(--success)'],['Emeka Obi','JSS 1','Smart Reading Lamp','Today, 08:40','On time','var(--success)'],['Bola Ade','JSS 2','Smart Reading Lamp','Yesterday','Late','var(--warning)'],['Chidi Okonkwo','JSS 3','Smart Reading Lamp','—','Pending','#ef4444']];
+  var hsEl=document.getElementById('hwSubsBody');
+  if(hsEl)hsEl.innerHTML=hwSubs.map(function(s){return '<tr><td class="strong">'+s[0]+'</td><td>'+s[1]+'</td><td>'+s[2]+'</td><td>'+s[3]+'</td><td><span style="font-weight:700;color:'+s[5]+'">'+s[4]+'</span></td></tr>';}).join('');
   // ---- router ----
   function show(v){if(!titles[v])return;document.querySelectorAll('.view').forEach(function(s){s.classList.toggle('active',s.id==='view-'+v);});document.querySelectorAll('.side a[data-view]').forEach(function(n){n.classList.toggle('on',n.dataset.view===v);});document.getElementById('pageTitle').textContent=titles[v];if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);document.querySelector('.content').scrollTop=0;window.scrollTo(0,0);}
   document.body.addEventListener('click',function(e){var t=e.target.closest('[data-view]');if(t){e.preventDefault();show(t.dataset.view);}});
@@ -352,7 +382,12 @@ svg{display:block}
   var saved;try{saved=localStorage.ignite_theme;}catch(e){}
   applyTheme(saved||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));
   var h=(location.hash||'').replace('#','');show(titles[h]?h:'overview');
+  // toast
+  var toastT;
+  function showToast(m){var toastEl=document.getElementById('toast');if(!toastEl)return;toastEl.textContent=m;toastEl.style.opacity='1';toastEl.style.transform='translateX(-50%) translateY(0)';clearTimeout(toastT);toastT=setTimeout(function(){toastEl.style.opacity='0';toastEl.style.transform='translateX(-50%) translateY(20px)';},2200);}
+  document.body.addEventListener('click',function(e){var t=e.target.closest('[data-toast]');if(t){showToast(t.getAttribute('data-toast'));}});
 })();
 </script>
+<div id="toast" style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--surface);padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:200"></div>
 </body>
 </html>

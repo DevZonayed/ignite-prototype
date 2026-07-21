@@ -275,7 +275,11 @@ svg{display:block}
       <section class="screen sub" id="s-homework-create">
         <div class="subhead"><span class="back" data-back><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></span><span class="st">Assign homework</span></div>
         <div class="card"><div class="sectitle" style="margin:0 0 6px">Title</div><div style="font-size:13px;color:var(--text-muted)">Rebuild your Smart Reading Lamp</div></div>
-        <div class="card"><div class="sectitle" style="margin:0 0 6px">Instructions</div><div style="font-size:13px;color:var(--text-muted)">Make a sprite walk across the stage using a repeat block; save the .sb3.</div></div>
+        <div class="card"><div class="sectitle" style="margin:0 0 6px">Instructions</div><div style="font-size:13px;color:var(--text-muted)">Rebuild the lamp from your LG-305 manual, test it 5×, and film a 60–90s demo explaining the input, brain and output.</div></div>
+        <div class="card"><div class="sectitle" style="margin:0 0 4px;display:flex;align-items:center;gap:7px">Attach lesson media <span style="font-family:var(--fd);font-weight:800;font-size:10px;color:#fff;background:var(--ignite);border-radius:20px;padding:2px 8px">helps parents</span></div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:9px">Tap any lesson video or GIF to attach it — parents see it as a "how to help at home" guide. <span id="hwAttachCount" style="font-weight:700;color:var(--brand)">0 attached</span></div>
+          <div id="hwMediaPick" style="display:flex;flex-direction:column;gap:7px"></div>
+        </div>
         <div class="card" style="display:flex;justify-content:space-between"><div class="sectitle" style="margin:0">Due date</div><div style="font-size:13px;font-weight:700">Fri 18 Jul</div></div>
         <button class="btn btn-primary" data-toast="Homework published · parents notified" data-back>Publish homework</button>
       </section>
@@ -300,13 +304,28 @@ svg{display:block}
         <div class="mtabs"><div class="mtab on" data-mtab="pending">Pending (4)</div><div class="mtab" data-mtab="reviewed">Reviewed</div></div>
         <div class="mtp on" id="mtp-pending" data-mtp>
           <div class="hwrow"><span class="hi">.sb3</span><div style="flex:1"><div class="ht">Amara Eze — Maze game</div><div class="hm">Scratch · submitted 2h ago</div></div><span style="font-size:11px;font-weight:700;color:var(--warning)">Review</span></div>
-          <div class="hwrow"><span class="hi">.sb3</span><div style="flex:1"><div class="ht">Chidi Okonkwo — Reading Lamp</div><div class="hm">Photo + video · submitted today</div></div><span style="font-size:11px;font-weight:700;color:var(--warning)">Review</span></div>
+          <div class="hwrow" data-screen="hw-review"><span class="hi">IMG</span><div style="flex:1"><div class="ht">Chidi Okonkwo — Reading Lamp</div><div class="hm">Photo + video · submitted today</div></div><span style="font-size:11px;font-weight:700;color:var(--warning)">Review</span></div>
           <div class="hwrow"><span class="hi">.py</span><div style="flex:1"><div class="ht">Ngozi Bello — Number guesser</div><div class="hm">Python · submitted today</div></div><span style="font-size:11px;font-weight:700;color:var(--warning)">Review</span></div>
         </div>
         <div class="mtp" id="mtp-reviewed" data-mtp>
           <div class="hwrow"><span class="hi" style="background:color-mix(in srgb,var(--success) 15%,transparent);color:var(--success)">✓</span><div style="flex:1"><div class="ht">Fatima Sani — Sprite walk</div><div class="hm">Feedback published</div></div></div>
           <div class="hwrow"><span class="hi" style="background:color-mix(in srgb,var(--success) 15%,transparent);color:var(--success)">✓</span><div style="flex:1"><div class="ht">Tunde Adeyemi — Costume swap</div><div class="hm">Feedback published</div></div></div>
         </div>
+      </section>
+
+      <!-- HOMEWORK REVIEW (sub) — 2-way thread -->
+      <section class="screen sub" id="s-hw-review">
+        <div class="subhead"><span class="back" data-back><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></span><span class="st">Chidi — Reading Lamp</span></div>
+        <div class="card"><div class="lesson"><span class="u">Smart Reading Lamp · Mission 5</span><div class="ttl">Chidi Okonkwo</div><div class="meta">Submitted today · JSS 1</div></div></div>
+        <div class="sectitle">Submission</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
+          <div class="card" style="padding:0;overflow:hidden;margin:0" data-toast="Opening photo"><div style="height:74px;background:linear-gradient(135deg,#0ea5e9,#38bdf8);display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m3 14 5-5 4 4 3-3 6 6"/></svg></div><div style="padding:7px 9px;font-size:11.5px;font-weight:700">lamp-photo.jpg</div></div>
+          <div class="card" style="padding:0;overflow:hidden;margin:0" data-toast="Playing submission video"><div style="height:74px;background:linear-gradient(135deg,#1e293b,#0f172a);display:flex;align-items:center;justify-content:center"><span style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="#172554"><path d="M8 5v14l11-7z"/></svg></span></div><div style="padding:7px 9px;font-size:11.5px;font-weight:700">demo.mp4 · 1:12</div></div>
+        </div>
+        <div class="sectitle">Messages with the parent</div>
+        <div id="thwThread" style="display:flex;flex-direction:column;gap:9px;margin-bottom:11px"></div>
+        <div style="display:flex;gap:8px;margin-bottom:12px"><input id="thwInput" placeholder="Reply to the parent…" style="flex:1;border:1.5px solid var(--border);border-radius:11px;padding:11px 13px;font-size:13px;background:var(--surface);color:var(--text);font-family:inherit"><button id="thwSend" class="btn btn-primary" style="width:auto;padding:11px 15px">Send</button></div>
+        <button class="btn btn-primary" data-toast="Feedback published · parent notified" data-back>Publish feedback</button>
       </section>
 
       <!-- AI (main) -->
@@ -459,6 +478,26 @@ svg{display:block}
   function renderTabs(){if(!tabsEl)return;tabsEl.innerHTML=secs.map(function(s){var on=s===curSec;return '<button data-sec="'+s+'" style="flex:none;cursor:pointer;font-size:11.5px;font-weight:700;border-radius:20px;padding:6px 13px;border:1px solid '+(on?'var(--ignite)':'var(--border)')+';background:'+(on?'var(--ignite)':'transparent')+';color:'+(on?'#fff':'var(--text-muted)')+'">'+s+(s==='All'?' · 6':'')+'</button>';}).join('');}
   if(tabsEl)tabsEl.addEventListener('click',function(e){var b=e.target.closest('[data-sec]');if(!b)return;curSec=b.getAttribute('data-sec');renderTabs();renderVids();});
   renderTabs();renderVids();
+  // homework — attach lesson media (tap to toggle)
+  var hwMedia=vids.map(function(v){return [v[0],'MP4',v[3]];}).concat([['Button-press demo','GIF','#7c3aed'],['LG-305 wiring diagram','JPG','#0ea5e9']]);
+  var hwAttached={};
+  var hwPick=document.getElementById('hwMediaPick');
+  function renderHwPick(){if(!hwPick)return;hwPick.innerHTML=hwMedia.map(function(m,i){var on=!!hwAttached[i];return '<div data-hwmedia="'+i+'" style="cursor:pointer;display:flex;align-items:center;gap:10px;border:1.5px solid '+(on?'var(--ignite)':'var(--border)')+';background:'+(on?'color-mix(in srgb,var(--ignite) 8%,transparent)':'var(--surface)')+';border-radius:11px;padding:9px 11px">'+
+    '<span style="flex:none;width:30px;height:24px;border-radius:6px;background:'+m[2]+';display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:800">'+m[1]+'</span>'+
+    '<div style="flex:1;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m[0]+'</div>'+
+    '<span style="flex:none;width:20px;height:20px;border-radius:50%;border:1.5px solid '+(on?'var(--ignite)':'var(--border)')+';background:'+(on?'var(--ignite)':'transparent')+';display:flex;align-items:center;justify-content:center">'+(on?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>':'')+'</span></div>';}).join('');}
+  var hwCount=document.getElementById('hwAttachCount');
+  function updHwCount(){if(hwCount){var n=Object.keys(hwAttached).filter(function(k){return hwAttached[k];}).length;hwCount.textContent=n+' attached';}}
+  if(hwPick){hwPick.addEventListener('click',function(e){var el=e.target.closest('[data-hwmedia]');if(!el)return;var i=el.getAttribute('data-hwmedia');hwAttached[i]=!hwAttached[i];renderHwPick();updHwCount();});}
+  renderHwPick();
+  // homework review — 2-way thread with parent (teacher side)
+  var tThread=[['me','You','Great start on the wiring! In the video, ask the learner to point to the button as they press it.'],['o','Parent · Mr. Eze',"Thank you — we'll film it this evening."]];
+  function renderTThread(){var el=document.getElementById('thwThread');if(!el)return;el.innerHTML=tThread.map(function(m){var mine=m[0]==='me';return '<div style="display:flex;flex-direction:column;align-items:'+(mine?'flex-end':'flex-start')+'"><div style="font-size:10.5px;color:var(--text-subtle);margin-bottom:3px">'+m[1]+'</div><div style="max-width:82%;font-size:12.5px;line-height:1.5;padding:9px 12px;border-radius:13px;'+(mine?'background:var(--brand);color:#fff;border-bottom-right-radius:4px':'background:var(--surface-2,#eef1f6);color:var(--text);border-bottom-left-radius:4px')+'">'+m[2]+'</div></div>';}).join('');}
+  renderTThread();
+  var tSend=document.getElementById('thwSend'),tInp=document.getElementById('thwInput');
+  function sendTMsg(){if(!tInp)return;var v=tInp.value.trim();if(!v)return;tThread.push(['me','You',v]);tInp.value='';renderTThread();showToast('Reply sent to parent');}
+  if(tSend)tSend.addEventListener('click',sendTMsg);
+  if(tInp)tInp.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();sendTMsg();}});
   // theme
   var sun='<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
   var moon='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
