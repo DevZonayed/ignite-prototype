@@ -154,6 +154,30 @@ svg{display:block}
         </form>
       </section>
 
+      <!-- OTP VERIFICATION (school owner step-up) -->
+      <section class="pane" id="p-otp">
+        <span class="backlink" data-go="signin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back to sign in</span>
+        <h1 class="h">Verify it's you</h1>
+        <p class="sub">We sent a 6-digit code by SMS to your registered phone <b id="otpPhone">••• ••• ••23</b>.</p>
+        <form id="otpForm" novalidate>
+          <div id="otpBoxes" style="display:flex;gap:8px;margin:4px 0 6px">
+            <input class="otpin" inputmode="numeric" maxlength="1" style="width:100%;text-align:center;font-family:var(--fd);font-weight:800;font-size:22px;border:1.5px solid var(--border);border-radius:11px;padding:12px 0;background:var(--surface);color:var(--text)">
+            <input class="otpin" inputmode="numeric" maxlength="1" style="width:100%;text-align:center;font-family:var(--fd);font-weight:800;font-size:22px;border:1.5px solid var(--border);border-radius:11px;padding:12px 0;background:var(--surface);color:var(--text)">
+            <input class="otpin" inputmode="numeric" maxlength="1" style="width:100%;text-align:center;font-family:var(--fd);font-weight:800;font-size:22px;border:1.5px solid var(--border);border-radius:11px;padding:12px 0;background:var(--surface);color:var(--text)">
+            <input class="otpin" inputmode="numeric" maxlength="1" style="width:100%;text-align:center;font-family:var(--fd);font-weight:800;font-size:22px;border:1.5px solid var(--border);border-radius:11px;padding:12px 0;background:var(--surface);color:var(--text)">
+            <input class="otpin" inputmode="numeric" maxlength="1" style="width:100%;text-align:center;font-family:var(--fd);font-weight:800;font-size:22px;border:1.5px solid var(--border);border-radius:11px;padding:12px 0;background:var(--surface);color:var(--text)">
+            <input class="otpin" inputmode="numeric" maxlength="1" style="width:100%;text-align:center;font-family:var(--fd);font-weight:800;font-size:22px;border:1.5px solid var(--border);border-radius:11px;padding:12px 0;background:var(--surface);color:var(--text)">
+          </div>
+          <div class="errmsg" id="otp-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg> Enter the 6-digit code.</div>
+          <div style="font-size:12.5px;color:var(--text-muted);margin:6px 0 16px">Didn't get it? <a href="#" id="otpResend">Resend code</a> <span id="otpTimer" style="color:var(--text-subtle)"></span></div>
+          <button class="btn" type="submit">Verify &amp; sign in</button>
+        </form>
+        <div class="notice" style="margin-top:18px;display:block">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/></svg> Device access · <span id="seatCount">2 of 3</span> in use</div>
+          <div style="font-size:12.5px;color:var(--text-muted);line-height:1.7">This school account can stay signed in on up to <b>3 devices</b>.<br>• This device — <b>signing in now</b><br>• Principal's laptop — active<br>• Front-office PC — active</div>
+        </div>
+      </section>
+
       <!-- FORGOT -->
       <section class="pane" id="p-forgot">
         <span class="backlink" data-go="signin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg> Back to sign in</span>
@@ -242,8 +266,23 @@ svg{display:block}
     if(!id.value.trim()){show('si-id-err');markErr(id,true);ok=false;}else{hide('si-id-err');markErr(id,false);}
     if(!pw.value){show('si-pw-err');markErr(pw,true);ok=false;}else{hide('si-pw-err');markErr(pw,false);}
     if(!role){show('role-err');ok=false;}
-    if(ok){var btn=this.querySelector('.btn');btn.textContent='Signing in…';setTimeout(function(){window.location.href='/design/pages/'+role+'.html';},450);}
+    if(ok){
+      if(role==='school'){ go('otp'); startOtpTimer(); setTimeout(function(){var f=document.querySelector('#otpBoxes .otpin');if(f)f.focus();},60); return; }
+      var btn=this.querySelector('.btn');btn.textContent='Signing in…';setTimeout(function(){window.location.href='/design/pages/'+role+'.html';},450);
+    }
   });
+  // OTP verify (school owner step-up + 3-seat)
+  var otpins=[].slice.call(document.querySelectorAll('#otpBoxes .otpin'));
+  otpins.forEach(function(inp,i){
+    inp.addEventListener('input',function(){this.value=this.value.replace(/[^0-9]/g,'').slice(0,1);if(this.value&&otpins[i+1])otpins[i+1].focus();hide('otp-err');});
+    inp.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!this.value&&otpins[i-1])otpins[i-1].focus();});
+    inp.addEventListener('paste',function(e){var d=(e.clipboardData||window.clipboardData).getData('text').replace(/[^0-9]/g,'').slice(0,6);if(d){e.preventDefault();d.split('').forEach(function(ch,k){if(otpins[k])otpins[k].value=ch;});(otpins[Math.min(d.length,5)]||otpins[5]).focus();}});
+  });
+  var otpTimerEl=document.getElementById('otpTimer'),otpT;
+  function startOtpTimer(){var s=30;otpTimerEl.textContent='(in '+s+'s)';clearInterval(otpT);otpT=setInterval(function(){s--;if(s<=0){clearInterval(otpT);otpTimerEl.textContent='';}else{otpTimerEl.textContent='(in '+s+'s)';}},1000);}
+  var otpResend=document.getElementById('otpResend');
+  if(otpResend)otpResend.addEventListener('click',function(e){e.preventDefault();otpins.forEach(function(x){x.value='';});otpins[0].focus();startOtpTimer();});
+  document.getElementById('otpForm').addEventListener('submit',function(e){e.preventDefault();var code=otpins.map(function(x){return x.value;}).join('');if(code.length<6){show('otp-err');otpins[0].focus();return;}hide('otp-err');var btn=this.querySelector('.btn');btn.textContent='Verifying…';setTimeout(function(){window.location.href='/design/pages/school.html';},500);});
   // activate
   var acPw=document.getElementById('ac-pw');
   function pwRules(pw,r1,r2){var v=pw.value;document.getElementById(r1).classList.toggle('ok',v.length>=8);document.getElementById(r2).classList.toggle('ok',/[a-zA-Z]/.test(v)&&/[0-9]/.test(v));}
@@ -270,7 +309,7 @@ svg{display:block}
   document.getElementById('themeBtn').addEventListener('click',function(){applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');});
   var saved;try{saved=localStorage.ignite_theme;}catch(e){}applyTheme(saved||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));
   // deep-link (e.g. #activate)
-  var h=(location.hash||'').replace('#','');if(['signin','activate','forgot','reset','consent'].indexOf(h)>=0)go(h,false);
+  var h=(location.hash||'').replace('#','');if(['signin','activate','forgot','reset','consent','otp'].indexOf(h)>=0)go(h,false);
 })();
 </script>
 </body>

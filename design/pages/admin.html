@@ -159,6 +159,14 @@ tr:hover td{background:var(--surface-2)}
 .valcirc{width:52px;height:52px;border-radius:50%;background:var(--success);display:flex;align-items:center;justify-content:center;flex:none}
 .valn{font-family:var(--fd);font-weight:900;font-size:19px;color:var(--success)}
 .errrow{display:flex;align-items:center;gap:10px;background:color-mix(in srgb,var(--danger) 8%,transparent);border:1px solid color-mix(in srgb,var(--danger) 25%,transparent);border-radius:9px;padding:10px 12px;font-size:12.5px;margin-bottom:8px}
+.annseg{cursor:pointer;font-size:12.5px;font-weight:700;border-radius:20px;padding:7px 14px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-family:inherit}
+.annseg.on{border-color:var(--brand);background:var(--brand);color:#fff}
+.matchip[data-annmedia]{cursor:pointer}
+.matchip[data-annmedia].on{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 9%,transparent)}
+#annList .annitem{border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:9px}
+#annList .annitem .at{font-weight:700;font-size:13px}
+#annList .annitem .am{font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5}
+#annList .annitem .ameta{font-size:11px;color:var(--text-subtle);margin-top:6px;display:flex;gap:10px;align-items:center}
 .errrow .fix{margin-left:auto;font-weight:700;color:var(--brand);cursor:pointer}
 
 /* scoring: LQS dims */
@@ -218,6 +226,7 @@ svg{display:block}
     <a data-view="imports"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M8 11l4 4 4-4M4 21h16"/></svg><span>Imports</span></a>
     <a data-view="curriculum"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10"/><path d="M9 4v6h6"/></svg><span>Curriculum</span></a>
     <a data-view="media"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m3 14 4-4 4 4 3-3 4 4"/><circle cx="8" cy="9" r="1"/></svg><span>Media</span></a>
+    <a data-view="announcements"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 0 1-5.8-1.1V14"/></svg><span>Announcements</span></a>
     <a data-view="scoring"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><span>Scoring</span></a>
     <a data-view="ai"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 6v6l4 2"/><circle cx="19" cy="5" r="2.5"/></svg><span>AI services</span></a>
     <a data-view="monitoring"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg><span>Monitoring</span></a>
@@ -455,6 +464,30 @@ svg{display:block}
         </div>
       </section>
 
+      <!-- ANNOUNCEMENTS TO PARENTS -->
+      <section class="view" id="view-announcements">
+        <div class="grid2">
+          <div class="panel">
+            <div class="ph"><h3>New post to parents</h3></div>
+            <div style="padding:4px 2px">
+              <div class="edlabel">Title</div>
+              <input id="annTitle" placeholder="e.g. Little Genius Kit — Term 3 update" style="width:100%;box-sizing:border-box;border:1.5px solid var(--border);border-radius:9px;padding:11px 13px;font-size:13px;background:var(--surface);color:var(--text);font-family:inherit;margin-bottom:12px">
+              <div class="edlabel">Message</div>
+              <textarea id="annMsg" rows="3" placeholder="Write an announcement or homework note for parents…" style="width:100%;box-sizing:border-box;border:1.5px solid var(--border);border-radius:9px;padding:11px 13px;font-size:13px;background:var(--surface);color:var(--text);font-family:inherit;resize:vertical;margin-bottom:12px">Dear parents, please ensure your child brings the Little Genius Kit for this week's Smart Reading Lamp build.</textarea>
+              <div class="edlabel">Attach media</div>
+              <div class="matrow" id="annMedia" style="margin-bottom:12px"><div class="matchip" data-annmedia><span class="mi" style="background:#7c3aed">MP4</span> Testing your lamp</div><div class="matchip" data-annmedia><span class="mi" style="background:#0ea5e9">IMG</span> Kit checklist</div><div class="matchip" data-annmedia><span class="mi" style="background:#ef4444">PDF</span> LG-305 manual</div></div>
+              <div class="edlabel">Audience</div>
+              <div id="annAud" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px"><button class="annseg on" data-aud="All parents">All parents</button><button class="annseg" data-aud="By school">By school</button><button class="annseg" data-aud="By class">By class</button></div>
+              <button class="btnP" id="annPost"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg> Post to parents</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="ph"><h3>Recent posts</h3></div>
+            <div id="annList"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- MONITORING -->
       <section class="view" id="view-monitoring">
         <div class="tiles" style="grid-template-columns:repeat(3,1fr)">
@@ -491,7 +524,7 @@ svg{display:block}
 
 <script>
 (function(){
-  var titles={overview:'All-schools overview',schools:'Schools',users:'Users',imports:'Bulk onboarding',curriculum:'Curriculum authoring',media:'Media library',scoring:'Scoring configuration',ai:'AI services',monitoring:'Monitoring',security:'Security & Audit'};
+  var titles={overview:'All-schools overview',schools:'Schools',users:'Users',imports:'Bulk onboarding',curriculum:'Curriculum authoring',media:'Media library',announcements:'Announcements to parents',scoring:'Scoring configuration',ai:'AI services',monitoring:'Monitoring',security:'Security & Audit'};
   // ---- data ----
   var regions=['Lagos','Abuja','Kano','Rivers','Oyo','Enugu'];
   var schoolNames=['Bright Future Academy','Unity College','Hillcrest Schools','Greenfield Model','Sunrise International','Cornerstone Academy','Royal Heritage','Peace Model School','New Era College','Little Stars School','Excel Academy','Trinity International','Grace Foundation','Kings & Queens','Pathfinder School','Beacon Light','Crown Academy','Harmony Schools','Nobel Model','Zenith College'];
@@ -559,11 +592,24 @@ svg{display:block}
   var moon='<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
   function applyTheme(t){document.documentElement.dataset.theme=t;try{localStorage.ignite_theme=t;}catch(e){}document.getElementById('themeIcon').innerHTML=t==='dark'?sun:moon;}
   document.getElementById('themeBtn').addEventListener('click',function(){applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');});
+  // ---- toast ----
+  var toastT;
+  function showToast(m){var el=document.getElementById('toast');if(!el)return;el.textContent=m;el.style.opacity='1';el.style.transform='translateX(-50%) translateY(0)';clearTimeout(toastT);toastT=setTimeout(function(){el.style.opacity='0';el.style.transform='translateX(-50%) translateY(20px)';},2200);}
+  document.body.addEventListener('click',function(e){var t=e.target.closest('[data-toast]');if(t){showToast(t.getAttribute('data-toast'));}});
+  // ---- announcements to parents ----
+  document.body.addEventListener('click',function(e){var s=e.target.closest('.annseg');if(s){document.querySelectorAll('#annAud .annseg').forEach(function(x){x.classList.toggle('on',x===s);});return;}
+    var m=e.target.closest('.matchip[data-annmedia]');if(m){m.classList.toggle('on');return;}});
+  var annPosts=[['Term 3 kits ready for collection','Please collect your child\'s Little Genius Kit from the front office by Friday.','All parents','2 days ago'],['Robotics showcase — 30 July','Parents are invited to the end-of-term Smart Invention showcase.','All parents','Last week']];
+  function renderAnn(){var el=document.getElementById('annList');if(!el)return;el.innerHTML=annPosts.map(function(p){return '<div class="annitem"><div class="at">'+p[0]+'</div><div class="am">'+p[1]+'</div><div class="ameta"><span>👥 '+p[2]+'</span><span>·</span><span>'+p[3]+'</span></div></div>';}).join('');}
+  renderAnn();
+  var annPost=document.getElementById('annPost');
+  if(annPost)annPost.addEventListener('click',function(){var t=(document.getElementById('annTitle').value||'').trim()||'Announcement';var msg=(document.getElementById('annMsg').value||'').trim()||'—';var aud=(document.querySelector('#annAud .annseg.on')||{}).textContent||'All parents';annPosts.unshift([t,msg,aud,'just now']);document.getElementById('annTitle').value='';renderAnn();showToast('Posted to parents · '+aud);});
   // init
   var saved;try{saved=localStorage.ignite_theme;}catch(e){}
   applyTheme(saved|| (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'));
   var h=(location.hash||'').replace('#','');show(titles[h]?h:'overview');
 })();
 </script>
+<div id="toast" style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--surface);padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:200"></div>
 </body>
 </html>
