@@ -1,2 +1,15 @@
 node_modules
+**/node_modules
 .DS_Store
+
+# app build artifacts
+**/dist
+**/dist-web
+**/.expo
+**/.vite
+**/web-build
+*.tsbuildinfo
+
+# environment & runtime data
+**/.env
+*.sqlite
