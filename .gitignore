@@ -1,6 +1,19 @@
 node_modules
+**/node_modules
 .DS_Store
+
+# app build artifacts
+**/dist
+**/dist-web
+**/.expo
+**/.vite
+**/web-build
+*.tsbuildinfo
 branch_structure.json
 temp_auto_push.bat
 temp_interactive_push.bat
 .gitignore
+
+# environment & runtime data
+**/.env
+*.sqlite
