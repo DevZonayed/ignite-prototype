@@ -17,3 +17,6 @@ temp_interactive_push.bat
 # environment & runtime data
 **/.env
 *.sqlite
+
+# Orca session artifacts (transcripts, drops) — never publish
+.orca/
