@@ -52,13 +52,29 @@ file is gitignored and wiped on every redeploy.
 Deployment sets `DB_TYPE=postgres` against a Dokploy-provisioned Postgres service.
 The config already supports this branch, including `DB_SSL`.
 
-**Two production landmines this exposes, both of which must be fixed:**
+**Three production landmines this exposes, all of which must be fixed:**
 
 1. `synchronize` is `configService.get('NODE_ENV') !== 'production'`. Deploying with
    the correct `NODE_ENV=production` therefore creates **zero tables**.
 2. There is no `migrations` directory, and `package.json`'s `migration:generate`,
    `migration:run` and `seed` scripts all reference `src/database/data-source.ts`,
    **which does not exist**.
+3. **The entities are not Postgres-compatible.** 21 columns across 15 entities
+   declare `@Column({ type: 'datetime' })`, which is a SQLite type. This was verified
+   empirically against `typeorm@0.3.20`: `PostgresDriver.supportedDataTypes` (71
+   entries) does not include `datetime`, and `normalizeType()` has no mapping for it,
+   so the column type falls through unchanged and TypeORM throws
+   `DataTypeNotSupportedError` at schema build. Affected entities include
+   `user.entity.ts` (5 columns) and `lesson-session.entity.ts` (2), both of which the
+   core teaching loop depends on.
+
+   Fix: change all 21 to `type: 'timestamp'`, which `normalizeType()` maps to
+   `timestamp without time zone`. This is also correct under `sqljs`, so local
+   development is unaffected.
+
+   `simple-json` (16 columns) was checked at the same time and **is** safe — it is
+   absent from `supportedDataTypes` but `normalizeType()` handles it explicitly, so
+   it is mapped before the support check runs. No change needed there.
 
 Fix: create `src/database/data-source.ts` exporting a TypeORM `DataSource` that reads
 the same env vars as `database.config.ts`, add `src/database/migrations/`, generate
@@ -154,9 +170,12 @@ against.
 The honest design: **a `401` from any authenticated request triggers automatic
 sign-out** with a "Session expired — please sign in again" message. The `POST
 /api/auth/signin` call itself is excluded — a 401 there means wrong credentials and
-is rendered as a form error, not a session expiry. `rememberMe` is wired to the
-existing checkbox so teachers get 30 days. Building a refresh flow against an endpoint
-that does not exist would be worse than this.
+is rendered as a form error, not a session expiry. Building a refresh flow against an
+endpoint that does not exist would be worse than this.
+
+`SignInScreen.js` has **no "remember me" control today**. The plan adds one, wired to
+the `rememberMe` field `SignInDto` already accepts, so a teacher can opt into a 30-day
+session on their own device.
 
 ### 4.4 Sign-in screen
 
@@ -216,9 +235,20 @@ writing the cache to AsyncStorage.
 ### 6.1 Class selection
 
 Every core endpoint needs a `classId`, and the app currently has no concept of a
-selected class. `ClassContext` fetches `GET /api/classes` (scoped server-side to the
-signed-in teacher), holds the selection, and persists it so it survives restarts.
-Nothing else works without this.
+selected class. `ClassContext` fetches the teacher's classes, holds the selection, and
+persists it so it survives restarts. Nothing else works without this.
+
+**`GET /api/classes` is NOT scoped to the caller.** `classes.service.ts` filters only
+on explicitly-supplied `schoolId`/`teacherId` query params; omitting them returns every
+class in the system. The app must therefore always call
+`GET /api/classes?teacherId=<signed-in user id>`. This is a server-side authorisation
+weakness worth fixing later, but it is out of scope here; the client compensates by
+always passing the filter.
+
+Related: `GET /api/classes/:id/learners` returns all learners in the class's **school**,
+not strictly its roster (`classes.service.ts:156-162`). It is still the correct endpoint
+for the Learners screen — `UserFilterDto` has no `classId` field, so
+`GET /api/users?classId=…` would be rejected with a 400 by `forbidNonWhitelisted`.
 
 ### 6.2 Screens and their endpoints
 
@@ -227,7 +257,7 @@ All routes below were verified to exist in the controllers.
 | Screen | Endpoints |
 |---|---|
 | Sign in | `POST /api/auth/signin`, `GET /api/auth/me` |
-| Home | `GET /api/lesson-sessions/current`, `GET /api/classes` |
+| Home | `GET /api/lesson-sessions/current`, `GET /api/classes?teacherId=` |
 | Lessons | `GET /api/curriculum`, `GET /api/lessons` |
 | LessonDetail | `GET /api/lessons/:id`, `/steps`, `/media` |
 | Learners | `GET /api/classes/:id/learners` |
@@ -317,6 +347,8 @@ from the edit list.
 | `sqljs` file wiped on redeploy | Move to Dokploy Postgres (§2.1) |
 | Default JWT secret and seed password reach production | Both set as Dokploy secrets; no production defaults (§2.2) |
 | `bcrypt` native build fails in a slim image | Multi-stage build with a toolchain in the builder stage (§2.3) |
+| `datetime` columns crash TypeORM on Postgres | All 21 changed to `timestamp` before the first migration is generated (§2.1) |
+| `GET /api/classes` returns every class in the system | Client always sends `?teacherId=` (§6.1) |
 | Cached learner data leaks between teachers on a shared device | Query cache wiped on sign-out (§4.2) |
 | Token expires with no refresh endpoint | 401 triggers sign-out with a clear message; `rememberMe` extends to 30 days (§4.3) |
 
