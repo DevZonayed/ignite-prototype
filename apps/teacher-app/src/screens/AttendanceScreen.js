@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { SubHead, Button } from '../components/ui';
+import { SubHead, Button, EmptyState } from '../components/ui';
 import { att } from '../data';
 
 const SEG = [
@@ -19,12 +19,18 @@ export default function AttendanceScreen({ goBack, showToast }) {
     setStatus(att.map(() => 'p'));
   }
 
+  const marked = status.filter((s) => s).length;
+
   return (
     <View style={{ flex: 1 }}>
       <SubHead title="Attendance" onBack={goBack} />
-      <Button variant="ghost" onPress={markAll} style={{ marginBottom: 12 }}>
-        ✓ Mark all present
-      </Button>
+      {att.length === 0 ? (
+        <EmptyState title="No learners to mark" sub="Attendance appears once your class roster syncs." />
+      ) : (
+        <Button variant="ghost" onPress={markAll} style={{ marginBottom: 12 }}>
+          ✓ Mark all present
+        </Button>
+      )}
 
       {att.map((a, i) => (
         <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 10, marginBottom: 9 }}>
@@ -57,12 +63,13 @@ export default function AttendanceScreen({ goBack, showToast }) {
       ))}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: 12, marginHorizontal: -18, paddingHorizontal: 18, marginTop: 4 }}>
-        <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 15, color: colors.text }}>18 / 32 marked</Text>
+        <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 15, color: colors.text }}>{marked} / {att.length} marked</Text>
         <View style={{ marginLeft: 'auto' }}>
           <Button
             variant="primary"
-            onPress={() => { showToast('Attendance saved · 32 learners'); setTimeout(goBack, 240); }}
-            style={{ width: 'auto', paddingHorizontal: 18 }}
+            disabled={att.length === 0}
+            onPress={() => { showToast('Attendance saved'); setTimeout(goBack, 240); }}
+            style={{ width: 'auto', paddingHorizontal: 18, opacity: att.length === 0 ? 0.5 : 1 }}
           >
             Save attendance
           </Button>

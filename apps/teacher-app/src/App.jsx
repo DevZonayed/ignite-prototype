@@ -38,6 +38,7 @@ import AssessmentScreen from './screens/AssessmentScreen';
 import ProjectScreen from './screens/ProjectScreen';
 import ReflectionScreen from './screens/ReflectionScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
+import SignInScreen from './screens/SignInScreen';
 
 const MAINS = ['home', 'lessons', 'learners', 'homework', 'ai', 'profile'];
 
@@ -57,6 +58,8 @@ function Shell() {
   const [stack, setStack] = useState(['home']);
   const [toast, setToast] = useState({ msg: '', visible: false });
   const [modalOpen, setModalOpen] = useState(false);
+  const [signOutOpen, setSignOutOpen] = useState(false);
+  const [user, setUser] = useState(null);
   const toastTimer = useRef(null);
   const scrollRef = useRef(null);
 
@@ -92,11 +95,28 @@ function Shell() {
   // Bottom nav taps reset the stack (main screens)
   const onNav = useCallback((id) => navTo(id, true), [navTo]);
 
+  // Sign out: drop the session AND reset nav, so signing back in starts at home
+  // rather than resuming on the profile screen.
+  const doSignOut = useCallback(() => {
+    setSignOutOpen(false);
+    setModalOpen(false);
+    setStack(['home']);
+    setUser(null);
+  }, []);
+
+  const doSignIn = useCallback(
+    (u) => {
+      setUser(u);
+      setStack(['home']);
+    },
+    []
+  );
+
   function renderScreen() {
     const p = { navTo, goBack, goHome, showToast };
     switch (current) {
       case 'home':
-        return <HomeScreen {...p} />;
+        return <HomeScreen {...p} user={user} />;
       case 'lessons':
         return <LessonsScreen {...p} />;
       case 'lesson-detail':
@@ -122,7 +142,7 @@ function Shell() {
       case 'ai':
         return <AIScreen {...p} />;
       case 'profile':
-        return <ProfileScreen {...p} />;
+        return <ProfileScreen {...p} user={user} onSignOut={() => setSignOutOpen(true)} />;
       case 'sync':
         return <SyncScreen {...p} openRemoveModal={() => setModalOpen(true)} />;
       case 'assessment':
@@ -161,12 +181,12 @@ function Shell() {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {renderScreen()}
+            {user ? renderScreen() : <SignInScreen onSignedIn={doSignIn} showToast={showToast} />}
           </ScrollView>
 
           <Toast message={toast.msg} visible={toast.visible} />
 
-          {isMain ? <BottomNav current={current} onNavigate={onNav} /> : null}
+          {user && isMain ? <BottomNav current={current} onNavigate={onNav} /> : null}
         </View>
       </View>
 
@@ -177,6 +197,15 @@ function Shell() {
           setModalOpen(false);
           showToast('Item removed from queue');
         }}
+      />
+
+      <ConfirmModal
+        visible={signOutOpen}
+        title="Sign out?"
+        body="You will need to sign in again to access your lessons and learners."
+        confirmLabel="Sign out"
+        onCancel={() => setSignOutOpen(false)}
+        onConfirm={doSignOut}
       />
 
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} translucent backgroundColor="transparent" />

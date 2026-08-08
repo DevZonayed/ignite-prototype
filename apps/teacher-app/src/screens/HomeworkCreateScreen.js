@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, TextInput } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { SubHead, Card, Button, SectionTitle, withAlpha } from '../components/ui';
+import { SubHead, Card, Button, SectionTitle, EmptyState, withAlpha } from '../components/ui';
 import { IconCheck } from '../components/Icon';
 import { hwMedia } from '../data';
 
 export default function HomeworkCreateScreen({ goBack, showToast }) {
   const { colors } = useTheme();
   const [attached, setAttached] = useState({});
+  const [title, setTitle] = useState('');
+  const [instructions, setInstructions] = useState('');
 
   const count = Object.keys(attached).filter((k) => attached[k]).length;
+  const canPublish = !!title.trim();
 
   return (
     <View>
@@ -18,14 +21,25 @@ export default function HomeworkCreateScreen({ goBack, showToast }) {
 
       <Card>
         <SectionTitle style={{ margin: 0, marginBottom: 6 }}>Title</SectionTitle>
-        <Text style={{ fontSize: 13, color: colors.textMuted }}>Rebuild your Smart Reading Lamp</Text>
+        <TextInput
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Homework title"
+          placeholderTextColor={colors.textSubtle}
+          style={{ fontSize: 13, color: colors.text }}
+        />
       </Card>
 
       <Card>
         <SectionTitle style={{ margin: 0, marginBottom: 6 }}>Instructions</SectionTitle>
-        <Text style={{ fontSize: 13, color: colors.textMuted }}>
-          Rebuild the lamp from your LG-305 manual, test it 5×, and film a 60–90s demo explaining the input, brain and output.
-        </Text>
+        <TextInput
+          value={instructions}
+          onChangeText={setInstructions}
+          multiline
+          placeholder="What should learners do?"
+          placeholderTextColor={colors.textSubtle}
+          style={{ fontSize: 13, color: colors.text, minHeight: 52, textAlignVertical: 'top' }}
+        />
       </Card>
 
       <Card>
@@ -39,6 +53,10 @@ export default function HomeworkCreateScreen({ goBack, showToast }) {
           Tap any lesson video or GIF to attach it — parents see it as a "how to help at home" guide.{' '}
           <Text style={{ fontFamily: fonts.body700, fontWeight: '700', color: colors.brand }}>{count} attached</Text>
         </Text>
+
+        {hwMedia.length === 0 ? (
+          <EmptyState title="No lesson media available" sub="Media attached to the current lesson will be listed here." style={{ marginBottom: 0 }} />
+        ) : null}
 
         <View style={{ gap: 7 }}>
           {hwMedia.map((m, i) => {
@@ -72,12 +90,7 @@ export default function HomeworkCreateScreen({ goBack, showToast }) {
         </View>
       </Card>
 
-      <Card style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <SectionTitle style={{ margin: 0 }}>Due date</SectionTitle>
-        <Text style={{ fontSize: 13, fontFamily: fonts.body700, fontWeight: '700', color: colors.text }}>Fri 18 Jul</Text>
-      </Card>
-
-      <Button variant="primary" onPress={() => { showToast('Homework published · parents notified'); setTimeout(goBack, 240); }}>
+      <Button variant="primary" disabled={!canPublish} onPress={() => { showToast('Homework published'); setTimeout(goBack, 240); }} style={{ opacity: canPublish ? 1 : 0.5 }}>
         Publish homework
       </Button>
     </View>

@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { PageTitle, PageSub, withAlpha } from '../components/ui';
+import { PageTitle, PageSub, EmptyState, withAlpha } from '../components/ui';
 import { IconChevronRight, IconChevronDown, IconCheck, IconLock } from '../components/Icon';
 import { units } from '../data';
 
 export default function LessonsScreen({ navTo }) {
   const { colors } = useTheme();
-  // Unit 5 (index 4, 'cur') open by default
+  // any unit flagged 'cur' opens by default
   const [open, setOpen] = useState(() => units.map((u) => u[1] === 'cur'));
 
   function toggle(i) {
@@ -18,7 +18,11 @@ export default function LessonsScreen({ navTo }) {
   return (
     <View>
       <PageTitle>Lessons</PageTitle>
-      <PageSub>JSS 1 · Digital Innovation · tap a unit</PageSub>
+      <PageSub>Tap a unit to see its lessons</PageSub>
+
+      {units.length === 0 ? (
+        <EmptyState title="No lessons yet" sub="Curriculum units will appear here once they sync." />
+      ) : null}
 
       {units.map((u, i) => {
         const state = u[1];

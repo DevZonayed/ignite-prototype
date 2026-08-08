@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { SubHead, Button, Pill, Hint, withAlpha } from '../components/ui';
+import { SubHead, Button, Hint, withAlpha } from '../components/ui';
 import {
   IconUser,
   IconChecklist,
@@ -10,7 +10,6 @@ import {
   IconGem,
   IconPencil,
   IconBox,
-  IconSyncPartial,
 } from '../components/Icon';
 
 function fmt(t) {
@@ -21,7 +20,7 @@ function fmt(t) {
 
 export default function ActiveScreen({ navTo, goBack }) {
   const { colors } = useTheme();
-  const [t, setT] = useState(765); // 12:45
+  const [t, setT] = useState(0);
   const [paused, setPaused] = useState(false);
   const pausedRef = useRef(false);
 
@@ -33,22 +32,18 @@ export default function ActiveScreen({ navTo, goBack }) {
   }, []);
 
   const tiles = [
-    { screen: 'attendance', name: 'Attendance', count: '18/32', countColor: colors.success, Icon: IconUser, bg: '#dcfce7', ic: '#16a34a' },
-    { screen: 'checklist', name: 'Activities', count: '2/4', countColor: colors.brand, Icon: IconChecklist, bg: colors.brandSoft, ic: colors.brand },
-    { screen: 'evidence', name: 'Add evidence', count: 'camera', countColor: colors.textSubtle, Icon: IconCamera, bg: colors.brandSoft, ic: colors.brand },
-    { screen: 'rubric', name: 'LQS rubric', count: '0/32', countColor: colors.violet, Icon: IconGem, bg: '#f5f3ff', ic: colors.violet },
-    { screen: 'homework-create', name: 'Homework', count: 'set', countColor: colors.textSubtle, Icon: IconPencil, bg: withAlpha(colors.ignite, 0.15), ic: colors.ignite },
-    { screen: 'assessment', name: 'Assess', count: '0/32', countColor: colors.textSubtle, Icon: IconChecklist, bg: '#e0e7ff', ic: '#4f46e5' },
-    { screen: 'project', name: 'Record project', count: '.sb3', countColor: colors.textSubtle, Icon: IconBox, bg: '#ccfbf1', ic: colors.teal },
+    { screen: 'attendance', name: 'Attendance', count: '', Icon: IconUser, bg: '#dcfce7', ic: '#16a34a' },
+    { screen: 'checklist', name: 'Activities', count: '', Icon: IconChecklist, bg: colors.brandSoft, ic: colors.brand },
+    { screen: 'evidence', name: 'Add evidence', count: '', Icon: IconCamera, bg: colors.brandSoft, ic: colors.brand },
+    { screen: 'rubric', name: 'LQS rubric', count: '', Icon: IconGem, bg: '#f5f3ff', ic: colors.violet },
+    { screen: 'homework-create', name: 'Homework', count: '', Icon: IconPencil, bg: withAlpha(colors.ignite, 0.15), ic: colors.ignite },
+    { screen: 'assessment', name: 'Assess', count: '', Icon: IconChecklist, bg: '#e0e7ff', ic: '#4f46e5' },
+    { screen: 'project', name: 'Record project', count: '', Icon: IconBox, bg: '#ccfbf1', ic: colors.teal },
   ];
 
   return (
     <View>
-      <SubHead
-        title="Smart Reading Lamp"
-        onBack={goBack}
-        right={<Pill kind="syncing" icon={<IconSyncPartial size={11} strokeWidth={3} />}>Syncing…</Pill>}
-      />
+      <SubHead title="Active lesson" onBack={goBack} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 16, padding: 14, marginBottom: 13 }}>
         <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 30, color: colors.brand, letterSpacing: 1 }}>{fmt(t)}</Text>
@@ -77,7 +72,9 @@ export default function ActiveScreen({ navTo, goBack }) {
               <tile.Icon size={20} color={tile.ic} />
             </View>
             <Text style={{ fontFamily: fonts.body700, fontWeight: '700', fontSize: 13, color: colors.text }}>{tile.name}</Text>
-            <Text style={{ fontSize: 12, fontFamily: fonts.body700, fontWeight: '700', marginTop: 2, color: tile.countColor }}>{tile.count}</Text>
+            {tile.count ? (
+              <Text style={{ fontSize: 12, fontFamily: fonts.body700, fontWeight: '700', marginTop: 2, color: colors.textSubtle }}>{tile.count}</Text>
+            ) : null}
           </Pressable>
         ))}
       </View>

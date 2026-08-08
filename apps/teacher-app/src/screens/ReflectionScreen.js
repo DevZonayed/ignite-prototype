@@ -33,7 +33,7 @@ export default function ReflectionScreen({ goBack, showToast, goHome }) {
   return (
     <View>
       <SubHead title="Reflect" onBack={goBack} />
-      <PageSub style={{ marginBottom: 10 }}>Smart Reading Lamp · a quick note before you finish</PageSub>
+      <PageSub style={{ marginBottom: 10 }}>A quick note before you finish</PageSub>
 
       <TextInput
         value={note}

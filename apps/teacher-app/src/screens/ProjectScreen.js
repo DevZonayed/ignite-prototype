@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { SubHead, Card, Button, SectionTitle, withAlpha } from '../components/ui';
+import { SubHead, Card, Button, SectionTitle, EmptyState, withAlpha } from '../components/ui';
 import { IconShield } from '../components/Icon';
 
 function Chip({ label, on, onPress }) {
@@ -28,10 +28,10 @@ export default function ProjectScreen({ goBack, showToast }) {
   const { colors } = useTheme();
   // chip2 toggles: default 'on' from source
   const [types, setTypes] = useState({ 0: true });
-  const [tags, setTags] = useState({ 0: true, 1: true });
+  const [tags, setTags] = useState({});
 
   const typeLabels = ['Scratch (.sb3)', 'Python (.py)', 'Robotics', 'Design'];
-  const tagLabels = ['Amara Eze', 'Chidi Okonkwo', '+ Add'];
+  const tagLabels = ['+ Add'];
 
   return (
     <View>
@@ -39,7 +39,7 @@ export default function ProjectScreen({ goBack, showToast }) {
 
       <Card>
         <SectionTitle style={{ margin: 0, marginBottom: 6 }}>Project title</SectionTitle>
-        <Text style={{ fontSize: 13, color: colors.textMuted }}>Smart Reading Lamp — Mission 5</Text>
+        <Text style={{ fontSize: 12.5, color: colors.textMuted }}>Set when a project is loaded.</Text>
       </Card>
 
       <SectionTitle>Type</SectionTitle>
@@ -50,6 +50,7 @@ export default function ProjectScreen({ goBack, showToast }) {
       </View>
 
       <SectionTitle>Tag learners</SectionTitle>
+      <EmptyState title="No learners to tag" sub="Your roster will appear here once it syncs." style={{ marginBottom: 14 }} />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
         {tagLabels.map((l, i) => (
           <Chip key={i} label={l} on={!!tags[i]} onPress={() => setTags((p) => ({ ...p, [i]: !p[i] }))} />

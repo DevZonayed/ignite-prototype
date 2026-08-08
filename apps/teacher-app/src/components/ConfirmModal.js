@@ -3,7 +3,15 @@ import { View, Text, Pressable, Modal } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
 
-export default function ConfirmModal({ visible, onCancel, onConfirm }) {
+export default function ConfirmModal({
+  visible,
+  onCancel,
+  onConfirm,
+  title = 'Remove failed item?',
+  body = 'This unsynced work will be permanently lost and cannot be recovered.',
+  confirmLabel = 'Remove',
+  cancelLabel = 'Cancel',
+}) {
   const { colors } = useTheme();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
@@ -20,23 +28,23 @@ export default function ConfirmModal({ visible, onCancel, onConfirm }) {
           }}
         >
           <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 18, color: colors.text, marginBottom: 8 }}>
-            Remove failed item?
+            {title}
           </Text>
           <Text style={{ fontSize: 13, color: colors.textMuted, marginBottom: 18, lineHeight: 20 }}>
-            This unsynced work will be permanently lost and cannot be recovered.
+            {body}
           </Text>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable
               onPress={onCancel}
               style={{ flex: 1, alignItems: 'center', paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface }}
             >
-              <Text style={{ fontFamily: fonts.display800, fontWeight: '800', fontSize: 14, color: colors.brand }}>Cancel</Text>
+              <Text style={{ fontFamily: fonts.display800, fontWeight: '800', fontSize: 14, color: colors.brand }}>{cancelLabel}</Text>
             </Pressable>
             <Pressable
               onPress={onConfirm}
               style={{ flex: 1, alignItems: 'center', paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: colors.danger, backgroundColor: colors.danger }}
             >
-              <Text style={{ fontFamily: fonts.display800, fontWeight: '800', fontSize: 14, color: '#fff' }}>Remove</Text>
+              <Text style={{ fontFamily: fonts.display800, fontWeight: '800', fontSize: 14, color: '#fff' }}>{confirmLabel}</Text>
             </Pressable>
           </View>
         </View>

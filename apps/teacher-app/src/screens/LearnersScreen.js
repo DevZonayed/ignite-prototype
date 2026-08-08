@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { PageTitle, PageSub } from '../components/ui';
+import { PageTitle, PageSub, EmptyState } from '../components/ui';
 import { IconChevronRight } from '../components/Icon';
 import { lr } from '../data';
 
@@ -11,7 +11,10 @@ export default function LearnersScreen({ navTo }) {
   return (
     <View>
       <PageTitle>Learners</PageTitle>
-      <PageSub>JSS 1 · tap a learner to rate the LQS rubric</PageSub>
+      <PageSub>Tap a learner to rate the LQS rubric</PageSub>
+      {lr.length === 0 ? (
+        <EmptyState title="No learners yet" sub="Your class roster will appear here once it syncs." />
+      ) : null}
       {lr.map((l, i) => (
         <Pressable
           key={i}

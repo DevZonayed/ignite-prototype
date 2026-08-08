@@ -135,6 +135,25 @@ tr:hover td{background:var(--surface-2)}.strong{font-weight:700}
 .dlist .di .dv{font-weight:700}
 .dchip{display:inline-block;font-size:11px;font-weight:700;color:#fff;border-radius:999px;padding:5px 11px;margin:0 5px 5px 0}
 svg{display:block}
+/* ---- global states: skeleton · empty · error/retry · offline (see design/pages/states.html) ---- */
+@keyframes gshim{100%{background-position:-200% 0}}
+.skel{background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 37%,var(--surface-2) 63%);background-size:200% 100%;animation:gshim 1.3s linear infinite;border-radius:7px;height:12px}
+.skel.t{height:15px}
+.skel.av{width:34px;height:34px;border-radius:50%;flex:none}
+.skelrow{display:flex;align-items:center;gap:11px;padding:13px 2px;border-top:1px solid var(--border)}
+.skelrow:first-child{border-top:none}
+.skelrow .sg{flex:1;display:flex;flex-direction:column;gap:7px}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+.gstate{display:flex;flex-direction:column;align-items:center;text-align:center;padding:46px 22px}
+.gstate .gi{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--border);margin-bottom:13px}
+.gstate h4{font-family:var(--fd);font-weight:800;font-size:15px;margin-bottom:6px}
+.gstate p{font-family:var(--fu);font-size:12.5px;color:var(--text-muted);max-width:40ch;line-height:1.6}
+.gstate .ga{margin-top:15px;display:inline-flex;align-items:center;gap:7px;background:var(--brand);color:#fff;border:none;font-family:var(--fu);font-size:12.5px;font-weight:700;padding:9px 16px;border-radius:9px;cursor:pointer}
+.gstate.err .gi{background:color-mix(in srgb,var(--danger) 12%,transparent);border-color:transparent;color:var(--danger)}
+.offbar{display:none;align-items:center;gap:9px;background:color-mix(in srgb,var(--warning) 14%,transparent);border-bottom:1px solid color-mix(in srgb,var(--warning) 38%,transparent);color:var(--warning);font-family:var(--fu);font-size:12px;font-weight:700;padding:8px 15px}
+.offbar.on{display:flex}
+.offbar .od{width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none}
+.offbar .os{margin-left:auto;font-weight:600;opacity:.85}
 </style>
 </head>
 <body>
@@ -161,6 +180,7 @@ svg{display:block}
       <button class="iconbtn" id="themeBtn" title="Toggle theme"><svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg></button>
       <button class="iconbtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
     </header>
+    <div class="offbar" id="offbar"><span class="od"></span><span>Offline — changes are saved on this device</span><span class="os">will sync when reconnected</span></div>
     <div class="content">
 
       <!-- OVERVIEW -->
@@ -265,8 +285,8 @@ svg{display:block}
 
       <!-- REPORTS -->
       <section class="view" id="view-reports">
-        <div class="toolbar"><div class="filter">Term 2</div><span class="sp"></span><button class="btnP"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M8 11l4 4 4-4M4 21h16"/></svg> New report</button></div>
-        <div class="panel" style="padding:6px 8px"><table><thead><tr><th>Report</th><th>Scope</th><th>Generated</th><th></th></tr></thead><tbody>
+        <div class="toolbar"><div class="filter">Term 2</div><span class="sp"></span><div class="filter" data-gdemo="reportsPanel:loaded" title="Replay the loading skeleton">↻ Reload</div><div class="filter" data-gdemo="reportsPanel:empty" title="Preview the empty state">Empty</div><div class="filter" data-gdemo="reportsPanel:error" title="Preview the error state">Error</div><button class="btnP"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M8 11l4 4 4-4M4 21h16"/></svg> New report</button></div>
+        <div class="panel" id="reportsPanel" style="padding:6px 8px"><table><thead><tr><th>Report</th><th>Scope</th><th>Generated</th><th></th></tr></thead><tbody>
           <tr><td class="strong">Weekly coverage summary</td><td>All classes</td><td>Today</td><td><span class="rowbtn">Download PDF</span></td></tr>
           <tr><td class="strong">Attendance register — Term 2</td><td>JSS 1–3</td><td>Mon</td><td><span class="rowbtn">Download PDF</span></td></tr>
           <tr><td class="strong">Project completion report</td><td>Digital Innovation</td><td>Last week</td><td><span class="rowbtn">Download PDF</span></td></tr>
@@ -336,8 +356,9 @@ svg{display:block}
   var hsEl=document.getElementById('hwSubsBody');
   if(hsEl)hsEl.innerHTML=hwSubs.map(function(s){return '<tr><td class="strong">'+s[0]+'</td><td>'+s[1]+'</td><td>'+s[2]+'</td><td>'+s[3]+'</td><td><span style="font-weight:700;color:'+s[5]+'">'+s[4]+'</span></td></tr>';}).join('');
   // ---- router ----
-  function show(v){if(!titles[v])return;document.querySelectorAll('.view').forEach(function(s){s.classList.toggle('active',s.id==='view-'+v);});document.querySelectorAll('.side a[data-view]').forEach(function(n){n.classList.toggle('on',n.dataset.view===v);});document.getElementById('pageTitle').textContent=titles[v];if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);document.querySelector('.content').scrollTop=0;window.scrollTo(0,0);}
-  document.body.addEventListener('click',function(e){var t=e.target.closest('[data-view]');if(t){e.preventDefault();show(t.dataset.view);}});
+  function show(v,push){if(!titles[v])return;document.querySelectorAll('.view').forEach(function(s){s.classList.toggle('active',s.id==='view-'+v);});document.querySelectorAll('.side a[data-view]').forEach(function(n){n.classList.toggle('on',n.dataset.view===v);});document.getElementById('pageTitle').textContent=titles[v];if(location.hash!=='#'+v){if(push)history.pushState(null,'','#'+v);else history.replaceState(null,'','#'+v);}document.querySelector('.content').scrollTop=0;window.scrollTo(0,0);}
+  document.body.addEventListener('click',function(e){var t=e.target.closest('[data-view]');if(t){e.preventDefault();show(t.dataset.view,true);}});
+  window.addEventListener('hashchange',function(){var v=(location.hash||'').replace('#','');if(titles[v])show(v);});
   // accordion
   document.body.addEventListener('click',function(e){var h=e.target.closest('.acc .ah');if(h){h.parentElement.classList.toggle('open');}});
   // tabs
@@ -386,6 +407,43 @@ svg{display:block}
   var toastT;
   function showToast(m){var toastEl=document.getElementById('toast');if(!toastEl)return;toastEl.textContent=m;toastEl.style.opacity='1';toastEl.style.transform='translateX(-50%) translateY(0)';clearTimeout(toastT);toastT=setTimeout(function(){toastEl.style.opacity='0';toastEl.style.transform='translateX(-50%) translateY(20px)';},2200);}
   document.body.addEventListener('click',function(e){var t=e.target.closest('[data-toast]');if(t){showToast(t.getAttribute('data-toast'));}});
+  // ---- global states: offline banner (real network events) ----
+  function syncOffline(){var b=document.getElementById('offbar');if(b)b.classList.toggle('on',navigator.onLine===false);}
+  window.addEventListener('online',function(){syncOffline();if(typeof showToast==='function')showToast('Back online — syncing changes');});
+  window.addEventListener('offline',function(){syncOffline();if(typeof showToast==='function')showToast('You are offline — changes saved on this device');});
+  syncOffline();
+  // ---- global states: skeleton -> content|empty|error, driven by [data-gstate] ----
+  var GICON={empty:'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="1.7"><path d="M3 7h18v13H3z"/><path d="M3 7l3-4h12l3 4"/></svg>',err:'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>'};
+  function gskel(n){var s='',i;for(i=0;i<(n||3);i++)s+='<div class="skelrow"><div class="skel av"></div><div class="sg"><div class="skel t" style="width:'+(52+(i*13)%30)+'%"></div><div class="skel" style="width:'+(26+(i*17)%24)+'%"></div></div></div>';return s;}
+  function gempty(t,d,a){return '<div class="gstate"><div class="gi">'+GICON.empty+'</div><h4>'+t+'</h4><p>'+d+'</p>'+(a?'<button class="ga" data-toast="'+a+'">'+a+'</button>':'')+'</div>';}
+  function gerror(host){return '<div class="gstate err"><div class="gi">'+GICON.err+'</div><h4>Couldn\'t load this</h4><p>The request didn\'t complete. Your data is safe — nothing was changed.</p><button class="ga" data-gretry="'+host+'">Try again</button></div>';}
+  // Each registered region can replay skeleton -> loaded / empty / error.
+  var GREG={};
+  function gregister(id,opts){GREG[id]=opts;}
+  // Snapshot existing static markup as the "loaded" state, so a region that has no
+  // render function can still replay skeleton/empty/error.
+  function gstatic(id,opts){var el=document.getElementById(id);if(!el)return;var snap=el.innerHTML;
+    opts=opts||{};opts.render=function(n){n.innerHTML=snap;};gregister(id,opts);}
+  function gload(id,mode){
+    var o=GREG[id];if(!o)return;var el=document.getElementById(id);if(!el)return;
+    var m=mode||o.mode||'loaded';
+    el.innerHTML=o.skel?o.skel():gskel(o.rows);
+    setTimeout(function(){
+      if(m==='error')el.innerHTML=gerror(id);
+      else if(m==='empty')el.innerHTML=gempty(o.title,o.desc,o.action);
+      else o.render(el);
+    },o.delay||620);
+  }
+  document.body.addEventListener('click',function(e){
+    var r=e.target.closest('[data-gretry]');
+    if(r){gload(r.getAttribute('data-gretry'),'loaded');return;}
+    var d=e.target.closest('[data-gdemo]');
+    if(d){var p=d.getAttribute('data-gdemo').split(':');gload(p[0],p[1]);}
+  });
+  // Reports — loading skeleton on first open, plus empty/error previews.
+  gstatic('reportsPanel',{rows:4,title:'No reports for Term 2 yet',desc:'Reports are generated once a term has attendance and lesson data. Generate one now or wait for the weekly summary.',action:'Generate report'});
+  var reportsSeen=false;
+  document.querySelector('.side a[data-view="reports"]').addEventListener('click',function(){if(!reportsSeen){reportsSeen=true;gload('reportsPanel','loaded');}});
 })();
 </script>
 <div id="toast" style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--surface);padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:200"></div>

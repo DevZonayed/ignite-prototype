@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { SubHead, Button } from '../components/ui';
+import { SubHead, Button, EmptyState } from '../components/ui';
 import { dims } from '../data';
 
 export default function RubricScreen({ goBack, showToast }) {
@@ -13,15 +13,11 @@ export default function RubricScreen({ goBack, showToast }) {
     <View>
       <SubHead title="LQS rubric" onBack={goBack} />
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, marginBottom: 14 }}>
-        <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 15, color: '#166534' }}>AE</Text>
-        </View>
-        <View>
-          <Text style={{ fontFamily: fonts.display800, fontWeight: '800', fontSize: 15, color: colors.text }}>Amara Eze</Text>
-          <Text style={{ fontSize: 12, color: colors.textSubtle }}>Term 2 · rate 1–4</Text>
-        </View>
-      </View>
+      {dims.length === 0 ? (
+        <EmptyState title="No rubric dimensions yet" sub="The LQS rubric dimensions will appear here once they sync." />
+      ) : (
+        <Text style={{ fontSize: 12, color: colors.textSubtle, marginBottom: 14 }}>Rate 1–4</Text>
+      )}
 
       {dims.map((d, i) => (
         <View key={i} style={{ marginBottom: 11 }}>
@@ -46,7 +42,7 @@ export default function RubricScreen({ goBack, showToast }) {
         </View>
       ))}
 
-      <Button variant="primary" onPress={() => { showToast('Rubric saved · next learner'); setTimeout(goBack, 240); }}>
+      <Button variant="primary" disabled={dims.length === 0} onPress={() => { showToast('Rubric saved'); setTimeout(goBack, 240); }} style={{ opacity: dims.length === 0 ? 0.5 : 1 }}>
         Save & next learner →
       </Button>
     </View>
