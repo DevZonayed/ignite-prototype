@@ -2,19 +2,18 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { SubHead } from '../components/ui';
+import { SubHead, EmptyState } from '../components/ui';
 
-const ITEMS = [
-  ['📥', 'New homework submission', 'Amara Eze · 2h ago'],
-  ['🏅', 'Badge awarded: Loop Master', '3 learners · today'],
-  ['📄', 'Curriculum v4 published', 'Admin · yesterday'],
-];
+const ITEMS = [];
 
 export default function NotificationsScreen({ goBack }) {
   const { colors } = useTheme();
   return (
     <View>
       <SubHead title="Notifications" onBack={goBack} />
+      {ITEMS.length === 0 ? (
+        <EmptyState title="No notifications" sub="Updates about homework, badges and curriculum will appear here." />
+      ) : null}
       {ITEMS.map(([emoji, title, meta], i) => (
         <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, marginBottom: 10 }}>
           <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' }}>

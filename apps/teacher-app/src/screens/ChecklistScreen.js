@@ -2,21 +2,19 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { SubHead, Card, Button, withAlpha } from '../components/ui';
+import { SubHead, Card, Button, EmptyState, withAlpha } from '../components/ui';
 import { IconCheck } from '../components/Icon';
 
-const ITEMS = [
-  ['done', 'Learners build a working loop'],
-  ['done', 'Learners run their sprite'],
-  ['3', 'Learners add a costume change'],
-  ['4', 'Save the .sb3 project'],
-];
+const ITEMS = [];
 
 export default function ChecklistScreen({ goBack, showToast }) {
   const { colors } = useTheme();
   return (
     <View>
       <SubHead title="Activities" onBack={goBack} />
+      {ITEMS.length === 0 ? (
+        <EmptyState title="No activities for this lesson" sub="Lesson activities will appear here as you check them off." />
+      ) : null}
       {ITEMS.map(([state, label], i) => (
         <Card key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 11 }}>
           {state === 'done' ? (

@@ -5,7 +5,7 @@ import { fonts } from '../theme';
 import { AppHead } from '../components/ui';
 import { IconSync, IconBellSimple, IconThemeRow, IconSignOut } from '../components/Icon';
 
-function PRow({ icon, label, right, onPress }) {
+function PRow({ icon, label, right, onPress, labelColor }) {
   const { colors } = useTheme();
   return (
     <Pressable
@@ -13,24 +13,26 @@ function PRow({ icon, label, right, onPress }) {
       style={{ flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, marginBottom: 10 }}
     >
       <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surface2, alignItems: 'center', justifyContent: 'center' }}>{icon}</View>
-      <Text style={{ flex: 1, fontFamily: fonts.body700, fontWeight: '700', fontSize: 13.5, color: colors.text }}>{label}</Text>
+      <Text style={{ flex: 1, fontFamily: fonts.body700, fontWeight: '700', fontSize: 13.5, color: labelColor || colors.text }}>{label}</Text>
       {right}
     </Pressable>
   );
 }
 
-export default function ProfileScreen({ navTo, showToast }) {
+export default function ProfileScreen({ navTo, showToast, user, onSignOut }) {
   const { colors, mode, toggle } = useTheme();
   const dark = mode === 'dark';
 
   return (
     <View>
-      <AppHead name="Mrs. Funke Okafor" role="Teacher · Bright Future Academy" />
+      <AppHead
+        name={(user && user.name) || ''}
+        role={(user && user.role) || ''}
+      />
 
       <PRow
         icon={<IconSync size={17} color={colors.textMuted} />}
         label="Sync queue"
-        right={<Text style={{ fontSize: 12, fontFamily: fonts.body700, fontWeight: '700', color: colors.warning }}>3 pending</Text>}
         onPress={() => navTo('sync')}
       />
       <PRow icon={<IconBellSimple size={17} color={colors.textMuted} />} label="Notifications" onPress={() => navTo('notifications')} />
@@ -46,7 +48,12 @@ export default function ProfileScreen({ navTo, showToast }) {
         </Pressable>
       </View>
 
-      <PRow icon={<IconSignOut size={17} color={colors.textMuted} />} label="Sign out" onPress={() => showToast('Signed out')} />
+      <PRow
+        icon={<IconSignOut size={17} color={colors.danger} />}
+        label="Sign out"
+        labelColor={colors.danger}
+        onPress={onSignOut}
+      />
     </View>
   );
 }

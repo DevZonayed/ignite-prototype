@@ -45,14 +45,27 @@ export default function App() {
     }
   }, [theme])
 
-  // page title + hash sync
+  // page title + hash sync. First run replaces so we don't add a bogus entry.
+  const firstNav = useRef(true)
   useEffect(() => {
     document.title = 'IGNITE — School Portal'
     if (window.location.hash !== '#' + view) {
-      window.history.replaceState(null, '', '#' + view)
+      if (firstNav.current) window.history.replaceState(null, '', '#' + view)
+      else window.history.pushState(null, '', '#' + view)
     }
+    firstNav.current = false
     window.scrollTo(0, 0)
   }, [view])
+
+  // hash -> view, so browser back/forward actually navigates
+  useEffect(() => {
+    const onHash = () => {
+      const h = (window.location.hash || '').replace('#', '')
+      if (titles[h]) setView(h)
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
 
   const navigate = (v) => {
     if (!titles[v]) return

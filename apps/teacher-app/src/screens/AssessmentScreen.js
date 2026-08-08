@@ -2,17 +2,23 @@ import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { SubHead, Button, PageSub } from '../components/ui';
+import { SubHead, Button, PageSub, EmptyState } from '../components/ui';
 import { att, assessScores } from '../data';
 
 export default function AssessmentScreen({ goBack, showToast }) {
   const { colors } = useTheme();
   const [scores, setScores] = useState(() => att.map((_, i) => assessScores[i] || 3));
 
+  const scored = scores.filter((s) => s > 0).length;
+
   return (
     <View>
       <SubHead title="Assess learners" onBack={goBack} />
-      <PageSub style={{ marginBottom: 10 }}>Smart Reading Lamp · quick outcome (1–4) per learner</PageSub>
+      <PageSub style={{ marginBottom: 10 }}>Quick outcome (1–4) per learner</PageSub>
+
+      {att.length === 0 ? (
+        <EmptyState title="No learners to assess" sub="Assessment appears once your class roster syncs." />
+      ) : null}
 
       {att.map((a, i) => (
         <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 10, marginBottom: 9 }}>
@@ -38,9 +44,9 @@ export default function AssessmentScreen({ goBack, showToast }) {
       ))}
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: 12, marginHorizontal: -18, paddingHorizontal: 18, marginTop: 4 }}>
-        <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 15, color: colors.text }}>6 / 32 assessed</Text>
+        <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 15, color: colors.text }}>{scored} / {att.length} assessed</Text>
         <View style={{ marginLeft: 'auto' }}>
-          <Button variant="primary" onPress={() => { showToast('Assessments saved'); setTimeout(goBack, 240); }} style={{ width: 'auto', paddingHorizontal: 18 }}>
+          <Button variant="primary" disabled={att.length === 0} onPress={() => { showToast('Assessments saved'); setTimeout(goBack, 240); }} style={{ width: 'auto', paddingHorizontal: 18, opacity: att.length === 0 ? 0.5 : 1 }}>
             Save
           </Button>
         </View>

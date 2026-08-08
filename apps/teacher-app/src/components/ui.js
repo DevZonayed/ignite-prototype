@@ -167,6 +167,16 @@ export function SubHead({ title, onBack, right }) {
   );
 }
 
+// Initials for the avatar, derived from the display name ("Ada Lovelace" -> "AL")
+function initialsOf(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '•';
+  return parts
+    .slice(0, 2)
+    .map((w) => w.charAt(0).toUpperCase())
+    .join('');
+}
+
 // App header (home / profile)
 export function AppHead({ name, role, onBell }) {
   const { colors } = useTheme();
@@ -174,7 +184,7 @@ export function AppHead({ name, role, onBell }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, paddingTop: 6, paddingBottom: 14 }}>
       <IgniteGradient radius={22} style={{ width: 44, height: 44 }}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 16, color: '#3b1d05' }}>FO</Text>
+          <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 16, color: '#3b1d05' }}>{initialsOf(name)}</Text>
         </View>
       </IgniteGradient>
       <View>
@@ -188,6 +198,19 @@ export function AppHead({ name, role, onBell }) {
         >
           <IconBell size={18} color={colors.textMuted} />
         </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+// Empty-state block for lists with no data yet
+export function EmptyState({ title, sub, style }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[{ borderWidth: 1, borderColor: colors.border, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 28, paddingHorizontal: 18, alignItems: 'center', marginBottom: 13 }, style]}>
+      <Text style={{ fontFamily: fonts.display800, fontWeight: '800', fontSize: 14, color: colors.text, textAlign: 'center', marginBottom: 5 }}>{title}</Text>
+      {sub ? (
+        <Text style={{ fontSize: 12.5, color: colors.textMuted, textAlign: 'center', lineHeight: 18 }}>{sub}</Text>
       ) : null}
     </View>
   );

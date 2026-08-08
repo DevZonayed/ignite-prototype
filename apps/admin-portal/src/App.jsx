@@ -42,11 +42,26 @@ export default function App() {
     try { localStorage.ignite_theme = theme } catch (e) { /* ignore */ }
   }, [theme])
 
-  // view -> hash + scroll top
+  // view -> hash + scroll top. First run replaces so we don't add a bogus entry.
+  const firstNav = useRef(true)
   useEffect(() => {
-    if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view)
+    if (location.hash !== '#' + view) {
+      if (firstNav.current) history.replaceState(null, '', '#' + view)
+      else history.pushState(null, '', '#' + view)
+    }
+    firstNav.current = false
     if (contentRef.current) contentRef.current.scrollTop = 0
   }, [view])
+
+  // hash -> view, so browser back/forward actually navigates
+  useEffect(() => {
+    const onHash = () => {
+      const h = (location.hash || '').replace('#', '')
+      if (titles[h]) setView(h)
+    }
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
 
   const navigate = useCallback((v) => {
     if (titles[v]) setView(v)

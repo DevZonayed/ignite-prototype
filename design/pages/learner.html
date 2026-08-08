@@ -72,6 +72,28 @@ h1,h2,h3,h4{font-family:var(--fd);color:var(--text);line-height:1.15;letter-spac
 .toast{position:absolute;left:16px;right:16px;bottom:86px;background:#0f172a;color:#fff;border-radius:12px;padding:12px 15px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none;z-index:5}.toast.show{opacity:1;transform:none}
 svg{display:block}
 @media(max-width:480px){.device{height:92vh;border-radius:0;padding:0}.viewport{border-radius:0}.stage{padding:0}.stagebar{display:none}}
+.gdemo{display:flex;gap:6px;margin:-6px 0 13px}
+.gdemo span{font-family:var(--fu);font-size:10.5px;font-weight:700;color:var(--text-subtle);background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:4px 10px;cursor:pointer}
+.gdemo span:active{background:var(--brand-soft);color:var(--brand)}
+/* ---- global states: skeleton · empty · error/retry · offline (see design/pages/states.html) ---- */
+@keyframes gshim{100%{background-position:-200% 0}}
+.skel{background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 37%,var(--surface-2) 63%);background-size:200% 100%;animation:gshim 1.3s linear infinite;border-radius:7px;height:12px}
+.skel.t{height:15px}
+.skel.av{width:34px;height:34px;border-radius:50%;flex:none}
+.skelrow{display:flex;align-items:center;gap:11px;padding:13px 2px;border-top:1px solid var(--border)}
+.skelrow:first-child{border-top:none}
+.skelrow .sg{flex:1;display:flex;flex-direction:column;gap:7px}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+.gstate{display:flex;flex-direction:column;align-items:center;text-align:center;padding:46px 22px}
+.gstate .gi{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--border);margin-bottom:13px}
+.gstate h4{font-family:var(--fd);font-weight:800;font-size:15px;margin-bottom:6px}
+.gstate p{font-family:var(--fu);font-size:12.5px;color:var(--text-muted);max-width:40ch;line-height:1.6}
+.gstate .ga{margin-top:15px;display:inline-flex;align-items:center;gap:7px;background:var(--brand);color:#fff;border:none;font-family:var(--fu);font-size:12.5px;font-weight:700;padding:9px 16px;border-radius:9px;cursor:pointer}
+.gstate.err .gi{background:color-mix(in srgb,var(--danger) 12%,transparent);border-color:transparent;color:var(--danger)}
+.offbar{display:none;align-items:center;gap:9px;background:color-mix(in srgb,var(--warning) 14%,transparent);border-bottom:1px solid color-mix(in srgb,var(--warning) 38%,transparent);color:var(--warning);font-family:var(--fu);font-size:12px;font-weight:700;padding:8px 15px}
+.offbar.on{display:flex}
+.offbar .od{width:7px;height:7px;border-radius:50%;background:var(--warning);flex:none}
+.offbar .os{margin-left:auto;font-weight:600;opacity:.85}
 </style>
 </head>
 <body>
@@ -79,6 +101,7 @@ svg{display:block}
   <div class="stagebar"><a class="home" href="/design/index.html">← All apps</a><span class="t">IGNITE Learner · working prototype</span><span class="sp"></span><span class="tbtn" id="themeBtn"><svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg> Theme</span></div>
   <div class="device"><div class="viewport">
     <div class="statusbar"><span>9:41</span><span>IGNITE</span><span>▮▮▮ 100%</span></div>
+    <div class="offbar" id="offbar"><span class="od"></span><span>Offline — changes are saved on this device</span><span class="os">will sync when reconnected</span></div>
     <div class="screens">
 
       <!-- HOME -->
@@ -93,6 +116,7 @@ svg{display:block}
       <!-- PORTFOLIO -->
       <section class="screen main" id="s-portfolio">
         <div class="pagetitle">My Portfolio</div><div class="pagesub">Term 2 · tap a project</div>
+        <div class="gdemo"><span data-gdemo="pfGrid:loaded">↻ Reload</span><span data-gdemo="pfGrid:empty">Empty</span><span data-gdemo="pfGrid:error">Error</span></div>
         <div class="pgrid" id="pfGrid"></div>
       </section>
 
@@ -210,6 +234,43 @@ svg{display:block}
   document.getElementById('themeToggle').addEventListener('click',function(){applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');});
   var saved;try{saved=localStorage.ignite_theme;}catch(e){}applyTheme(saved||'light');
   render();
+  // ---- global states: offline banner (real network events) ----
+  function syncOffline(){var b=document.getElementById('offbar');if(b)b.classList.toggle('on',navigator.onLine===false);}
+  window.addEventListener('online',function(){syncOffline();if(typeof showToast==='function')showToast('Back online — syncing changes');});
+  window.addEventListener('offline',function(){syncOffline();if(typeof showToast==='function')showToast('You are offline — changes saved on this device');});
+  syncOffline();
+  // ---- global states: skeleton -> content|empty|error, driven by [data-gstate] ----
+  var GICON={empty:'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" stroke-width="1.7"><path d="M3 7h18v13H3z"/><path d="M3 7l3-4h12l3 4"/></svg>',err:'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 8v5M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>'};
+  function gskel(n){var s='',i;for(i=0;i<(n||3);i++)s+='<div class="skelrow"><div class="skel av"></div><div class="sg"><div class="skel t" style="width:'+(52+(i*13)%30)+'%"></div><div class="skel" style="width:'+(26+(i*17)%24)+'%"></div></div></div>';return s;}
+  function gempty(t,d,a){return '<div class="gstate"><div class="gi">'+GICON.empty+'</div><h4>'+t+'</h4><p>'+d+'</p>'+(a?'<button class="ga" data-toast="'+a+'">'+a+'</button>':'')+'</div>';}
+  function gerror(host){return '<div class="gstate err"><div class="gi">'+GICON.err+'</div><h4>Couldn\'t load this</h4><p>The request didn\'t complete. Your data is safe — nothing was changed.</p><button class="ga" data-gretry="'+host+'">Try again</button></div>';}
+  // Each registered region can replay skeleton -> loaded / empty / error.
+  var GREG={};
+  function gregister(id,opts){GREG[id]=opts;}
+  // Snapshot existing static markup as the "loaded" state, so a region that has no
+  // render function can still replay skeleton/empty/error.
+  function gstatic(id,opts){var el=document.getElementById(id);if(!el)return;var snap=el.innerHTML;
+    opts=opts||{};opts.render=function(n){n.innerHTML=snap;};gregister(id,opts);}
+  function gload(id,mode){
+    var o=GREG[id];if(!o)return;var el=document.getElementById(id);if(!el)return;
+    var m=mode||o.mode||'loaded';
+    el.innerHTML=o.skel?o.skel():gskel(o.rows);
+    setTimeout(function(){
+      if(m==='error')el.innerHTML=gerror(id);
+      else if(m==='empty')el.innerHTML=gempty(o.title,o.desc,o.action);
+      else o.render(el);
+    },o.delay||620);
+  }
+  document.body.addEventListener('click',function(e){
+    var r=e.target.closest('[data-gretry]');
+    if(r){gload(r.getAttribute('data-gretry'),'loaded');return;}
+    var d=e.target.closest('[data-gdemo]');
+    if(d){var p=d.getAttribute('data-gdemo').split(':');gload(p[0],p[1]);}
+  });
+  // Portfolio — skeleton on first open; empty state speaks to the learner, not the system.
+  gstatic('pfGrid',{rows:3,title:'Your portfolio is empty',desc:'Every project you finish lands here with your photos and reflection. Finish your first one to start building it.',action:'See my projects'});
+  var pfSeen=false;
+  document.body.addEventListener('click',function(e){var t=e.target.closest('[data-screen="portfolio"]');if(t&&!pfSeen){pfSeen=true;setTimeout(function(){gload('pfGrid','loaded');},0);}});
 })();
 </script>
 </body>
