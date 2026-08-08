@@ -13,3 +13,6 @@ node_modules
 # environment & runtime data
 **/.env
 *.sqlite
+
+# Orca session artifacts (transcripts, drops) — never publish
+.orca/
