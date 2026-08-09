@@ -65,7 +65,7 @@ export class AiController {
   @Roles('platform_admin')
   @ApiOperation({ summary: 'Get AI platform configuration' })
   @ApiResponse({ status: 200, description: 'Current AI configuration' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async getConfig() {
     return this.aiService.getConfig();
   }
@@ -75,7 +75,7 @@ export class AiController {
   @ApiOperation({ summary: 'Update AI platform configuration' })
   @ApiResponse({ status: 200, description: 'Configuration updated' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async updateConfig(@Body() dto: UpdateConfigDto) {
     return this.aiService.updateConfig(dto);
   }
@@ -84,7 +84,7 @@ export class AiController {
   @Roles('platform_admin')
   @ApiOperation({ summary: 'Get AI usage statistics' })
   @ApiResponse({ status: 200, description: 'Aggregated AI usage stats' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async getUsage() {
     return this.aiService.getUsageStats();
   }
@@ -93,7 +93,7 @@ export class AiController {
   @Roles('platform_admin')
   @ApiOperation({ summary: 'Get per-school AI usage breakdown' })
   @ApiResponse({ status: 200, description: 'Paginated school-level AI usage' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async getSchoolUsage(@Query() filters: UsageFilterDto) {
     return this.aiService.getSchoolUsage(filters.page, filters.limit);
   }

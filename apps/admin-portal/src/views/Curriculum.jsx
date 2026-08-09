@@ -1,90 +1,512 @@
-export default function Curriculum({ active }) {
+import { useState } from 'react'
+import { useResource, useAction } from '../api/useResource.js'
+import {
+  listCurricula, getCurriculum, getCoverage, createCurriculum,
+  publishCurriculum, assignCurriculum, addUnit, updateUnit, deleteUnit,
+  listSchools,
+} from '../api/endpoints.js'
+import { Loading, ErrorState, EmptyState } from '../components/States.jsx'
+import Modal, { ModalActions, Field } from '../components/Modal.jsx'
+import ConfirmModal from '../components/ConfirmModal.jsx'
+import IconButton, { Actions } from '../components/IconButton.jsx'
+import { IconPencil, IconTrash, IconPlus } from '../components/Icons.jsx'
+import { fmtDate, humanize, coverageColor } from '../lib/format.js'
+
+/* ------------------------------------------------------------------ modals */
+
+function NewVersionModal({ onClose, onCreated, onToast }) {
+  const [name, setName] = useState('')
+  const { run, busy, error } = useAction()
+
+  async function submit(e) {
+    e.preventDefault()
+    const res = await run(() => createCurriculum(name.trim()))
+    if (res.ok) {
+      onToast(`${res.value.name} v${res.value.version} created as a draft`)
+      onCreated(res.value.id)
+      onClose()
+    }
+  }
+
+  return (
+    <Modal
+      title="New curriculum version"
+      subtitle="Starts as an editable draft. The version number is assigned automatically."
+      onClose={onClose}
+      busy={busy}
+    >
+      <form onSubmit={submit}>
+        <Field label="Name" htmlFor="c-name">
+          <input
+            id="c-name"
+            className="signin-input"
+            placeholder="Type name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </Field>
+        {error ? <div className="signin-err">{error.message}</div> : null}
+        <ModalActions onCancel={onClose} submitLabel="Create draft" busy={busy} disabled={!name.trim()} />
+      </form>
+    </Modal>
+  )
+}
+
+function UnitModal({ curriculumId, unit, nextOrder, onClose, onSaved, onToast }) {
+  const editing = !!unit
+  const initial = { title: unit?.title || '', order: unit?.order ?? nextOrder }
+  const [form, setForm] = useState(initial)
+  const { run, busy, error } = useAction()
+
+  async function submit(e) {
+    e.preventDefault()
+    const body = { title: form.title.trim(), order: Number(form.order) }
+    const res = await run(() =>
+      editing ? updateUnit(curriculumId, unit.id, body) : addUnit(curriculumId, body))
+    if (res.ok) {
+      onToast(editing ? 'Unit updated' : 'Unit added')
+      onSaved()
+      onClose()
+    }
+  }
+
+  const dirty = editing
+    ? form.title !== initial.title || Number(form.order) !== Number(initial.order)
+    : !!form.title.trim()
+
+  return (
+    <Modal
+      title={editing ? 'Edit unit' : 'Add unit'}
+      subtitle={editing ? unit.title : 'Units group the lessons teachers deliver'}
+      onClose={onClose}
+      busy={busy}
+    >
+      <form onSubmit={submit}>
+        <Field label="Title" htmlFor="u-title">
+          <input
+            id="u-title"
+            className="signin-input"
+            placeholder="Type title"
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            required
+          />
+        </Field>
+        <Field label="Order" htmlFor="u-order" hint="Position in the sequence, starting at 1.">
+          <input
+            id="u-order"
+          placeholder="Type order"
+            className="signin-input"
+            type="number"
+            min="1"
+            value={form.order}
+            onChange={(e) => setForm((f) => ({ ...f, order: e.target.value }))}
+            required
+          />
+        </Field>
+        {error ? <div className="signin-err">{error.message}</div> : null}
+        <ModalActions
+          onCancel={onClose}
+          submitLabel={editing ? 'Save unit' : 'Add unit'}
+          busy={busy}
+          disabled={!dirty}
+        />
+      </form>
+    </Modal>
+  )
+}
+
+function AssignModal({ curriculum, schools, onClose, onAssigned, onToast }) {
+  const [selected, setSelected] = useState(
+    () => new Set(schools.filter((s) => s.curriculumVersionId === curriculum.id).map((s) => s.id)),
+  )
+  const { run, busy, error } = useAction()
+
+  function toggle(id) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  async function submit(e) {
+    e.preventDefault()
+    const res = await run(() => assignCurriculum(curriculum.id, Array.from(selected)))
+    if (res.ok) {
+      onToast(`Assigned to ${selected.size} school${selected.size === 1 ? '' : 's'}`)
+      onAssigned()
+      onClose()
+    }
+  }
+
+  return (
+    <Modal
+      title="Assign to schools"
+      subtitle={`${curriculum.name} v${curriculum.version}`}
+      onClose={onClose}
+      busy={busy}
+    >
+      <form onSubmit={submit}>
+        {schools.length === 0 ? (
+          <EmptyState title="No schools yet" hint="Create a school before assigning a curriculum." />
+        ) : (
+          <div className="check-list">
+            {schools.map((s) => (
+              <label className="check-row" key={s.id}>
+                <input
+                  type="checkbox"
+                  checked={selected.has(s.id)}
+                  onChange={() => toggle(s.id)}
+                />
+                <span className="check-main">
+                  <span className="strong">{s.name}</span>
+                  <span className="fm">{s.region || 'No region'}</span>
+                </span>
+                {s.curriculumVersionId && s.curriculumVersionId !== curriculum.id ? (
+                  <span className="badge b-grey">on another version</span>
+                ) : null}
+              </label>
+            ))}
+          </div>
+        )}
+        {error ? <div className="signin-err">{error.message}</div> : null}
+        <ModalActions
+          onCancel={onClose}
+          submitLabel={`Assign to ${selected.size} school${selected.size === 1 ? '' : 's'}`}
+          busy={busy}
+          disabled={schools.length === 0}
+        />
+      </form>
+    </Modal>
+  )
+}
+
+/* -------------------------------------------------------------------- view */
+
+export default function Curriculum({ active, onToast }) {
+  const [selectedId, setSelectedId] = useState(null)
+  const [newVersion, setNewVersion] = useState(false)
+  const [unitModal, setUnitModal] = useState(null)   // { unit } | { unit: null }
+  const [confirm, setConfirm] = useState(null)       // { kind, unit? }
+  const [assigning, setAssigning] = useState(false)
+
+  const curricula = useResource(() => listCurricula(), [], { enabled: active })
+  const list = curricula.data ?? []
+  const currentId = selectedId ?? list[0]?.id ?? null
+
+  const detail = useResource(() => getCurriculum(currentId), [currentId], {
+    enabled: active && !!currentId,
+  })
+  const coverage = useResource(() => getCoverage(), [], { enabled: active })
+  const schools = useResource(() => listSchools({ limit: 100 }), [], { enabled: active })
+
+  const publish = useAction()
+  const removeUnit = useAction()
+
+  const current = detail.data
+  const units = current?.units ?? []
+  const locked = !!current?.isImmutable
+  const published = current?.status === 'published'
+  const schoolList = schools.data?.data ?? []
+  const usingThis = schoolList.filter((s) => s.curriculumVersionId === current?.id)
+  const totalLessons = units.reduce((n, u) => n + (u.lessons?.length ?? 0), 0)
+
+  async function doPublish() {
+    const res = await publish.run(() => publishCurriculum(current.id))
+    if (res.ok) {
+      onToast(`${current.name} v${current.version} published`)
+      curricula.reload()
+      detail.reload()
+      setConfirm(null)
+    }
+  }
+
+  async function doDeleteUnit(unit) {
+    const res = await removeUnit.run(() => deleteUnit(current.id, unit.id))
+    if (res.ok) {
+      onToast('Unit deleted')
+      detail.reload()
+      setConfirm(null)
+    }
+  }
+
   return (
     <section className={'view' + (active ? ' active' : '')} id="view-curriculum">
-      <div className="pubbar">
-        <span className="dstat"><span className="ddot"></span>Draft v5 · unpublished</span>
-        <span className="sp"></span>
-        <button className="btnP"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M5 12l5 5L20 7" /></svg> Publish version</button>
-        <button className="btnO"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 21V9l9-6 9 6v12" /></svg> Assign to schools</button>
-        <span className="immut"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg> Published versions are immutable</span>
+      <div className="toolbar">
+        <select
+          className="filter"
+          value={currentId ?? ''}
+          onChange={(e) => setSelectedId(e.target.value)}
+          disabled={list.length === 0}
+        >
+          {list.length === 0 ? <option value="">No curriculum</option> : null}
+          {list.map((c) => (
+            <option key={c.id} value={c.id}>{c.name} v{c.version} ({c.status})</option>
+          ))}
+        </select>
+
+        {current ? (
+          <span className={'badge ' + (published ? 'b-green' : 'b-amber')}>
+            {humanize(current.status)}
+          </span>
+        ) : null}
+        {locked ? <span className="badge b-grey">locked</span> : null}
+
+        <span className="sp" />
+
+        {current && !published ? (
+          <button className="btnO" onClick={() => setConfirm({ kind: 'publish' })}>
+            Publish version
+          </button>
+        ) : null}
+        {current && published ? (
+          <button className="btnO" onClick={() => setAssigning(true)}>
+            Assign to schools
+          </button>
+        ) : null}
+        <button className="btnP" onClick={() => setNewVersion(true)}>
+          <IconPlus />
+          New version
+        </button>
       </div>
-      <div className="auth">
-        <div className="tree">
-          <div className="ttitle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10" /></svg> Digital Innovation · v4</div>
-          <div className="tnode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg> Unit 1 · Getting Started with Scratch</div>
-          <div className="tnode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg> Unit 2 · Sprites &amp; Events</div>
-          <div className="tnode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg> Unit 3 · Loops &amp; Motion</div>
-          <div className="tnode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="2"><path d="M9 6l6 6-6 6" /></svg> Unit 4 · Intro to Python</div>
-          <div className="tnode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-subtle)" strokeWidth="2"><path d="M6 9l6 6 6-6" /></svg> Unit 5 · Robotics · Little Genius Lab™</div>
-          <div className="tlesson"><span className="tnum done">1</span> What is robotics?</div>
-          <div className="tlesson"><span className="tnum done">2</span> Sensors &amp; actuators</div>
-          <div className="tlesson"><span className="tnum done">3</span> The Arduino board</div>
-          <div className="tlesson"><span className="tnum done">4</span> Connecting Arduino</div>
-          <div className="tlesson on"><span className="tnum cur">5</span> Build a Smart Reading Lamp</div>
-          <div className="tlesson"><span className="tnum">6</span> Line-follower robot</div>
-          <div className="addlesson">+ Add lesson</div>
-        </div>
-        <div className="ed">
-          <div className="edlabel">Lesson title</div>
-          <div className="edtitle">Build a Smart Reading Lamp</div>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '-6px 0 6px', lineHeight: 1.6 }}>Mirrors the IGNITE lesson-plan template exactly — every section below is editable and <b>optional per lesson</b>, so a short lesson uses a few blocks and a full mission uses them all. Add or remove sections freely to match any lesson pattern.</div>
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v4h1" /></svg></span><h4>Overview</h4><span className="elink">Edit</span></div><div className="assessgrid"><div className="ag">Programme<b>Little Genius Robotics Lab™</b></div><div className="ag">Class · Term · Week<b>Primary 3 · T3 · Wk 5</b></div><div className="ag">Mission<b>Mission 5</b></div><div className="ag">Duration<b>90 minutes</b></div><div className="ag">Theme<b>Programming Your First Smart Invention</b></div><div className="ag">Real-world problem<b>Turn a lamp on with a button</b></div></div></div>
+      {curricula.loading && !curricula.data ? <Loading label="Loading curricula…" /> : null}
+      {curricula.error ? <ErrorState error={curricula.error} onRetry={curricula.reload} /> : null}
+      {curricula.data && list.length === 0 ? (
+        <EmptyState
+          title="No curriculum versions yet"
+          hint='Use "New version" above to create the first draft.'
+        />
+      ) : null}
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg></span><h4>Opening &amp; prerequisites</h4><span className="elink">Edit</span></div><div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '8px' }}>Skills assumed from Weeks 1–4:</div><div className="matrow"><div className="matchip">What robotics is</div><div className="matchip">Physical computing</div><div className="matchip">Sensors &amp; actuators</div><div className="matchip">Arduino board</div><div className="matchip">PictoBlox interface</div><div className="matchip">Connecting Arduino</div><div className="matchip">Uploading programs</div></div></div>
-
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1" /></svg></span><h4>Lesson framing</h4><span className="elink">Edit</span></div><div className="stepitem"><b>Real-world problem</b> — How can we build a reading lamp that turns on when we press a button?</div><div className="stepitem"><b>Big idea</b> — A robot follows instructions to solve real-life problems.</div><div className="stepitem"><b>Essential question</b> — How can we use a button, an LED and Arduino to build a smart reading lamp?</div></div>
-
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg></span><h4>Learning outcomes</h4><span className="elink">Edit</span></div><div className="stepitem">Build a Smart Reading Lamp.</div><div className="stepitem">Connect electronic components correctly.</div><div className="stepitem">Write a simple PictoBlox program.</div><div className="stepitem">Upload the program to Arduino.</div><div className="stepitem">Test their invention &amp; explain how it works.</div></div>
-
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4" /></svg></span><h4>Success criteria</h4><span className="elink">Edit</span></div><div className="chkitem"><span className="chkbox" style={{ background: 'var(--brand)', borderColor: 'var(--brand)' }}></span> I built my first invention.</div><div className="chkitem"><span className="chkbox" style={{ background: 'var(--brand)', borderColor: 'var(--brand)' }}></span> My lamp works.</div><div className="chkitem"><span className="chkbox" style={{ background: 'var(--brand)', borderColor: 'var(--brand)' }}></span> I can explain the program.</div><div className="chkitem"><span className="chkbox" style={{ background: 'var(--brand)', borderColor: 'var(--brand)' }}></span> I can identify the input and the output.</div></div>
-
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2M9 20h6M12 4v16" /></svg></span><h4>Key vocabulary</h4><span className="elink">+ Add term</span></div><div className="matrow"><div className="matchip">Circuit</div><div className="matchip">LED</div><div className="matchip">Push Button</div><div className="matchip">Program</div><div className="matchip">Upload</div><div className="matchip">Sensor</div><div className="matchip">Output</div><div className="matchip">Reading Lamp</div></div></div>
-
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10" /><path d="M9 4v6h6" /></svg></span><h4>NERDC curriculum link</h4><span className="elink">Edit</span></div><div className="assessgrid"><div className="ag">Theme<b>Physical Computing</b></div><div className="ag">Topic<b>Programming Physical Devices</b></div></div><div style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: '9px 0 4px' }}>Performance objectives:</div><div className="stepitem">Assemble simple electronic circuits.</div><div className="stepitem">Create simple Arduino programs.</div><div className="stepitem">Explain how programs control electronic devices.</div></div>
-
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z" /></svg></span><h4>Real-world connection</h4><span className="elink">Edit</span></div><div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '8px' }}>Teacher-led discussion — where and why this invention is used:</div><div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}><b>Teacher asks:</b> "Where do we use reading lamps?"</div><div className="matrow" style={{ marginBottom: '10px' }}><div className="matchip">📚 Library</div><div className="matchip">🏠 Bedroom</div><div className="matchip">🏫 Classroom</div><div className="matchip">📖 Study table</div></div><div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}><b>Teacher asks:</b> "Why are reading lamps useful?"</div><div className="matrow"><div className="matchip">Better visibility</div><div className="matchip">Protects eyesight</div><div className="matchip">Saves energy</div><div className="matchip">Helps read comfortably</div></div></div>
-
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="8" width="18" height="12" rx="2" /><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" /></svg></span><h4>Little Genius kit components</h4><span className="elink">Edit</span></div><div className="matrow"><div className="matchip">Arduino UNO</div><div className="matchip">Breadboard</div><div className="matchip">USB cable</div><div className="matchip">Push button</div><div className="matchip">LED</div><div className="matchip">220Ω resistor</div><div className="matchip">Jumper wires</div></div></div>
-
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="14" rx="2" /><path d="m3 14 4-4 4 4 3-3 4 4" /><circle cx="8" cy="9" r="1" /></svg></span><h4>Lesson media</h4><span className="elink" style={{ color: 'var(--text-subtle)', fontWeight: 600 }}>flexible · no limit</span></div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '-2px 0 10px', lineHeight: 1.6 }}>Add <b>as many videos and images as this lesson needs</b> — drag to reorder. Some lessons carry one clip, others carry a full walkthrough set. This lesson has <b>6 videos + 2 images</b>.</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-              <div className="matchip" style={{ justifyContent: 'flex-start', gap: '9px' }}><span className="mi" style={{ background: '#1e293b' }}>MP4</span> Components overview <span style={{ marginLeft: 'auto', color: 'var(--text-subtle)', fontSize: '11px' }}>2:40 · Components</span></div>
-              <div className="matchip" style={{ justifyContent: 'flex-start', gap: '9px' }}><span className="mi" style={{ background: '#0f766e' }}>MP4</span> Wiring the breadboard <span style={{ marginLeft: 'auto', color: 'var(--text-subtle)', fontSize: '11px' }}>3:15 · Wiring</span></div>
-              <div className="matchip" style={{ justifyContent: 'flex-start', gap: '9px' }}><span className="mi" style={{ background: '#2563EB' }}>MP4</span> Writing the PictoBlox program <span style={{ marginLeft: 'auto', color: 'var(--text-subtle)', fontSize: '11px' }}>4:05 · Programming</span></div>
-              <div className="matchip" style={{ justifyContent: 'flex-start', gap: '9px', color: 'var(--text-subtle)' }}>…Upload · Testing · Challenge videos + 2 images</div>
+      {list.length > 0 ? (
+        <>
+          <div className="tiles">
+            <div className="tile">
+              <div className="th"><span className="tl">Units</span></div>
+              <div className="tn">{units.length}</div>
+              <div className="tf">{totalLessons} lesson{totalLessons === 1 ? '' : 's'} in total</div>
             </div>
-            <div style={{ display: 'flex', gap: '9px', marginTop: '11px' }}><button className="btnP" style={{ padding: '8px 13px', fontSize: '12.5px' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg> Add video</button><button className="btnP" style={{ padding: '8px 13px', fontSize: '12.5px', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14" /></svg> Add image / GIF</button></div>
+            <div className="tile">
+              <div className="th"><span className="tl">Schools using this</span></div>
+              <div className="tn">{usingThis.length}</div>
+              <div className="tf">{published ? 'assignable' : 'publish before assigning'}</div>
+            </div>
+            <div className="tile">
+              <div className="th"><span className="tl">Status</span></div>
+              <div className="tn" style={{ fontSize: 22 }}>
+                <span className={'badge ' + (published ? 'b-green' : 'b-amber')}>
+                  {humanize(current?.status)}
+                </span>
+              </div>
+              <div className="tf">
+                {current?.publishedAt ? `published ${fmtDate(current.publishedAt)}` : 'not published yet'}
+              </div>
+            </div>
+            <div className="tile">
+              <div className="th"><span className="tl">Editable</span></div>
+              <div className="tn" style={{ fontSize: 22 }}>
+                <span className={'badge ' + (locked ? 'b-grey' : 'b-green')}>
+                  {locked ? 'Locked' : 'Draft'}
+                </span>
+              </div>
+              <div className="tf">{locked ? 'published versions cannot change' : 'units can be edited'}</div>
+            </div>
           </div>
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16v16H4z" /><path d="M4 9h16M9 9v11" /></svg></span><h4>Infographic manual · LG-305</h4><span className="elink">+ Add page</span></div><div style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '-2px 0 9px' }}>The step-by-step booklet learners follow — 8 pages.</div><div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '7px' }}>
-            <div className="matchip" style={{ justifyContent: 'flex-start', gap: '8px' }}><span className="mi" style={{ background: '#334155' }}>1</span> Real-world problem</div><div className="matchip" style={{ justifyContent: 'flex-start', gap: '8px' }}><span className="mi" style={{ background: '#334155' }}>2</span> Components needed</div>
-            <div className="matchip" style={{ justifyContent: 'flex-start', gap: '8px' }}><span className="mi" style={{ background: '#334155' }}>3</span> Let's build</div><div className="matchip" style={{ justifyContent: 'flex-start', gap: '8px' }}><span className="mi" style={{ background: '#334155' }}>4</span> Let's program</div>
-            <div className="matchip" style={{ justifyContent: 'flex-start', gap: '8px' }}><span className="mi" style={{ background: '#334155' }}>5</span> How it works</div><div className="matchip" style={{ justifyContent: 'flex-start', gap: '8px' }}><span className="mi" style={{ background: '#334155' }}>6</span> Where is it used?</div>
-            <div className="matchip" style={{ justifyContent: 'flex-start', gap: '8px' }}><span className="mi" style={{ background: '#334155' }}>7</span> Engineering challenge</div><div className="matchip" style={{ justifyContent: 'flex-start', gap: '8px' }}><span className="mi" style={{ background: '#334155' }}>8</span> Engineering journal</div></div></div>
+          <div className="grid2">
+            {/* ---------------- units ---------------- */}
+            <div className="panel">
+              <div className="ph">
+                <h3>Units</h3>
+                {!locked ? (
+                  <span
+                    className="link"
+                    onClick={() => setUnitModal({ unit: null })}
+                  >
+                    + Add unit
+                  </span>
+                ) : null}
+              </div>
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg></span><h4>Materials</h4><span className="elink">+ Add material</span></div><div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text-subtle)', marginBottom: '6px' }}>Teacher</div><div className="matrow" style={{ marginBottom: '10px' }}><div className="matchip">Computer</div><div className="matchip">Projector</div><div className="matchip">Working Smart Reading Lamp</div><div className="matchip"><span className="mi" style={{ background: '#ef4444' }}>PDF</span> LG-305 manual</div></div><div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.4px', color: 'var(--text-subtle)', marginBottom: '6px' }}>Learners</div><div className="matrow"><div className="matchip">Little Genius Kit</div><div className="matchip">Computer</div><div className="matchip">Engineering Journal</div></div></div>
+              {locked ? (
+                <div className="note-strip">
+                  This version is published and immutable. Create a new version to change its units.
+                </div>
+              ) : null}
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h12" /></svg></span><h4>Lesson flow</h4><span className="elink">Reorder</span></div><div style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '-2px 0 9px' }}>Introduction → 5 teaching points → 4 class activities → infographic manual completion.</div>
-            <div className="stepitem"><b>Intro · Story</b> — Professor Ignite compares an ordinary lamp with a Smart Reading Lamp.</div>
-            <div className="stepitem"><b>TP1</b> Understanding the project</div><div className="stepitem"><b>TP2</b> Identify the components (input · brain · output)</div><div className="stepitem"><b>TP3</b> Build the circuit (LG-305)</div><div className="stepitem"><b>TP4</b> Program the reading lamp (PictoBlox)</div><div className="stepitem"><b>TP5</b> Test your invention (5×)</div>
-            <div className="matrow" style={{ marginTop: '8px' }}><div className="matchip">A1 · Component hunt</div><div className="matchip">A2 · Circuit inspection</div><div className="matchip">A3 · Predict before upload</div><div className="matchip">A4 · Explain like an engineer</div></div>
-            <div className="stepitem" style={{ marginTop: '8px' }}><b>Infographic manual</b> — Teacher completes every page of LG-305 with learners.</div></div>
+              {detail.loading && !detail.data ? <Loading /> : null}
+              {detail.error ? <ErrorState error={detail.error} onRetry={detail.reload} /> : null}
+              {detail.data && units.length === 0 ? (
+                <EmptyState
+                  title="No units in this version"
+                  hint={locked ? undefined : 'Add the first unit to start building the sequence.'}
+                />
+              ) : null}
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" /><path d="M12 8v6M9 11h6" /></svg></span><h4>Engineering discussion</h4><span className="elink">Edit</span></div><div className="assessgrid"><div className="ag">Problem<b>Reading in the dark</b></div><div className="ag">Input<b>Push Button</b></div><div className="ag">Brain<b>Arduino</b></div><div className="ag">Output<b>LED</b></div><div className="ag">Solution<b>Smart Reading Lamp</b></div></div></div>
+              {units.length > 0 ? (
+                <div className="tree">
+                  {units.map((u) => (
+                    <div className="tnode" key={u.id}>
+                      <div className="tnum">{u.order}</div>
+                      <div style={{ flex: 1 }}>
+                        <div className="strong">{u.title}</div>
+                        <div className="fm">
+                          {(u.lessons?.length ?? 0)} lesson{(u.lessons?.length ?? 0) === 1 ? '' : 's'}
+                          {u.status ? ` · ${humanize(u.status)}` : ''}
+                        </div>
+                        {u.lessons?.length ? (
+                          <div className="lesson-chips">
+                            {u.lessons.map((l) => (
+                              <span className="chip" key={l.id}>{l.title}</span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                      {!locked ? (
+                        <Actions>
+                          <IconButton
+                            label="Edit unit"
+                            icon={<IconPencil />}
+                            onClick={() => setUnitModal({ unit: u })}
+                          />
+                          <IconButton
+                            label="Delete unit"
+                            tone="danger"
+                            icon={<IconTrash />}
+                            onClick={() => setConfirm({ kind: 'unit', unit: u })}
+                          />
+                        </Actions>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12l2-2 4 4 8-8 4 4v8H3z" /></svg></span><h4>Home engineering challenge</h4><span className="elink">Edit</span></div><div className="stepitem">Rebuild the Smart Reading Lamp from the manual and test it five times.</div><div className="stepitem">Teach a parent what the button, Arduino and LED each do.</div><div className="stepitem">Draw the invention in the Engineering Journal.</div><div className="stepitem" style={{ color: 'var(--text-subtle)' }}><b>Extension</b> — make the LED stay on a few seconds before turning off.</div></div>
+            {/* ---------------- where this curriculum is used ---------------- */}
+            <div className="panel">
+              <div className="ph">
+                <h3>Schools on this version</h3>
+                <span className="link" onClick={schools.reload}>Refresh</span>
+              </div>
+              {schools.loading && !schools.data ? <Loading /> : null}
+              {schools.error ? <ErrorState error={schools.error} onRetry={schools.reload} /> : null}
+              {schools.data && usingThis.length === 0 ? (
+                <EmptyState
+                  title="Not assigned to any school"
+                  hint={published
+                    ? 'Use "Assign to schools" above to roll it out.'
+                    : 'Publish this version before assigning it.'}
+                />
+              ) : null}
+              {usingThis.length > 0 ? (
+                <table>
+                  <thead><tr><th>School</th><th>Region</th><th>Term</th></tr></thead>
+                  <tbody>
+                    {usingThis.map((s) => (
+                      <tr key={s.id}>
+                        <td className="strong">{s.name}</td>
+                        <td>{s.region || '-'}</td>
+                        <td>{s.currentTerm || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : null}
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2" /></svg></span><h4>Assessment</h4><span className="elink">Edit</span></div><div className="assessgrid" style={{ marginBottom: '9px' }}><div className="ag">Type<b>Project + 5 questions</b></div><div className="ag">Scale<b>1–4</b></div><div className="ag">Feeds<b>LQS · Physical Computing</b></div><div className="ag">Evidence<b>Photo + 60–90s video</b></div></div><div className="stepitem"><b>1.</b> What problem does this invention solve?</div><div className="stepitem"><b>2.</b> Which component is the sensor?</div><div className="stepitem"><b>3.</b> Which component is the output?</div><div className="stepitem"><b>4.</b> Why do we need Arduino?</div><div className="stepitem"><b>5.</b> What happens when the button is pressed?</div></div>
+              <div className="ph" style={{ marginTop: 18 }}>
+                <h3>Coverage by class</h3>
+                <span className="link" onClick={coverage.reload}>Refresh</span>
+              </div>
+              {coverage.loading && !coverage.data ? <Loading /> : null}
+              {coverage.error ? <ErrorState error={coverage.error} onRetry={coverage.reload} /> : null}
+              {coverage.data && coverage.data.length === 0 ? (
+                <EmptyState
+                  title="No coverage recorded yet"
+                  hint="Coverage appears once teachers deliver lessons."
+                />
+              ) : null}
+              {coverage.data && coverage.data.length > 0 ? (
+                <table>
+                  <thead><tr><th>Class</th><th>Delivered</th><th>Coverage</th></tr></thead>
+                  <tbody>
+                    {coverage.data.map((c) => (
+                      <tr key={c.classId}>
+                        <td className="strong">{c.className}</td>
+                        <td>{c.deliveredLessons}/{c.totalLessons}</td>
+                        <td>
+                          <span className="cbar">
+                            <i style={{ width: `${c.coveragePercent}%`, background: coverageColor(c.coveragePercent) }} />
+                          </span>
+                          {c.coveragePercent}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : null}
+            </div>
+          </div>
+        </>
+      ) : null}
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 11l3 3L22 4" /></svg></span><h4>Teacher observation checklist</h4><span className="elink">Edit</span></div><div className="chkitem"><span className="chkbox"></span> Built circuit correctly</div><div className="chkitem"><span className="chkbox"></span> Connected Arduino</div><div className="chkitem"><span className="chkbox"></span> Uploaded program</div><div className="chkitem"><span className="chkbox"></span> Reading Lamp worked</div><div className="chkitem"><span className="chkbox"></span> Explained the invention</div><div className="chkitem"><span className="chkbox"></span> Worked safely</div></div>
+      {newVersion ? (
+        <NewVersionModal
+          onClose={() => setNewVersion(false)}
+          onCreated={(id) => { curricula.reload(); setSelectedId(id) }}
+          onToast={onToast}
+        />
+      ) : null}
 
-          <div className="edsec"><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="7" width="18" height="13" rx="2" /><circle cx="12" cy="13" r="3.5" /><path d="M8 7l1.5-3h5L16 7" /></svg></span><h4>Digital portfolio</h4><span className="elink">Edit</span></div><div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '8px' }}>Parents upload from the Parent app:</div><div className="matrow"><div className="matchip"><span className="mi" style={{ background: '#0ea5e9' }}>IMG</span> Photo of the completed lamp</div><div className="matchip"><span className="mi" style={{ background: '#7c3aed' }}>MP4</span> 60–90s demo video</div></div><div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', lineHeight: 1.6 }}>Video shows the lamp on/off, names input/brain/output, and explains the program. Portfolio entry: <b>LG-305 — Smart Reading Lamp</b>.</div></div>
+      {unitModal && current ? (
+        <UnitModal
+          curriculumId={current.id}
+          unit={unitModal.unit}
+          nextOrder={units.length + 1}
+          onClose={() => setUnitModal(null)}
+          onSaved={detail.reload}
+          onToast={onToast}
+        />
+      ) : null}
 
-          <div className="edsec" style={{ marginBottom: 0 }}><div className="eh"><span className="eic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a9 9 0 0 0-9 9c0 4 3 6 3 6h12s3-2 3-6a9 9 0 0 0-9-9z" /><path d="M9 21h6" /></svg></span><h4>Teacher coaching notes</h4><span className="elink">Edit</span></div><div style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '8px', lineHeight: 1.6 }}>First complete engineering experience — focus on the <b>process</b>, not just a working project. Reinforce the routine:</div><div className="matrow"><div className="matchip">1 Problem</div><div className="matchip">2 Input</div><div className="matchip">3 Brain</div><div className="matchip">4 Output</div><div className="matchip">5 Build</div><div className="matchip">6 Program</div><div className="matchip">7 Test</div><div className="matchip">8 Improve</div><div className="matchip">9 Explain</div></div><div style={{ fontSize: '12px', color: 'var(--text-subtle)', marginTop: '8px', lineHeight: 1.6 }}>If a project fails, teach debugging rather than fixing it — check wiring, review the program, test one step at a time.</div></div>
-        </div>
-      </div>
+      {assigning && current ? (
+        <AssignModal
+          curriculum={current}
+          schools={schoolList}
+          onClose={() => setAssigning(false)}
+          onAssigned={schools.reload}
+          onToast={onToast}
+        />
+      ) : null}
+
+      {confirm?.kind === 'publish' && current ? (
+        <ConfirmModal
+          title="Publish this version?"
+          body={`Publishing ${current.name} v${current.version} locks it permanently. Its ${units.length} unit${units.length === 1 ? '' : 's'} can never be edited again, and it becomes assignable to schools. To make further changes you would create a new version.`}
+          confirmLabel="Publish and lock"
+          busy={publish.busy}
+          error={publish.error}
+          onConfirm={doPublish}
+          onClose={() => setConfirm(null)}
+        />
+      ) : null}
+
+      {confirm?.kind === 'unit' ? (
+        <ConfirmModal
+          title="Delete this unit?"
+          tone="danger"
+          body={`"${confirm.unit.title}" and its place in the sequence will be removed. This cannot be undone.`}
+          confirmLabel="Delete unit"
+          busy={removeUnit.busy}
+          error={removeUnit.error}
+          onConfirm={() => doDeleteUnit(confirm.unit)}
+          onClose={() => setConfirm(null)}
+        />
+      ) : null}
     </section>
   )
 }

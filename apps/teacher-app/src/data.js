@@ -1,4 +1,4 @@
-// Data shapes for the teacher app. All arrays start empty — the API layer
+// Data shapes for the teacher app. All arrays start empty; the API layer
 // (see apps/README) will populate them; screens show empty states until then.
 
 // units: [title, state('done'|'cur'|''), [lesson titles]]

@@ -78,7 +78,7 @@ export class SeedService {
   async seed(): Promise<void> {
     const userCount = await this.userRepo.count();
     if (userCount > 0) {
-      this.logger.log('Database already seeded — skipping.');
+      this.logger.log('Database already seeded, skipping.');
       return;
     }
 
@@ -1039,7 +1039,7 @@ export class SeedService {
 
     await this.announcementRepo.save(
       this.announcementRepo.create({
-        title: 'Robotics showcase — 30 July',
+        title: 'Robotics showcase on 30 July',
         message:
           'We are excited to announce the end-of-term Robotics Showcase on 30 July. Learners will present their Smart Reading Lamp projects. Parents are welcome to attend.',
         audience: AnnouncementAudience.ALL_PARENTS,

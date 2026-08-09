@@ -14,7 +14,7 @@ export default function AssessmentScreen({ goBack, showToast }) {
   return (
     <View>
       <SubHead title="Assess learners" onBack={goBack} />
-      <PageSub style={{ marginBottom: 10 }}>Quick outcome (1–4) per learner</PageSub>
+      <PageSub style={{ marginBottom: 10 }}>Quick outcome (1-4) per learner</PageSub>
 
       {att.length === 0 ? (
         <EmptyState title="No learners to assess" sub="Assessment appears once your class roster syncs." />

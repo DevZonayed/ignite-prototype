@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -31,6 +31,9 @@ import { useTheme } from './ThemeContext';
 import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
 
+import Auth from './screens/Auth';
+import { loadSession } from './api/auth';
+
 import Home from './screens/Home';
 import Portfolio from './screens/Portfolio';
 import Projects from './screens/Projects';
@@ -58,6 +61,19 @@ export default function AppRoot() {
   const [stack, setStack] = useState(['home']);
   const [itemIndex, setItemIndex] = useState(0);
   const scrollRef = useRef(null);
+
+  // Session: null while the stored one is still being read, so the sign-in
+  // screen never flashes in front of a learner who is already signed in.
+  const [user, setUser] = useState(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSession()
+      .then((stored) => { if (!cancelled) setUser(stored); })
+      .finally(() => { if (!cancelled) setSessionChecked(true); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Toast
   const [toast, setToast] = useState({ message: '', visible: false });
@@ -94,11 +110,20 @@ export default function AppRoot() {
     navTo('item', false);
   }, [navTo]);
 
-  if (!fontsLoaded || !ready) {
+  if (!fontsLoaded || !ready || !sessionChecked) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.bg }]}>
         <ActivityIndicator color={colors.brand} />
       </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SafeAreaView style={[styles.root, { backgroundColor: colors.bg, paddingTop: ANDROID_TOP }]}>
+        <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+        <Auth onSignedIn={setUser} />
+      </SafeAreaView>
     );
   }
 

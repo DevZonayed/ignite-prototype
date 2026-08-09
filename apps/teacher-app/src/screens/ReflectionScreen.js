@@ -39,7 +39,7 @@ export default function ReflectionScreen({ goBack, showToast, goHome }) {
         value={note}
         onChangeText={setNote}
         multiline
-        placeholder="How did the lesson go? What will you change next time?"
+        placeholder="Type your reflection"
         placeholderTextColor={colors.textSubtle}
         style={{ minHeight: 110, borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, padding: 12, fontSize: 13, color: colors.text, backgroundColor: colors.surface, marginBottom: 12, textAlignVertical: 'top' }}
       />

@@ -1,91 +1,158 @@
 import { useState } from 'react'
-import { initialAnnPosts } from '../data.js'
+import { useResource, useAction } from '../api/useResource.js'
+import { listAnnouncements, createAnnouncement, deleteAnnouncement } from '../api/endpoints.js'
+import { ErrorState, EmptyState, Loading } from '../components/States.jsx'
+import Modal, { ModalActions, Field } from '../components/Modal.jsx'
+import IconButton, { Actions } from '../components/IconButton.jsx'
+import { IconTrash, IconPlus } from '../components/Icons.jsx'
+import { fmtRelative, humanize } from '../lib/format.js'
 
-const audiences = ['All parents', 'By school', 'By class']
-
-const mediaChips = [
-  { color: '#7c3aed', label: 'MP4', text: 'Testing your lamp' },
-  { color: '#0ea5e9', label: 'IMG', text: 'Kit checklist' },
-  { color: '#ef4444', label: 'PDF', text: 'LG-305 manual' },
+const AUDIENCES = [
+  { value: 'all_parents', label: 'All parents' },
+  { value: 'by_school', label: 'By school' },
+  { value: 'by_class', label: 'By class' },
 ]
 
-export default function Announcements({ active, onToast }) {
-  const [posts, setPosts] = useState(initialAnnPosts)
-  const [title, setTitle] = useState('')
-  const [msg, setMsg] = useState("Dear parents, please ensure your child brings the Little Genius Kit for this week's Smart Reading Lamp build.")
-  const [aud, setAud] = useState('All parents')
-  const [selectedMedia, setSelectedMedia] = useState([])
+function AnnouncementModal({ onClose, onPosted, onToast }) {
+  const [form, setForm] = useState({ title: '', message: '', audience: 'all_parents' })
+  const { run, busy, error } = useAction()
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
-  function toggleMedia(i) {
-    setSelectedMedia((prev) => (prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i]))
-  }
-
-  function post() {
-    const t = (title || '').trim() || 'Announcement'
-    const m = (msg || '').trim() || '—'
-    setPosts((prev) => [[t, m, aud, 'just now'], ...prev])
-    setTitle('')
-    onToast('Posted to parents · ' + aud)
+  async function submit(e) {
+    e.preventDefault()
+    const res = await run(() => createAnnouncement({
+      title: form.title.trim(),
+      message: form.message.trim(),
+      audience: form.audience,
+    }))
+    if (res.ok) {
+      onToast('Announcement posted')
+      onPosted()
+      onClose()
+    }
   }
 
   return (
+    <Modal
+      title="New announcement"
+      subtitle="Parents see this in their app"
+      onClose={onClose}
+      busy={busy}
+    >
+      <form onSubmit={submit}>
+        <Field label="Title" htmlFor="a-title">
+          <input
+            id="a-title"
+            className="signin-input"
+            placeholder="Type title"
+            value={form.title}
+            onChange={set('title')}
+            required
+          />
+        </Field>
+
+        <Field label="Message" htmlFor="a-msg">
+          <textarea
+            id="a-msg"
+            className="signin-input"
+            rows={5}
+            placeholder="Type message"
+            value={form.message}
+            onChange={set('message')}
+            required
+          />
+        </Field>
+
+        <Field label="Audience" htmlFor="a-aud">
+          <select id="a-aud" className="signin-input" value={form.audience} onChange={set('audience')}>
+            {AUDIENCES.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
+          </select>
+        </Field>
+
+        {error ? <div className="signin-err">{error.message}</div> : null}
+
+        <ModalActions
+          onCancel={onClose}
+          submitLabel="Post announcement"
+          busy={busy}
+          disabled={!form.title.trim() || !form.message.trim()}
+        />
+      </form>
+    </Modal>
+  )
+}
+
+export default function Announcements({ active, onToast }) {
+  const [composing, setComposing] = useState(false)
+  const posts = useResource(() => listAnnouncements({ limit: 50 }), [], { enabled: active })
+  const remove = useAction()
+
+  async function onDelete(a) {
+    const res = await remove.run(() => deleteAnnouncement(a.id))
+    if (res.ok) {
+      onToast('Announcement deleted')
+      posts.reload()
+    } else {
+      onToast(res.error.message)
+    }
+  }
+
+  const rows = posts.data?.data ?? []
+
+  return (
     <section className={'view' + (active ? ' active' : '')} id="view-announcements">
-      <div className="grid2">
-        <div className="panel">
-          <div className="ph"><h3>New post to parents</h3></div>
-          <div style={{ padding: '4px 2px' }}>
-            <div className="edlabel">Title</div>
-            <input
-              id="annTitle"
-              placeholder="e.g. Little Genius Kit — Term 3 update"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid var(--border)', borderRadius: '9px', padding: '11px 13px', fontSize: '13px', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', marginBottom: '12px' }}
-            />
-            <div className="edlabel">Message</div>
-            <textarea
-              id="annMsg"
-              rows="3"
-              placeholder="Write an announcement or homework note for parents…"
-              value={msg}
-              onChange={(e) => setMsg(e.target.value)}
-              style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid var(--border)', borderRadius: '9px', padding: '11px 13px', fontSize: '13px', background: 'var(--surface)', color: 'var(--text)', fontFamily: 'inherit', resize: 'vertical', marginBottom: '12px' }}
-            />
-            <div className="edlabel">Attach media</div>
-            <div className="matrow" id="annMedia" style={{ marginBottom: '12px' }}>
-              {mediaChips.map((c, i) => (
-                <div
-                  key={i}
-                  className={'matchip' + (selectedMedia.includes(i) ? ' on' : '')}
-                  data-annmedia=""
-                  onClick={() => toggleMedia(i)}
-                >
-                  <span className="mi" style={{ background: c.color }}>{c.label}</span> {c.text}
-                </div>
-              ))}
-            </div>
-            <div className="edlabel">Audience</div>
-            <div id="annAud" style={{ display: 'flex', gap: '7px', flexWrap: 'wrap', marginBottom: '14px' }}>
-              {audiences.map((a) => (
-                <button key={a} className={'annseg' + (aud === a ? ' on' : '')} data-aud={a} onClick={() => setAud(a)}>{a}</button>
-              ))}
-            </div>
-            <button className="btnP" id="annPost" onClick={post}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z" /></svg> Post to parents</button>
-          </div>
-        </div>
-        <div className="panel">
-          <div className="ph"><h3>Recent posts</h3></div>
-          <div id="annList">
-            {posts.map((p, i) => (
-              <div className="annitem" key={i}>
-                <div className="at">{p[0]}</div>
-                <div className="am">{p[1]}</div>
-                <div className="ameta"><span>👥 {p[2]}</span><span>·</span><span>{p[3]}</span></div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="toolbar">
+        <span className="count">{rows.length} posted</span>
+        <span className="sp" />
+        <button className="btnP" onClick={() => setComposing(true)}>
+          <IconPlus />
+          New announcement
+        </button>
       </div>
+
+      <div className="panel">
+        <div className="ph">
+          <h3>Posted announcements</h3>
+          <span className="link" onClick={posts.reload}>Refresh</span>
+        </div>
+        {posts.loading && !posts.data ? <Loading /> : null}
+        {posts.error ? <ErrorState error={posts.error} onRetry={posts.reload} /> : null}
+        {posts.data && rows.length === 0 ? (
+          <EmptyState
+            title="Nothing posted yet"
+            hint='Use "New announcement" above. Posts reach parents in their app.'
+          />
+        ) : null}
+        {rows.map((a) => (
+          <div className="mcard" key={a.id}>
+            <div className="ph" style={{ padding: 0, border: 0 }}>
+              <div className="strong">{a.title}</div>
+              <Actions>
+                <IconButton
+                  label="Delete announcement"
+                  tone="danger"
+                  icon={<IconTrash />}
+                  busy={remove.busy}
+                  onClick={() => onDelete(a)}
+                />
+              </Actions>
+            </div>
+            <div className="fm" style={{ margin: '6px 0 8px' }}>{a.message}</div>
+            <div>
+              <span className="badge b-blue">{humanize(a.audience)}</span>
+              <span className="fm" style={{ marginLeft: 8 }}>{fmtRelative(a.createdAt)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {composing ? (
+        <AnnouncementModal
+          onClose={() => setComposing(false)}
+          onPosted={posts.reload}
+          onToast={onToast}
+        />
+      ) : null}
     </section>
   )
 }

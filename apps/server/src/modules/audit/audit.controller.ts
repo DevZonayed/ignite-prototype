@@ -21,7 +21,7 @@ export class AuditController {
   @Get()
   @ApiOperation({ summary: 'List audit log entries with filters and pagination' })
   @ApiResponse({ status: 200, description: 'Paginated list of audit log entries' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async findAll(@Query() filters: AuditFilterDto) {
     // Default to last 7 days if no dates specified
     if (!filters.startDate && !filters.endDate) {
@@ -39,7 +39,7 @@ export class AuditController {
   @ApiOperation({ summary: 'Create an audit log entry (internal)' })
   @ApiResponse({ status: 201, description: 'Audit log entry created' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async create(@Body() dto: CreateAuditLogDto) {
     return this.auditService.create(dto);
   }
@@ -47,7 +47,7 @@ export class AuditController {
   @Get('export')
   @ApiOperation({ summary: 'Export audit log entries (no pagination)' })
   @ApiResponse({ status: 200, description: 'All matching audit log entries' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async export(@Query() filters: AuditFilterDto) {
     return this.auditService.export(filters);
   }

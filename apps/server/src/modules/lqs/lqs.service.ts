@@ -54,7 +54,7 @@ export class LqsService {
     const totalWeight = dto.dimensions.reduce((sum, d) => sum + d.weight, 0);
     if (totalWeight !== 100) {
       throw new BadRequestException(
-        `Dimension weights must total 100 — received ${totalWeight}`,
+        `Dimension weights must total 100. They currently total ${totalWeight}`,
       );
     }
 
