@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Icon from './Icon';
-import { children } from '../data';
 import { useTheme } from '../ThemeContext';
+import { useChildren } from '../context/ChildContext';
+import { displayName, initialsOf } from '../lib/user';
 
 // Pill button + dropdown menu — matches .switcher/.swbtn/.swmenu in parent.html.
-export default function ChildSwitcher({ current, onSelect }) {
+export default function ChildSwitcher() {
   const { colors, fonts } = useTheme();
   const [open, setOpen] = useState(false);
-  const c = children[current];
+  const { children, activeChild, setActiveChildId } = useChildren();
+  const c = activeChild;
+
+  // One child is the common case: a switcher with nothing to switch to is
+  // noise, and no children at all is handled by the screens themselves.
+  if (!c || children.length < 2) return null;
 
   return (
     <View style={styles.switcher}>
@@ -19,13 +25,13 @@ export default function ChildSwitcher({ current, onSelect }) {
         ]}
         onPress={() => setOpen((o) => !o)}
       >
-        <View style={[styles.av, { backgroundColor: c.avc }]}>
-          <Text style={[styles.avText, { color: c.avt, fontFamily: fonts.display }]}>
-            {c.av}
+        <View style={[styles.av, { backgroundColor: c.avatarBg || colors.brandSoft }]}>
+          <Text style={[styles.avText, { color: c.avatarColor || colors.brand, fontFamily: fonts.display }]}>
+            {initialsOf(c)}
           </Text>
         </View>
         <Text style={[styles.nm, { color: colors.text, fontFamily: fonts.display800 }]}>
-          {c.n}
+          {displayName(c)}
         </Text>
         <View style={{ marginLeft: 6 }}>
           <Icon name="chevronDown" size={16} color={colors.textMuted} strokeWidth={2} />
@@ -44,26 +50,26 @@ export default function ChildSwitcher({ current, onSelect }) {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            {children.map((ch, i) => (
+            {children.map((ch) => (
               <Pressable
-                key={ch.av}
+                key={ch.id}
                 style={styles.switem}
                 onPress={() => {
-                  onSelect(i);
+                  setActiveChildId(ch.id);
                   setOpen(false);
                 }}
               >
-                <View style={[styles.itemAv, { backgroundColor: ch.avc }]}>
+                <View style={[styles.itemAv, { backgroundColor: ch.avatarBg || colors.brandSoft }]}>
                   <Text
-                    style={[styles.itemAvText, { color: ch.avt, fontFamily: fonts.display }]}
+                    style={[styles.itemAvText, { color: ch.avatarColor || colors.brand, fontFamily: fonts.display }]}
                   >
-                    {ch.av}
+                    {initialsOf(ch)}
                   </Text>
                 </View>
                 <Text
                   style={[styles.switemText, { color: colors.text, fontFamily: fonts.ui700 }]}
                 >
-                  {ch.n}
+                  {displayName(ch)}
                 </Text>
               </Pressable>
             ))}

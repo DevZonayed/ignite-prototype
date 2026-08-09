@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -26,25 +26,52 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { ThemeProvider, useTheme } from './ThemeContext';
-import { mains } from './data';
+import { ChildProvider } from './context/ChildContext';
+import { loadSession, clearSession, setUnauthorizedHandler } from './api/auth';
 import Toast from './components/Toast';
 import BottomNav from './components/BottomNav';
+import Auth from './screens/Auth';
 import Home from './screens/Home';
 import Child from './screens/Child';
 import Homework from './screens/Homework';
 import Report from './screens/Report';
 import Profile from './screens/Profile';
 
+const MAINS = ['home', 'child', 'homework', 'report', 'profile'];
+
 function Shell() {
   const { colors } = useTheme();
 
   // Stack router (mirrors the vanilla-JS stack in parent.html).
   const [stack, setStack] = useState(['home']);
-  const [current, setCurrent] = useState(0); // active child index
   const scrollRef = useRef(null);
 
+  // Session: null while the stored one is still being read, so the sign-in
+  // screen never flashes in front of a parent who is already signed in.
+  const [user, setUser] = useState(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSession()
+      .then((stored) => { if (!cancelled) setUser(stored); })
+      .finally(() => { if (!cancelled) setSessionChecked(true); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // An expired or revoked token makes every screen fail the same way. Drop the
+  // session so the app returns to sign-in by itself instead of showing errors.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+      setStack(['home']);
+      clearSession();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
   const active = stack[stack.length - 1];
-  const showBottomNav = mains.indexOf(active) >= 0;
+  const showBottomNav = MAINS.indexOf(active) >= 0;
 
   const scrollTop = () => {
     if (scrollRef.current) scrollRef.current.scrollTo({ y: 0, animated: false });
@@ -70,24 +97,41 @@ function Shell() {
     }, 1900);
   }, []);
 
+  const doSignOut = useCallback(() => {
+    setStack(['home']);
+    setUser(null);
+    clearSession();
+  }, []);
+
   const renderScreen = () => {
     switch (active) {
       case 'home':
-        return (
-          <Home current={current} onSelectChild={setCurrent} onNavigate={(id) => navTo(id, true)} />
-        );
+        return <Home onNavigate={(id) => navTo(id, true)} />;
       case 'child':
-        return <Child current={current} />;
+        return <Child />;
       case 'homework':
-        return <Homework showToast={showToast} />;
+        return <Homework user={user} showToast={showToast} />;
       case 'report':
-        return <Report current={current} />;
+        return <Report />;
       case 'profile':
-        return <Profile />;
+        return <Profile user={user} onSignOut={doSignOut} />;
       default:
         return null;
     }
   };
+
+  if (!sessionChecked) {
+    return <View style={[styles.root, { backgroundColor: colors.bg }]} />;
+  }
+
+  if (!user) {
+    return (
+      <SafeAreaView style={[styles.root, { backgroundColor: colors.bg, paddingTop: ANDROID_TOP }]}>
+        <StatusBar style={colors.text === '#0F172A' ? 'dark' : 'light'} />
+        <Auth onSignedIn={setUser} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.bg, paddingTop: ANDROID_TOP }]}>
@@ -97,23 +141,27 @@ function Shell() {
         backgroundColor="transparent"
       />
 
-      <View style={styles.screens}>
-        <ScrollView
-          ref={scrollRef}
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {renderScreen()}
-        </ScrollView>
+      {/* Mounted inside the signed-in branch so the child list is fetched with
+          a token, and thrown away on sign-out. */}
+      <ChildProvider>
+        <View style={styles.screens}>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {renderScreen()}
+          </ScrollView>
 
-        <Toast message={toast.message} visible={toast.visible} />
+          <Toast message={toast.message} visible={toast.visible} />
 
-        {showBottomNav && (
-          <BottomNav active={active} onNavigate={(id) => navTo(id, true)} />
-        )}
-      </View>
+          {showBottomNav && (
+            <BottomNav active={active} onNavigate={(id) => navTo(id, true)} />
+          )}
+        </View>
+      </ChildProvider>
     </SafeAreaView>
   );
 }
