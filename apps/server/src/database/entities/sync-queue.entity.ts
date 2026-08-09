@@ -40,7 +40,7 @@ export class SyncQueue {
   @Column({ type: 'varchar', enum: SyncQueueStatus, default: SyncQueueStatus.QUEUED })
   status: SyncQueueStatus;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   queuedAt: Date;
 
   @CreateDateColumn()

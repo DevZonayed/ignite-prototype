@@ -83,7 +83,16 @@ export class SeedService {
     }
 
     this.logger.log('Seeding database...');
-    const passwordHash = await bcrypt.hash('ignite123', 10);
+    // Every seeded account shares this password. It stays out of the source so
+    // a deployment that leaves SEED_DEMO_DATA on does not ship a public
+    // credential; locally, the documented default keeps the demo usable.
+    const seedPassword = process.env.SEED_DEFAULT_PASSWORD ?? 'ignite123';
+    if (!process.env.SEED_DEFAULT_PASSWORD) {
+      this.logger.warn(
+        'SEED_DEFAULT_PASSWORD is not set, so seeded accounts use the well-known default password.',
+      );
+    }
+    const passwordHash = await bcrypt.hash(seedPassword, 10);
 
     // ── 1. Curriculum Version ──────────────────────────────────────────
     this.logger.log('Seeding curriculum version...');

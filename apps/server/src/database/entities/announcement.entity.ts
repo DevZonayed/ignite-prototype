@@ -36,7 +36,7 @@ export class Announcement {
   @Column({ type: 'varchar' })
   postedById: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   postedAt: Date;
 
   @CreateDateColumn()

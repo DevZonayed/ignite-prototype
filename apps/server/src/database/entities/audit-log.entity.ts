@@ -31,7 +31,7 @@ export class AuditLog {
   @Column({ type: 'varchar', enum: AuditResult, nullable: true })
   result: AuditResult;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   timestamp: Date;
 
   @CreateDateColumn()

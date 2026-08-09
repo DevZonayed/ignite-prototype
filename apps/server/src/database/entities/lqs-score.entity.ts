@@ -27,7 +27,7 @@ export class LqsScore {
   @Column({ type: 'varchar', nullable: true })
   term: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   savedAt: Date;
 
   @CreateDateColumn()
