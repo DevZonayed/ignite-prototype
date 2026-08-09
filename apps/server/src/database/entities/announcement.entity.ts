@@ -7,6 +7,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum AnnouncementAudience {
   ALL_PARENTS = 'all_parents',
   BY_SCHOOL = 'by_school',
@@ -36,7 +38,7 @@ export class Announcement {
   @Column({ type: 'varchar' })
   postedById: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   postedAt: Date;
 
   @CreateDateColumn()

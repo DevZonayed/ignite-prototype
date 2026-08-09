@@ -22,12 +22,12 @@ export const getAttendance = (childId) => get(`/children/${childId}/attendance`)
 export const getChildPortfolio = (childId) => get(`/children/${childId}/portfolio`).then(listOf);
 
 /**
- * Skill levels, normalised to 1..4.
+ * Skill levels, clamped to the rubric's 1..4.
  *
- * The server mixes scales here — some dimensions come back on the rubric's 1-4
- * scale and others as a percentage (75, 90). Anything above 4 is treated as a
- * percentage so a progress bar cannot overflow. Remove once the server returns
- * one scale.
+ * This read the wrong scale when LQS scores were stored as percentages instead
+ * of 1-4 ratings, which pinned every dimension to the top level. The seed no
+ * longer does that, but the guard stays: a score written on the wrong scale
+ * should not silently report a child as excelling in everything.
  */
 export const getChildSkills = (childId) =>
   get(`/children/${childId}/skills`).then((r) => ({

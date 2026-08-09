@@ -10,6 +10,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum SchoolRegion {
   LAGOS = 'Lagos',
   ABUJA = 'Abuja',
@@ -41,7 +43,7 @@ export class School {
   @Column({ type: 'varchar', nullable: true })
   curriculumVersionId: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   lastSyncAt: Date;
 
   @Column({ type: 'varchar', nullable: true })

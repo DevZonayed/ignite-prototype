@@ -7,6 +7,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum MediaLibraryType {
   MP4 = 'mp4',
   PDF = 'pdf',
@@ -31,7 +33,7 @@ export class MediaLibrary {
   @Column({ type: 'varchar', nullable: true })
   unitId: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   uploadedAt: Date;
 
   @CreateDateColumn()

@@ -21,12 +21,13 @@ export const getProject = (projectId) => get(`/portfolio/projects/${projectId}`)
 export const getLqs = (learnerId) => get(`/lqs/learner/${learnerId}`);
 
 /**
- * Radar points, normalised to 0..1.
+ * Radar points, clamped to the 0..1 the chart draws on.
  *
- * The server mixes scales in this response — some dimensions come back as a
- * fraction (0.75) and others as a percentage-like number (22.5). Rather than
- * let the chart draw spokes off the canvas, anything above 1 is treated as a
- * percentage. Remove this once the server returns one scale.
+ * The server's own maths is right (average rating ÷ 4); what broke it was LQS
+ * scores stored as percentages instead of the rubric's 1-4, which pushed
+ * spokes far outside the chart. The seed no longer does that, but any score
+ * written on the wrong scale would do it again, so the guard stays — a wrong
+ * number should read as "full marks", not draw off the canvas.
  */
 export const getRadar = (learnerId) =>
   get(`/lqs/learner/${learnerId}/radar`).then((r) => ({

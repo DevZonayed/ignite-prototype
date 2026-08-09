@@ -686,17 +686,22 @@ export class SeedService {
     // ── 7. LQS Scores for Amara Eze ───────────────────────────────────
     this.logger.log('Seeding LQS scores for Amara Eze...');
 
+    // The LQS rubric is an integer 1-4 scale: `LqsScore.score` is an int column,
+    // the teacher app offers exactly 1-4, getLearnerProfile maps >=3 to "Secure"
+    // and >=2 to "Developing", and the radar divides by 4. These were seeded as
+    // percentages (85, 90, …), which made every reader wrong at once — levels
+    // pinned to Secure and radar spokes drawn far outside the chart.
     const amaraScores: { dimensionName: string; score: number }[] = [
-      { dimensionName: 'Coding', score: 85 },
-      { dimensionName: 'Creativity', score: 90 },
-      { dimensionName: 'Collaboration', score: 70 },
-      { dimensionName: 'Communication', score: 75 },
-      { dimensionName: 'Critical Thinking', score: 65 },
-      { dimensionName: 'Problem Solving', score: 80 },
-      { dimensionName: 'Attendance', score: 95 },
-      { dimensionName: 'Digital Literacy', score: 85 },
-      { dimensionName: 'Robotics', score: 60 },
-      { dimensionName: 'STEAM', score: 70 },
+      { dimensionName: 'Coding', score: 3 },
+      { dimensionName: 'Creativity', score: 4 },
+      { dimensionName: 'Collaboration', score: 3 },
+      { dimensionName: 'Communication', score: 3 },
+      { dimensionName: 'Critical Thinking', score: 3 },
+      { dimensionName: 'Problem Solving', score: 3 },
+      { dimensionName: 'Attendance', score: 4 },
+      { dimensionName: 'Digital Literacy', score: 3 },
+      { dimensionName: 'Robotics', score: 2 },
+      { dimensionName: 'STEAM', score: 3 },
     ];
 
     for (const s of amaraScores) {

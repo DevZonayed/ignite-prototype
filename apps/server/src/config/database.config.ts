@@ -46,12 +46,17 @@ export const getDatabaseConfig = (
     };
   }
 
-  // Default: SQLite via sql.js (pure JavaScript — no native modules)
+  // Default: SQLite via sql.js (pure JavaScript — no native modules).
+  //
+  // An empty DB_SQLITE_PATH means "keep it in memory": the driver refuses
+  // autoSave without a location, and a test run should not leave a file behind.
+  const sqlitePath = configService.get<string>('DB_SQLITE_PATH', './ignite.sqlite');
+  const persist = !!sqlitePath;
+
   return {
     type: 'sqljs',
     database: new Uint8Array(0),
-    location: configService.get<string>('DB_SQLITE_PATH', './ignite.sqlite'),
-    autoSave: true,
+    ...(persist ? { location: sqlitePath, autoSave: true } : { autoSave: false }),
     entities: [entityPath],
     synchronize: true,
     logging: isDevelopment,
