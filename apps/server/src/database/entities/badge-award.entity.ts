@@ -21,7 +21,7 @@ export class BadgeAward {
   @Column({ type: 'varchar', nullable: true })
   linkedProjectId: string;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: 'timestamp' })
   awardedAt: Date;
 
   @CreateDateColumn()

@@ -25,7 +25,7 @@ export class HomeworkSubmission {
   @Column({ type: 'varchar' })
   learnerId: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   submittedAt: Date;
 
   @Column({ type: 'varchar', nullable: true })
@@ -43,7 +43,7 @@ export class HomeworkSubmission {
   @Column({ type: 'varchar', enum: ReviewStatus, default: ReviewStatus.PENDING })
   reviewStatus: ReviewStatus;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   feedbackPublishedAt: Date;
 
   @CreateDateColumn()

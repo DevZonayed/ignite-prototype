@@ -26,13 +26,13 @@ export class LessonSession {
   @Column({ type: 'varchar' })
   teacherId: string;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: 'timestamp' })
   startedAt: Date;
 
   @Column({ type: 'int', default: 0 })
   pausedDurationSeconds: number;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   completedAt: Date;
 
   @Column({ type: 'int', default: 0 })

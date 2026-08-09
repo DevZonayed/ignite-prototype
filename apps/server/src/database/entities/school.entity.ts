@@ -41,7 +41,7 @@ export class School {
   @Column({ type: 'varchar', nullable: true })
   curriculumVersionId: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   lastSyncAt: Date;
 
   @Column({ type: 'varchar', nullable: true })

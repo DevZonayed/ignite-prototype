@@ -34,7 +34,7 @@ export class Homework {
   @Column({ type: 'date', nullable: true })
   dueDate: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   publishedAt: Date;
 
   @Column({ type: 'varchar', enum: HomeworkStatus, default: HomeworkStatus.DRAFT })

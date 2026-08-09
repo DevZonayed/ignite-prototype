@@ -31,7 +31,7 @@ export class MediaLibrary {
   @Column({ type: 'varchar', nullable: true })
   unitId: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   uploadedAt: Date;
 
   @CreateDateColumn()

@@ -26,7 +26,7 @@ export class CurriculumVersion {
   @Column({ type: 'varchar', enum: CurriculumVersionStatus, default: CurriculumVersionStatus.DRAFT })
   status: CurriculumVersionStatus;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   publishedAt: Date;
 
   @Column({ type: 'boolean', default: false })

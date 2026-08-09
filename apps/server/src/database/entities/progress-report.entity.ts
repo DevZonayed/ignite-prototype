@@ -53,7 +53,7 @@ export class ProgressReport {
   @Column({ type: 'varchar', enum: GeneratedBy, nullable: true })
   generatedBy: GeneratedBy;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   publishedAt: Date;
 
   @CreateDateColumn()

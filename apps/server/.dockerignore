@@ -1,0 +1,17 @@
+node_modules
+dist
+uploads
+*.sqlite
+.env
+.env.*
+!.env.example
+.git
+.continuum
+.orca
+test
+**/*.spec.ts
+coverage
+Dockerfile
+.dockerignore
+docker-compose.yml
+README.md

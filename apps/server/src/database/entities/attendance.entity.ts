@@ -33,7 +33,7 @@ export class Attendance {
   @Column({ type: 'varchar', enum: AttendanceStatus })
   status: AttendanceStatus;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   markedAt: Date;
 
   @CreateDateColumn()
