@@ -2,81 +2,114 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts, igniteGradient } from '../theme';
-import { projects, recentColors, recentTag } from '../data';
 import Gradient from '../components/Gradient';
 import ProgressRing from '../components/ProgressRing';
 import { MedalIcon } from '../components/Icon';
 import { Card, SecTitle } from '../components/common';
+import { AsyncList, Loading } from '../components/ScreenState';
+import { useApi } from '../api/useApi';
+import { getProgress, getRecentWork } from '../api/endpoints';
+import { styleFor, subtitleFor, tagFor } from '../lib/project';
 
-export default function Home({ onOpenItem }) {
+export default function Home({ user, onOpenItem }) {
   const { colors } = useTheme();
-  const recent = projects.slice(0, 3);
+  const learnerId = user?.id ?? null;
+
+  const progress = useApi(() => getProgress(learnerId), [learnerId], { skip: !learnerId });
+  const recent = useApi(() => getRecentWork(learnerId), [learnerId], {
+    skip: !learnerId,
+    initial: [],
+  });
+
+  const first = (user?.firstName || '').trim();
+  const initial = (first || user?.email || '?').charAt(0).toUpperCase();
+  const streak = progress.data?.streak ?? 0;
+  const latestBadge = progress.data?.latestBadge ?? null;
 
   return (
     <View>
       {/* apphead */}
       <View style={styles.apphead}>
         <Gradient colors={igniteGradient} style={styles.av} borderRadius={23}>
-          <Text style={styles.avText}>A</Text>
+          <Text style={styles.avText}>{initial}</Text>
         </Gradient>
         <View>
-          <Text style={[styles.hi, { color: colors.text }]}>Hi, Amara!</Text>
-          <View
-            style={[
-              styles.streak,
-              { backgroundColor: colors.streakBg, borderColor: colors.streakBorder },
-            ]}
-          >
-            <Text style={[styles.streakText, { color: colors.ignite }]}>🔥 5-day spark</Text>
-          </View>
+          <Text style={[styles.hi, { color: colors.text }]}>
+            {first ? `Hi, ${first}!` : 'Hi there!'}
+          </Text>
+          {streak > 0 ? (
+            <View
+              style={[
+                styles.streak,
+                { backgroundColor: colors.streakBg, borderColor: colors.streakBorder },
+              ]}
+            >
+              <Text style={[styles.streakText, { color: colors.ignite }]}>
+                🔥 {streak}-day spark
+              </Text>
+            </View>
+          ) : null}
         </View>
       </View>
 
-      {/* celebrate */}
-      <Gradient colors={igniteGradient} style={styles.celebrate} borderRadius={20}>
-        <View style={styles.medal}>
-          <MedalIcon size={26} color="#fff" strokeWidth={2} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.celTitle}>New badge! Loop Master</Text>
-          <Text style={styles.celSub}>You finished the Scratch loops project</Text>
-        </View>
-      </Gradient>
+      {/* Most recent badge. Nothing to celebrate yet on a new account. */}
+      {latestBadge ? (
+        <Gradient colors={igniteGradient} style={styles.celebrate} borderRadius={20}>
+          <View style={styles.medal}>
+            <MedalIcon size={26} color="#fff" strokeWidth={2} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.celTitle}>New badge! {latestBadge.name}</Text>
+            <Text style={styles.celSub}>Keep going — the next one is close</Text>
+          </View>
+        </Gradient>
+      ) : null}
 
       {/* term progress ring */}
       <Card>
-        <View style={styles.ringrow}>
-          <ProgressRing size={78} percent={72} />
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.ringTitle, { color: colors.text }]}>Term 2 progress</Text>
-            <Text style={[styles.ringSub, { color: colors.textMuted }]}>
-              Digital Innovation · keep going!
-            </Text>
+        {progress.loading && !progress.data ? (
+          <Loading label="Loading progress…" />
+        ) : (
+          <View style={styles.ringrow}>
+            <ProgressRing size={78} percent={progress.data?.termProgressPercent ?? 0} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.ringTitle, { color: colors.text }]}>Term progress</Text>
+              <Text style={[styles.ringSub, { color: colors.textMuted }]}>
+                Digital Innovation · keep going!
+              </Text>
+            </View>
           </View>
-        </View>
+        )}
       </Card>
 
       <SecTitle>Recent work</SecTitle>
 
-      {recent.map((p, i) => {
-        const col = recentColors[i];
-        const tag = recentTag(p.f);
-        return (
-          <Pressable
-            key={i}
-            onPress={() => onOpenItem(i)}
-            style={[styles.work, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          >
-            <View style={[styles.thumb, { backgroundColor: col }]}>
-              <Text style={styles.thumbText}>{tag}</Text>
-            </View>
-            <View>
-              <Text style={[styles.wt, { color: colors.text }]}>{p.t}</Text>
-              <Text style={[styles.wm, { color: colors.textSubtle }]}>{p.f}</Text>
-            </View>
-          </Pressable>
-        );
-      })}
+      <AsyncList
+        state={recent}
+        loadingLabel="Loading recent work…"
+        empty={{
+          title: 'No work yet',
+          sub: 'Projects your teacher saves will show up here.',
+        }}
+      >
+        {(items) =>
+          items.slice(0, 3).map((p) => (
+            <Pressable
+              key={p.id}
+              onPress={() => onOpenItem(p.id)}
+              style={[styles.work, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+              <View style={[styles.thumb, { backgroundColor: styleFor(p).gradient[1] }]}>
+                <Text style={styles.thumbText}>{tagFor(p)}</Text>
+              </View>
+              <View>
+                <Text style={[styles.wt, { color: colors.text }]}>{p.title}</Text>
+                <Text style={[styles.wm, { color: colors.textSubtle }]}>{subtitleFor(p)}</Text>
+              </View>
+            </Pressable>
+          ))
+        }
+      </AsyncList>
     </View>
   );
 }

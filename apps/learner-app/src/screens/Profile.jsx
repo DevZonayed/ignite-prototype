@@ -2,76 +2,105 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts, igniteGradient } from '../theme';
-import { badges } from '../data';
 import Gradient from '../components/Gradient';
 import { SecTitle } from '../components/common';
+import { AsyncList, Loading } from '../components/ScreenState';
 import { AwardIcon, LockIcon, SunDotIcon } from '../components/Icon';
+import { useApi } from '../api/useApi';
+import { getBadges, getCertificate } from '../api/endpoints';
 
-export default function Profile({ onOpenCertificate }) {
+export default function Profile({ user, onOpenCertificate }) {
   const { colors, mode, toggleTheme } = useTheme();
   const isDark = mode === 'dark';
+  const learnerId = user?.id ?? null;
+
+  const badges = useApi(() => getBadges(learnerId), [learnerId], {
+    skip: !learnerId,
+    initial: [],
+  });
+  const certificate = useApi(() => getCertificate(learnerId), [learnerId], { skip: !learnerId });
+
+  const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || '';
+  const initial = (name || '?').charAt(0).toUpperCase();
+  const cert = certificate.data ?? null;
 
   return (
     <View>
       {/* apphead */}
       <View style={styles.apphead}>
         <Gradient colors={igniteGradient} style={styles.av} borderRadius={23}>
-          <Text style={styles.avText}>A</Text>
+          <Text style={styles.avText}>{initial}</Text>
         </Gradient>
         <View>
-          <Text style={[styles.hi, { color: colors.text }]}>Amara Eze</Text>
+          <Text style={[styles.hi, { color: colors.text }]}>{name}</Text>
           <Text style={[styles.sub, { color: colors.textSubtle }]}>
-            JSS 1 · Bright Future Academy
+            {cert ? [cert.course, cert.school].filter(Boolean).join(' · ') : 'Learner'}
           </Text>
         </View>
       </View>
 
       <SecTitle>Badges</SecTitle>
-      <View style={styles.bgrid}>
-        {badges.map((b, i) => {
-          const earned = !!b[1];
-          return (
-            <View key={i} style={styles.bg}>
-              {earned ? (
-                <Gradient colors={igniteGradient} style={styles.disc} borderRadius={28}>
-                  <AwardIcon size={24} color="#fff" strokeWidth={2} />
-                </Gradient>
-              ) : (
-                <View style={[styles.disc, { backgroundColor: colors.surface2 }]}>
-                  <LockIcon size={22} color="#94a3b8" strokeWidth={2} />
+      <AsyncList
+        state={badges}
+        loadingLabel="Loading badges…"
+        empty={{ title: 'No badges yet', sub: 'Badges arrive as you finish projects.' }}
+      >
+        {(rows) => (
+          <View style={styles.bgrid}>
+            {rows.map((b) => {
+              const earned = !!b.earned;
+              return (
+                <View key={b.badge?.id ?? b.badge?.name} style={styles.bg}>
+                  {earned ? (
+                    <Gradient colors={igniteGradient} style={styles.disc} borderRadius={28}>
+                      <AwardIcon size={24} color="#fff" strokeWidth={2} />
+                    </Gradient>
+                  ) : (
+                    <View style={[styles.disc, { backgroundColor: colors.surface2 }]}>
+                      <LockIcon size={22} color="#94a3b8" strokeWidth={2} />
+                    </View>
+                  )}
+                  <Text
+                    style={[
+                      styles.bn,
+                      { color: earned ? colors.text : colors.textSubtle },
+                    ]}
+                  >
+                    {b.badge?.name}
+                  </Text>
                 </View>
-              )}
-              <Text
-                style={[
-                  styles.bn,
-                  { color: earned ? colors.text : colors.textSubtle },
-                ]}
-              >
-                {b[0]}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
+              );
+            })}
+          </View>
+        )}
+      </AsyncList>
 
       <SecTitle>Certificate</SecTitle>
-      <Pressable
-        onPress={onOpenCertificate}
-        style={[styles.certcard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-      >
-        <View style={styles.certInner}>
-          <Text style={[styles.certBrand, { color: colors.brand }]}>IGNITE</Text>
-          <Text style={[styles.certTitle, { color: colors.text }]}>
-            Certificate of Achievement
-          </Text>
-          <Text style={[styles.certMeta, { color: colors.textMuted }]}>
-            Amara Eze · Digital Innovation · Term 2
-          </Text>
-          <Text style={[styles.certTap, { color: colors.brand }]}>
-            Tap to view & download →
-          </Text>
-        </View>
-      </Pressable>
+      {certificate.loading && !cert ? (
+        <Loading label="Loading certificate…" />
+      ) : cert ? (
+        <Pressable
+          onPress={onOpenCertificate}
+          style={[styles.certcard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        >
+          <View style={styles.certInner}>
+            <Text style={[styles.certBrand, { color: colors.brand }]}>IGNITE</Text>
+            <Text style={[styles.certTitle, { color: colors.text }]}>
+              Certificate of Achievement
+            </Text>
+            <Text style={[styles.certMeta, { color: colors.textMuted }]}>
+              {[name, cert.course, cert.term].filter(Boolean).join(' · ')}
+            </Text>
+            <Text style={[styles.certTap, { color: colors.brand }]}>
+              Tap to view & download →
+            </Text>
+          </View>
+        </Pressable>
+      ) : (
+        <Text style={{ fontSize: 12.5, color: colors.textSubtle, marginBottom: 14 }}>
+          Your certificate appears once your school issues it.
+        </Text>
+      )}
 
       {/* Dark theme toggle */}
       <View
