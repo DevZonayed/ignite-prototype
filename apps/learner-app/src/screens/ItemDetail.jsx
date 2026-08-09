@@ -1,43 +1,80 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { projects } from '../data';
 import { Card, SubHead } from '../components/common';
+import { Loading, ErrorState, EmptyState } from '../components/ScreenState';
 import Gradient from '../components/Gradient';
+import { useApi } from '../api/useApi';
+import { getProject } from '../api/endpoints';
+import { styleFor, subtitleFor } from '../lib/project';
 
-export default function ItemDetail({ index, onBack, onToast }) {
+export default function ItemDetail({ projectId, onBack }) {
   const { colors } = useTheme();
-  const p = projects[index] || projects[0];
+
+  const project = useApi(() => getProject(projectId), [projectId], { skip: !projectId });
+
+  if (!projectId) {
+    return (
+      <View>
+        <SubHead title="Project" onBack={onBack} />
+        <EmptyState title="No project selected" sub="Open a project from your portfolio." />
+      </View>
+    );
+  }
+
+  if (project.loading && !project.data) {
+    return (
+      <View>
+        <SubHead title="Project" onBack={onBack} />
+        <Loading label="Loading project…" />
+      </View>
+    );
+  }
+
+  if (project.error && !project.data) {
+    return (
+      <View>
+        <SubHead title="Project" onBack={onBack} />
+        <ErrorState error={project.error} onRetry={project.reload} />
+      </View>
+    );
+  }
+
+  const p = project.data ?? {};
 
   return (
     <View>
-      <SubHead title={p.t} onBack={onBack} />
+      <SubHead title={p.title} onBack={onBack} />
 
       {/* preview: code monospace OR title */}
-      <Gradient colors={['#1e293b', '#0f172a']} style={styles.preview} borderRadius={14}>
-        {p.code ? (
-          <Text style={styles.code}>{p.code}</Text>
+      <Gradient colors={styleFor(p).gradient} style={styles.preview} borderRadius={14}>
+        {p.codeSnippet ? (
+          <Text style={styles.code}>{p.codeSnippet}</Text>
         ) : (
-          <Text style={styles.previewTitle}>{p.t}</Text>
+          <Text style={styles.previewTitle}>{p.title}</Text>
         )}
       </Gradient>
 
       <Card>
-        <Text style={[styles.desc, { color: colors.textMuted }]}>{p.desc}</Text>
+        <Text style={[styles.desc, { color: colors.textMuted }]}>
+          {p.description || subtitleFor(p) || 'No description yet.'}
+        </Text>
       </Card>
 
-      <Card style={styles.skillsCard}>
-        <Text style={[styles.skillsLabel, { color: colors.textSubtle }]}>Skills</Text>
-        <Text style={[styles.skillsVal, { color: colors.text }]}>{p.skills}</Text>
-      </Card>
+      {p.skills ? (
+        <Card style={styles.skillsCard}>
+          <Text style={[styles.skillsLabel, { color: colors.textSubtle }]}>Skills</Text>
+          <Text style={[styles.skillsVal, { color: colors.text }]}>{p.skills}</Text>
+        </Card>
+      ) : null}
 
-      <Pressable
-        style={[styles.btn, { backgroundColor: colors.brand }]}
-        onPress={() => onToast('Shared to your parent')}
-      >
-        <Text style={styles.btnText}>Share with parent</Text>
-      </Pressable>
+      {/* No "Share with parent" button: the server restricts sharing to
+          teachers (POST /portfolio/projects/:id/share is @Roles('teacher')), so
+          the control would 403 every time a learner pressed it. */}
+      <Text style={[styles.shareNote, { color: colors.textSubtle }]}>
+        Your teacher shares finished work with your parent.
+      </Text>
     </View>
   );
 }
@@ -75,16 +112,10 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontFamily: fonts.uiBold,
   },
-  btn: {
-    borderRadius: 12,
-    paddingVertical: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnText: {
-    fontFamily: fonts.display,
-    fontWeight: '900',
-    fontSize: 15,
-    color: '#fff',
+  shareNote: {
+    fontSize: 12.5,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: 4,
   },
 });
