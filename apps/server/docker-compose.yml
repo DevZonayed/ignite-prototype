@@ -46,7 +46,9 @@ services:
       DB_DATABASE: ignite
       # Override both of these for anything reachable from outside this machine.
       JWT_SECRET: local-compose-secret-not-for-deployment
-      SEED_DEMO_DATA: 'false'
+      # Mirrors a deployment by default. Set SEED_DEMO_DATA=true to bring the
+      # stack up populated when working on an app against it.
+      SEED_DEMO_DATA: '${SEED_DEMO_DATA:-false}'
     ports:
       - '4000:4000'
 
