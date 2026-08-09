@@ -1,13 +1,56 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Icon from '../components/Icon';
-import { children } from '../data';
 import { useTheme } from '../ThemeContext';
+import { useChildren } from '../context/ChildContext';
+import { useApi } from '../api/useApi';
+import { listProgressReports } from '../api/endpoints';
+import { Loading, ErrorState, EmptyState } from '../components/ScreenState';
+import { displayName } from '../lib/user';
 
-// REPORT screen — published AI progress report with trust banner + sections.
-export default function Report({ current }) {
+// A colour per skill so the chips stay readable whatever the server sends.
+const CHIP_COLORS = ['#2563EB', '#7C3AED', '#6366F1', '#16A34A', '#E11D48', '#0891B2'];
+
+// REPORT screen — published progress report with trust banner + sections.
+export default function Report() {
   const { colors, fonts } = useTheme();
-  const c = children[current];
+  const { activeChild, activeChildId, loading: childrenLoading } = useChildren();
+
+  const reports = useApi(() => listProgressReports(activeChildId), [activeChildId], {
+    skip: !activeChildId,
+    initial: [],
+  });
+
+  if (childrenLoading && !activeChild) return <Loading label="Loading…" />;
+  if (!activeChild) {
+    return (
+      <EmptyState
+        title="No children linked yet"
+        sub="Ask your school to link your account to your child's record."
+      />
+    );
+  }
+  if (reports.loading && !reports.data?.length) return <Loading label="Loading report…" />;
+  if (reports.error) return <ErrorState error={reports.error} onRetry={reports.reload} />;
+
+  // Parents only ever see published reports; drafts are the teacher's business.
+  const report = (reports.data ?? []).find((r) => r.status === 'published') ?? null;
+
+  if (!report) {
+    return (
+      <View>
+        <Text style={[styles.title, { color: colors.text, fontFamily: fonts.display }]}>
+          Progress report
+        </Text>
+        <EmptyState
+          title="No report published yet"
+          sub="Your child's teacher publishes a report each term."
+        />
+      </View>
+    );
+  }
+
+  const skills = Array.isArray(report.skillsGrowing) ? report.skillsGrowing : [];
 
   return (
     <View>
@@ -15,7 +58,7 @@ export default function Report({ current }) {
         Progress report
       </Text>
       <Text style={[styles.sub2, { color: colors.textMuted, fontFamily: fonts.ui }]}>
-        {c.short} · Term 2 · Digital Innovation
+        {[displayName(activeChild), report.term, report.programme].filter(Boolean).join(' · ')}
       </Text>
 
       {/* Published pill */}
@@ -29,14 +72,16 @@ export default function Report({ current }) {
       </View>
 
       {/* Trust banner */}
-      <View
-        style={[styles.trust, { backgroundColor: colors.brandSoft, borderColor: colors.border }]}
-      >
-        <Icon name="shieldCheck" size={16} color={colors.brand} strokeWidth={2} />
-        <Text style={[styles.trustText, { color: colors.text, fontFamily: fonts.ui600 }]}>
-          Reviewed by Mrs. Okafor before publishing
-        </Text>
-      </View>
+      {report.reviewedBy ? (
+        <View
+          style={[styles.trust, { backgroundColor: colors.brandSoft, borderColor: colors.border }]}
+        >
+          <Icon name="shieldCheck" size={16} color={colors.brand} strokeWidth={2} />
+          <Text style={[styles.trustText, { color: colors.text, fontFamily: fonts.ui600 }]}>
+            Reviewed by {report.reviewedBy} before publishing
+          </Text>
+        </View>
+      ) : null}
 
       {/* What went well */}
       <View style={[styles.rep, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -49,7 +94,7 @@ export default function Report({ current }) {
           </Text>
         </View>
         <Text style={[styles.rb, { color: colors.text, fontFamily: fonts.ui }]}>
-          Amara builds Scratch loops confidently and explains her code clearly.
+          {report.whatWentWell || 'Not written yet.'}
         </Text>
       </View>
 
@@ -64,9 +109,19 @@ export default function Report({ current }) {
           </Text>
         </View>
         <View style={styles.chips}>
-          <Chip bg="#2563EB" label="Coding" />
-          <Chip bg="#7C3AED" label="Creativity" />
-          <Chip bg="#6366F1" label="Digital Literacy" />
+          {skills.length ? (
+            skills.map((sk, i) => (
+              <Chip
+                key={typeof sk === 'string' ? sk : sk?.name ?? i}
+                bg={CHIP_COLORS[i % CHIP_COLORS.length]}
+                label={typeof sk === 'string' ? sk : sk?.name ?? ''}
+              />
+            ))
+          ) : (
+            <Text style={[styles.rb, { color: colors.textMuted, fontFamily: fonts.ui }]}>
+              Not listed yet.
+            </Text>
+          )}
         </View>
       </View>
 
@@ -81,7 +136,7 @@ export default function Report({ current }) {
           </Text>
         </View>
         <Text style={[styles.rb, { color: colors.text, fontFamily: fonts.ui }]}>
-          Try a simple robotics motor loop at home.
+          {report.nextSteps || 'Not written yet.'}
         </Text>
       </View>
 

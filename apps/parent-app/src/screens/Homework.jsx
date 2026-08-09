@@ -1,124 +1,204 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import Icon from '../components/Icon';
-import { initialThread, teacherReply } from '../data';
 import { useTheme } from '../ThemeContext';
+import { useChildren } from '../context/ChildContext';
+import { useApi, useAction } from '../api/useApi';
+import {
+  listHomework,
+  listSubmissions,
+  listSubmissionMessages,
+  sendSubmissionMessage,
+  createSubmission,
+} from '../api/endpoints';
+import { Loading, ErrorState, EmptyState } from '../components/ScreenState';
+import { displayName } from '../lib/user';
 
-// HOMEWORK screen — Smart Reading Lamp: instructions, teacher media, upload, 2-way thread, submit.
-export default function Homework({ showToast }) {
+/** "2026-07-18" → "Fri 18 Jul". */
+function formatDue(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+// HOMEWORK screen — the child's current homework, the upload, and the 2-way
+// message thread with the teacher.
+export default function Homework({ user, showToast }) {
   const { colors, fonts } = useTheme();
-  const [thread, setThread] = useState(initialThread);
-  const [msg, setMsg] = useState('');
+  const { activeChild, activeChildId, loading: childrenLoading } = useChildren();
 
-  const send = () => {
+  const homework = useApi(() => listHomework(activeChildId), [activeChildId], {
+    skip: !activeChildId,
+    initial: [],
+  });
+  // The newest published assignment is the one a parent is being asked about.
+  const current = (homework.data ?? [])[0] ?? null;
+
+  const submissions = useApi(() => listSubmissions(current?.id), [current?.id], {
+    skip: !current?.id,
+    initial: [],
+  });
+  // A parent only ever sees their own child's submission on this screen.
+  const submission = (submissions.data ?? []).find(
+    (sub) => (sub.learnerId ?? sub.learner?.id) === activeChildId,
+  ) ?? null;
+
+  const thread = useApi(() => listSubmissionMessages(submission?.id), [submission?.id], {
+    skip: !submission?.id,
+    initial: [],
+  });
+
+  const [msg, setMsg] = useState('');
+  const [pickError, setPickError] = useState(null);
+
+  const send = useAction(async (text) => {
+    await sendSubmissionMessage(submission.id, text, user ? displayName(user) : undefined);
+    await thread.reload();
+  });
+
+  const upload = useAction(async (asset) => {
+    await createSubmission(current.id, {
+      learnerId: activeChildId,
+      fileType: asset.type === 'video' ? 'video' : 'image',
+      // The server stores a reference, not the bytes — it has no file storage
+      // yet. This URI is meaningful on this device only until that exists.
+      fileUrl: asset.uri,
+      fileName: asset.fileName ?? 'upload',
+      ...(asset.fileSize ? { fileSizeMb: Number((asset.fileSize / 1048576).toFixed(2)) } : {}),
+    });
+    await submissions.reload();
+  });
+
+  async function onSend() {
     const v = msg.trim();
-    if (!v) return;
-    setThread((prev) => [...prev, ['p', 'You', v]]);
-    setMsg('');
-    showToast('Message sent to teacher');
-    setTimeout(() => {
-      setThread((prev) => [...prev, teacherReply]);
-    }, 1400);
-  };
+    if (!v || !submission) return;
+    try {
+      await send.run(v);
+      setMsg('');
+      showToast('Message sent to teacher');
+    } catch {
+      // Rendered inline; the draft stays put.
+    }
+  }
+
+  async function onPick() {
+    setPickError(null);
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        setPickError(new Error('Photo access is off for IGNITE. Turn it on in Settings.'));
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+      if (res.canceled || !res.assets?.length) return;
+      await upload.run(res.assets[0]);
+      showToast('Homework submitted to teacher');
+    } catch (err) {
+      setPickError(err);
+    }
+  }
+
+  if (childrenLoading && !activeChild) return <Loading label="Loading…" />;
+  if (!activeChild) {
+    return (
+      <EmptyState
+        title="No children linked yet"
+        sub="Ask your school to link your account to your child's record."
+      />
+    );
+  }
+  if (homework.loading && !homework.data?.length) return <Loading label="Loading homework…" />;
+  if (homework.error) return <ErrorState error={homework.error} onRetry={homework.reload} />;
+  if (!current) {
+    return (
+      <View>
+        <Text style={[styles.title, { color: colors.text, fontFamily: fonts.display }]}>
+          Homework
+        </Text>
+        <EmptyState
+          title="Nothing set right now"
+          sub="Homework your child's teacher sets will appear here."
+        />
+      </View>
+    );
+  }
+
+  const messages = thread.data ?? [];
 
   return (
     <View>
       <Text style={[styles.title, { color: colors.text, fontFamily: fonts.display }]}>
-        Smart Reading Lamp
+        {current.title}
       </Text>
       <Text style={[styles.sub2, { color: colors.textMuted, fontFamily: fonts.ui }]}>
-        Robotics · Mission 5 · due Fri 18 Jul
+        {[displayName(activeChild), current.dueDate ? `due ${formatDue(current.dueDate)}` : null]
+          .filter(Boolean)
+          .join(' · ')}
       </Text>
 
-      <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Text style={[styles.cardText, { color: colors.textMuted, fontFamily: fonts.ui }]}>
-          Rebuild the lamp from the LG-305 manual, test it 5×, then upload a photo and a 60–90s
-          video of your child explaining it.
-        </Text>
-      </View>
-
-      {/* How to help */}
-      <View style={styles.helpHead}>
-        <Text style={[styles.helpTitle, { color: colors.text, fontFamily: fonts.display800 }]}>
-          How to help at home{' '}
-        </Text>
-        <View style={[styles.helpBadge, { backgroundColor: colors.ignite }]}>
-          <Text style={[styles.helpBadgeText, { fontFamily: fonts.display800 }]}>
-            from the teacher
+      {current.instructions ? (
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.cardText, { color: colors.textMuted, fontFamily: fonts.ui }]}>
+            {current.instructions}
           </Text>
         </View>
-      </View>
-
-      <View style={styles.mediaGrid}>
-        <Pressable
-          style={[styles.mediaCard, { borderColor: colors.border }]}
-          onPress={() => showToast('Playing · Testing your lamp')}
-        >
-          <View style={[styles.mediaThumb, { backgroundColor: '#b45309' }]}>
-            <View style={styles.playCircle}>
-              <Icon name="play" size={14} fill="#172554" />
-            </View>
-          </View>
-          <View style={styles.mediaMeta}>
-            <Text style={[styles.mediaLabel, { color: colors.text, fontFamily: fonts.ui700 }]}>
-              Testing your lamp · 2:20
-            </Text>
-          </View>
-        </Pressable>
-
-        <Pressable
-          style={[styles.mediaCard, { borderColor: colors.border }]}
-          onPress={() => showToast('Playing · Button-press demo')}
-        >
-          <View style={[styles.mediaThumb, { backgroundColor: '#7c3aed' }]}>
-            <Text style={[styles.gif, { fontFamily: fonts.display }]}>GIF</Text>
-          </View>
-          <View style={styles.mediaMeta}>
-            <Text style={[styles.mediaLabel, { color: colors.text, fontFamily: fonts.ui700 }]}>
-              Button-press demo
-            </Text>
-          </View>
-        </Pressable>
-      </View>
+      ) : null}
 
       {/* Upload drop */}
       <Pressable
-        style={[styles.drop, { borderColor: colors.brand }]}
-        onPress={() => showToast('Choose a photo or file')}
+        disabled={upload.pending}
+        style={[styles.drop, { borderColor: colors.brand, opacity: upload.pending ? 0.5 : 1 }]}
+        onPress={onPick}
       >
         <Text style={[styles.dropText, { color: colors.brand, fontFamily: fonts.ui700 }]}>
-          ＋ Add your child's photo or video
+          {upload.pending ? 'Submitting…' : "＋ Add your child's photo or video"}
         </Text>
       </Pressable>
 
-      {/* In-progress upload */}
-      <View style={[styles.upload, { borderColor: colors.border }]}>
-        <View style={[styles.uic, { backgroundColor: colors.brandSoft }]}>
-          <Text style={[styles.uicText, { color: colors.brand, fontFamily: fonts.ui700 }]}>
-            IMG
-          </Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.upName, { color: colors.text, fontFamily: fonts.ui700 }]}>
-            lamp-photo.jpg · 0.9 MB
-          </Text>
-          <View style={[styles.upbar, { backgroundColor: colors.surface2 }]}>
-            <View style={[styles.upbarFill, { backgroundColor: colors.brand }]} />
+      {pickError ? <ErrorState error={pickError} /> : null}
+      {upload.error ? <ErrorState error={upload.error} /> : null}
+
+      {/* What has already been sent in */}
+      {submission ? (
+        <View style={[styles.upload, { borderColor: colors.border }]}>
+          <View style={[styles.uic, { backgroundColor: colors.brandSoft }]}>
+            <Text style={[styles.uicText, { color: colors.brand, fontFamily: fonts.ui700 }]}>
+              {String(submission.fileType ?? 'file').slice(0, 3).toUpperCase()}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.upName, { color: colors.text, fontFamily: fonts.ui700 }]}>
+              {[submission.fileName, submission.fileSizeMb ? `${submission.fileSizeMb} MB` : null]
+                .filter(Boolean)
+                .join(' · ')}
+            </Text>
+            <Text style={[styles.cardText, { color: colors.textMuted, fontFamily: fonts.ui }]}>
+              {submission.reviewStatus === 'reviewed'
+                ? 'Reviewed by the teacher'
+                : 'Waiting for the teacher to review'}
+            </Text>
           </View>
         </View>
-      </View>
+      ) : null}
 
       {/* Messages */}
       <Text style={[styles.msgHead, { color: colors.text, fontFamily: fonts.display800 }]}>
         Messages with the teacher
       </Text>
+      {!submission ? (
+        <Text style={[styles.cardText, { color: colors.textMuted, fontFamily: fonts.ui }]}>
+          Send your child's work in first — the thread with the teacher opens then.
+        </Text>
+      ) : null}
       <View style={styles.thread}>
-        {thread.map((m, i) => {
-          const mine = m[0] === 'p';
+        {messages.map((m) => {
+          const mine = m.senderType === 'parent';
           return (
-            <View key={i} style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
+            <View key={m.id} style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
               <Text style={[styles.msgName, { color: colors.textSubtle, fontFamily: fonts.ui }]}>
-                {m[1]}
+                {m.senderName || (mine ? 'You' : 'Teacher')}
               </Text>
               <View
                 style={[
@@ -137,7 +217,7 @@ export default function Homework({ showToast }) {
                     { color: mine ? '#fff' : colors.text, fontFamily: fonts.ui },
                   ]}
                 >
-                  {m[2]}
+                  {m.body}
                 </Text>
               </View>
             </View>
@@ -145,13 +225,16 @@ export default function Homework({ showToast }) {
         })}
       </View>
 
+      {send.error ? <ErrorState error={send.error} /> : null}
+
       <View style={styles.inputRow}>
         <TextInput
           value={msg}
           onChangeText={setMsg}
-          placeholder="Type message"
+          editable={!!submission}
+          placeholder={submission ? 'Type message' : 'Available after you submit'}
           placeholderTextColor={colors.textSubtle}
-          onSubmitEditing={send}
+          onSubmitEditing={onSend}
           returnKeyType="send"
           style={[
             styles.input,
@@ -163,17 +246,17 @@ export default function Homework({ showToast }) {
             },
           ]}
         />
-        <Pressable style={[styles.sendBtn, { backgroundColor: colors.brand }]} onPress={send}>
+        <Pressable
+          disabled={!submission || !msg.trim() || send.pending}
+          style={[
+            styles.sendBtn,
+            { backgroundColor: colors.brand, opacity: !submission || !msg.trim() || send.pending ? 0.5 : 1 },
+          ]}
+          onPress={onSend}
+        >
           <Text style={[styles.sendText, { fontFamily: fonts.display }]}>Send</Text>
         </Pressable>
       </View>
-
-      <Pressable
-        style={[styles.submit, { backgroundColor: colors.brand }]}
-        onPress={() => showToast('Homework submitted to teacher')}
-      >
-        <Text style={[styles.submitText, { fontFamily: fonts.display }]}>Submit homework</Text>
-      </Pressable>
     </View>
   );
 }
