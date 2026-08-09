@@ -24,7 +24,7 @@ export default function HomeworkCreateScreen({ goBack, showToast }) {
         <TextInput
           value={title}
           onChangeText={setTitle}
-          placeholder="Homework title"
+          placeholder="Type title"
           placeholderTextColor={colors.textSubtle}
           style={{ fontSize: 13, color: colors.text }}
         />
@@ -36,7 +36,7 @@ export default function HomeworkCreateScreen({ goBack, showToast }) {
           value={instructions}
           onChangeText={setInstructions}
           multiline
-          placeholder="What should learners do?"
+          placeholder="Type instructions"
           placeholderTextColor={colors.textSubtle}
           style={{ fontSize: 13, color: colors.text, minHeight: 52, textAlignVertical: 'top' }}
         />
@@ -50,7 +50,7 @@ export default function HomeworkCreateScreen({ goBack, showToast }) {
           </View>
         </View>
         <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 9 }}>
-          Tap any lesson video or GIF to attach it — parents see it as a "how to help at home" guide.{' '}
+          Tap any lesson video or GIF to attach it. Parents see it as a "how to help at home" guide.{' '}
           <Text style={{ fontFamily: fonts.body700, fontWeight: '700', color: colors.brand }}>{count} attached</Text>
         </Text>
 

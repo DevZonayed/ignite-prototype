@@ -1,7 +1,7 @@
 import React from 'react';
 import Svg, { Path, Rect, Circle, Line } from 'react-native-svg';
 
-// Icon library — each inline SVG from teacher.html converted to react-native-svg.
+// Icon library: each inline SVG from teacher.html converted to react-native-svg.
 // Props: size, color (stroke), fill, strokeWidth
 const defaults = { size: 22, color: 'currentColor', fill: 'none', strokeWidth: 2 };
 

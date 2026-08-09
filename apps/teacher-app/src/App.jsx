@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, useWindowDimensions, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -39,6 +39,9 @@ import ProjectScreen from './screens/ProjectScreen';
 import ReflectionScreen from './screens/ReflectionScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import SignInScreen from './screens/SignInScreen';
+import { loadSession, clearSession } from './api/auth';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
+import ActivateScreen from './screens/ActivateScreen';
 
 const MAINS = ['home', 'lessons', 'learners', 'homework', 'ai', 'profile'];
 
@@ -60,6 +63,21 @@ function Shell() {
   const [modalOpen, setModalOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [user, setUser] = useState(null);
+  // Which pre-auth screen is showing, and the address to prefill on return
+  // from a completed password reset.
+  const [authView, setAuthView] = useState('signin');
+  const [resetIdentifier, setResetIdentifier] = useState('');
+  // Null while we check storage, so we don't flash the sign-in screen at
+  // someone who is already signed in.
+  const [restoring, setRestoring] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSession()
+      .then((stored) => { if (!cancelled && stored) setUser(stored); })
+      .finally(() => { if (!cancelled) setRestoring(false); });
+    return () => { cancelled = true; };
+  }, []);
   const toastTimer = useRef(null);
   const scrollRef = useRef(null);
 
@@ -102,6 +120,8 @@ function Shell() {
     setModalOpen(false);
     setStack(['home']);
     setUser(null);
+    setAuthView('signin');
+    clearSession();
   }, []);
 
   const doSignIn = useCallback(
@@ -174,15 +194,47 @@ function Shell() {
         ]}
       >
         <View style={[styles.viewport, { backgroundColor: colors.bg, borderRadius: narrow ? 0 : 34 }]}>
-          <ScrollView
-            ref={scrollRef}
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 18, paddingTop: TOP_INSET + 10, paddingBottom: 92 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {user ? renderScreen() : <SignInScreen onSignedIn={doSignIn} showToast={showToast} />}
-          </ScrollView>
+          {/* Sign-in owns the full viewport so its hero can bleed to the edges;
+              signed-in screens keep the shared padded scroll container. */}
+          {restoring ? (
+            <View style={{ flex: 1, backgroundColor: colors.bg }} />
+          ) : user ? (
+            <ScrollView
+              ref={scrollRef}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingHorizontal: 18, paddingTop: TOP_INSET + 10, paddingBottom: 92 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {renderScreen()}
+            </ScrollView>
+          ) : authView === 'forgot' ? (
+            <ForgotPasswordScreen
+              onDone={(identifier) => {
+                setResetIdentifier(identifier);
+                setAuthView('signin');
+              }}
+              onCancel={() => setAuthView('signin')}
+              showToast={showToast}
+              topInset={TOP_INSET}
+            />
+          ) : authView === 'activate' ? (
+            <ActivateScreen
+              onActivated={doSignIn}
+              onCancel={() => setAuthView('signin')}
+              showToast={showToast}
+              topInset={TOP_INSET}
+            />
+          ) : (
+            <SignInScreen
+              onSignedIn={doSignIn}
+              onForgotPassword={() => setAuthView('forgot')}
+              onActivate={() => setAuthView('activate')}
+              showToast={showToast}
+              topInset={TOP_INSET}
+              initialIdentifier={resetIdentifier}
+            />
+          )}
 
           <Toast message={toast.msg} visible={toast.visible} />
 

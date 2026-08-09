@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { User } from '../../database/entities/user.entity';
+import { Class } from '../../database/entities/class.entity';
+import { LessonSession } from '../../database/entities/lesson-session.entity';
 import { ParentChild } from '../../database/entities/parent-child.entity';
 import { Attendance } from '../../database/entities/attendance.entity';
 import { Project } from '../../database/entities/project.entity';
@@ -23,6 +25,8 @@ import { ChildrenController } from './children.controller';
   imports: [
     TypeOrmModule.forFeature([
       User,
+      Class,
+      LessonSession,
       ParentChild,
       Attendance,
       Project,

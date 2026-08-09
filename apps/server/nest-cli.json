@@ -4,6 +4,7 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "plugins": ["@nestjs/swagger"]
+    "//plugins": "@nestjs/swagger's CLI plugin emits absolute require() paths pointing at the .ts sources, which Node cannot resolve from dist/ (MODULE_NOT_FOUND on boot). Every DTO already carries explicit @ApiProperty, so the plugin buys nothing here. Do not re-enable.",
+    "plugins": []
   }
 }

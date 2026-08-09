@@ -3,6 +3,7 @@ import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
 import { AppHead } from '../components/ui';
+import { displayName, roleLabel } from '../lib/user';
 import { IconSync, IconBellSimple, IconThemeRow, IconSignOut } from '../components/Icon';
 
 function PRow({ icon, label, right, onPress, labelColor }) {
@@ -26,8 +27,8 @@ export default function ProfileScreen({ navTo, showToast, user, onSignOut }) {
   return (
     <View>
       <AppHead
-        name={(user && user.name) || ''}
-        role={(user && user.role) || ''}
+        name={displayName(user)}
+        role={roleLabel(user)}
       />
 
       <PRow

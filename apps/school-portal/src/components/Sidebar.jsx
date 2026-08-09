@@ -1,3 +1,4 @@
+import { humanize } from '../lib/format.js'
 const NAV = [
   {
     view: 'overview',
@@ -93,7 +94,19 @@ const NAV = [
   },
 ]
 
-export default function Sidebar({ view, onNavigate }) {
+
+function displayName(user) {
+  if (!user) return 'Signed in'
+  const name = [user.firstName, user.lastName].filter(Boolean).join(' ')
+  return name || user.email || 'Signed in'
+}
+
+function initialsOf(user) {
+  if (user?.initials) return user.initials
+  return displayName(user).split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'
+}
+
+export default function Sidebar({ view, onNavigate, user }) {
   return (
     <aside className="side">
       <div className="brand">
@@ -113,13 +126,23 @@ export default function Sidebar({ view, onNavigate }) {
           <span>{n.label}</span>
         </a>
       ))}
-      <div className="userchip">
-        <span className="ua">FO</span>
-        <div>
-          <div className="un">Funke Okafor</div>
-          <div className="ur">Principal</div>
+      <button
+        type="button"
+        className={'userchip' + (view === 'profile' ? ' on' : '')}
+        onClick={() => onNavigate('profile')}
+        title="Open your profile"
+      >
+        <span className="ua" style={user?.avatarBg ? { background: user.avatarBg, color: user.avatarColor } : undefined}>
+          {initialsOf(user)}
+        </span>
+        <div className="uinfo">
+          <div className="un">{displayName(user)}</div>
+          <div className="ur">{humanize(user?.role)}</div>
         </div>
-      </div>
+        <svg className="uchev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </button>
     </aside>
   )
 }

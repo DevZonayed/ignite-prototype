@@ -3,20 +3,12 @@ import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
 import { AppHead, EmptyState, SectionTitle } from '../components/ui';
+import { firstName, roleLabel } from '../lib/user';
 import { IconBook, IconUser, IconHomework, IconSync } from '../components/Icon';
-
-// "Mrs. Ada Lovelace" -> "Ada" for the greeting
-function firstName(name) {
-  const clean = String(name || '')
-    .replace(/^(mr|mrs|ms|miss|dr)\.?\s+/i, '')
-    .trim();
-  return clean.split(/\s+/)[0] || '';
-}
 
 export default function HomeScreen({ navTo, user }) {
   const { colors } = useTheme();
-
-  const first = firstName(user && user.name);
+  const first = firstName(user);
 
   const quick = [
     ['lessons', 'Lessons', IconBook],
@@ -27,7 +19,7 @@ export default function HomeScreen({ navTo, user }) {
 
   return (
     <View>
-      <AppHead name={first ? 'Hi, ' + first : 'Welcome'} role={(user && user.role) || ''} onBell={() => navTo('notifications')} />
+      <AppHead name={first ? 'Hi, ' + first : 'Welcome'} role={roleLabel(user)} onBell={() => navTo('notifications')} />
 
       {/* current lesson */}
       <EmptyState title="No lesson in progress" sub="Your current lesson from the curriculum will appear here." />

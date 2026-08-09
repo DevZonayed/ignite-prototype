@@ -16,7 +16,7 @@ export default function RubricScreen({ goBack, showToast }) {
       {dims.length === 0 ? (
         <EmptyState title="No rubric dimensions yet" sub="The LQS rubric dimensions will appear here once they sync." />
       ) : (
-        <Text style={{ fontSize: 12, color: colors.textSubtle, marginBottom: 14 }}>Rate 1–4</Text>
+        <Text style={{ fontSize: 12, color: colors.textSubtle, marginBottom: 14 }}>Rate 1-4</Text>
       )}
 
       {dims.map((d, i) => (

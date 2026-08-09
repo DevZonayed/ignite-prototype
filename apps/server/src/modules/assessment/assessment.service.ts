@@ -172,7 +172,11 @@ export class AssessmentService {
       .innerJoin('lessons', 'l', 'l.id = a.lessonId');
 
     if (schoolId) {
-      qb.innerJoin('classes', 'c', 'c.id = l.classId')
+      // A lesson belongs to a unit, not a class, so it carries no schoolId.
+      // The only path from an assessment to a school is through the session it
+      // was recorded in: assessment -> lesson_session -> class -> school.
+      qb.innerJoin('lesson_sessions', 'ls', 'ls.id = a.lessonSessionId')
+        .innerJoin('classes', 'c', 'c.id = ls.classId')
         .andWhere('c.schoolId = :schoolId', { schoolId });
     }
 

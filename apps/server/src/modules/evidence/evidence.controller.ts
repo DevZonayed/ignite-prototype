@@ -43,7 +43,7 @@ export class EvidenceController {
   @ApiOperation({ summary: 'Upload evidence (photo/video/code captured during a lesson)' })
   @ApiResponse({ status: 201, description: 'Evidence created' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async create(
     @Body() dto: CreateEvidenceDto,
     @CurrentUser('id') teacherId: string,
@@ -66,7 +66,7 @@ export class EvidenceController {
   @ApiParam({ name: 'id', description: 'Evidence UUID' })
   @ApiResponse({ status: 200, description: 'Evidence deleted' })
   @ApiResponse({ status: 404, description: 'Evidence not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async remove(@Param('id') id: string) {
     return this.evidenceService.remove(id);
   }
@@ -77,7 +77,7 @@ export class EvidenceController {
   @ApiParam({ name: 'id', description: 'Evidence UUID' })
   @ApiResponse({ status: 201, description: 'Learner tags created' })
   @ApiResponse({ status: 404, description: 'Evidence not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async addTags(
     @Param('id') id: string,
     @Body('learnerIds') learnerIds: string[],
@@ -92,7 +92,7 @@ export class EvidenceController {
   @ApiParam({ name: 'learnerId', description: 'Learner UUID' })
   @ApiResponse({ status: 200, description: 'Learner tag removed' })
   @ApiResponse({ status: 404, description: 'Tag not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async removeTag(
     @Param('id') id: string,
     @Param('learnerId') learnerId: string,

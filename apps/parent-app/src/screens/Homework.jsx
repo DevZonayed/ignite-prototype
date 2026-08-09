@@ -149,7 +149,7 @@ export default function Homework({ showToast }) {
         <TextInput
           value={msg}
           onChangeText={setMsg}
-          placeholder="Message the teacher…"
+          placeholder="Type message"
           placeholderTextColor={colors.textSubtle}
           onSubmitEditing={send}
           returnKeyType="send"

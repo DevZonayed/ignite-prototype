@@ -202,3 +202,128 @@ tr:hover td{background:var(--surface-2)}
 .drowbtns .db{flex:1;text-align:center;font-weight:700;font-size:13px;padding:11px;border-radius:10px;cursor:pointer;border:1.5px solid var(--border);background:var(--surface)}
 .drowbtns .db.pri{background:var(--brand);color:#fff;border-color:var(--brand)}
 svg{display:block}
+
+/* ---------------------------------------------------------------- API-era UI
+   Sign-in, load/error/empty states, real form controls, pagination, chart. */
+
+.signin{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+.signin-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:26px;display:flex;flex-direction:column}
+.signin-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.signin-mark{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#FBBF24,#F97316);color:#3b1d05;flex:none}
+.signin-title{font-weight:800;font-size:17px;color:var(--text)}
+.signin-sub{font-size:12.5px;color:var(--text-muted)}
+.signin-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-subtle);margin:12px 0 6px}
+.signin-input{width:100%;font:inherit;font-size:14px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text)}
+.signin-input:focus{outline:none;border-color:var(--brand);background:var(--surface)}
+.signin-err{margin-top:12px;padding:10px 12px;border-radius:10px;font-size:12.5px;line-height:1.45;color:var(--danger);background:color-mix(in srgb,var(--danger) 10%,transparent);border:1px solid color-mix(in srgb,var(--danger) 32%,transparent)}
+.signin-btn{margin-top:18px;justify-content:center;width:100%}
+.signin-foot{margin-top:16px;font-size:11.5px;color:var(--text-subtle);text-align:center;word-break:break-all}
+
+.state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:32px 18px;text-align:center;color:var(--text-muted);font-size:13px}
+.state-title{font-weight:700;color:var(--text);font-size:14px}
+.state-msg{font-size:12.5px;color:var(--text-muted);max-width:46ch;line-height:1.5}
+.state-err .state-title{color:var(--danger)}
+.state .btnO{margin-top:6px}
+.spinner{width:20px;height:20px;border-radius:50%;border:2.5px solid var(--border);border-top-color:var(--brand);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:2s}}
+
+.skel{display:inline-block;height:11px;border-radius:6px;background:var(--surface-2);position:relative;overflow:hidden}
+.skel::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--border) 70%,transparent),transparent);animation:shimmer 1.3s infinite}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@media (prefers-reduced-motion:reduce){.skel::after{animation:none}}
+
+select.filter{font:inherit;font-size:12.5px;cursor:pointer}
+.count{font-size:12.5px;color:var(--text-subtle)}
+.pager{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0;font-size:12.5px;color:var(--text-muted)}
+.pager .btnO:disabled{opacity:.45;cursor:not-allowed}
+
+.inline-form{display:flex;flex-direction:column;gap:10px}
+.inline-row{display:flex;gap:10px;flex-wrap:wrap}
+.inline-row>*{flex:1 1 160px}
+.inline-row>button{flex:0 0 auto}
+
+.whoami{display:flex;align-items:center;gap:8px;margin-right:4px}
+.whoami-name{font-size:13px;font-weight:600;color:var(--text)}
+
+.chart{display:flex;align-items:flex-end;gap:10px;height:190px;padding:14px 4px 0}
+.chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%}
+.chart-bar{width:100%;max-width:46px;margin-top:auto;background:linear-gradient(180deg,var(--brand),color-mix(in srgb,var(--brand) 55%,transparent));border-radius:8px 8px 4px 4px;position:relative;min-height:4px;display:flex;justify-content:center}
+.chart-val{position:absolute;top:-18px;font-size:11px;font-weight:700;color:var(--text-muted)}
+.chart-lbl{font-size:11.5px;color:var(--text-subtle)}
+
+textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
+.chkitem input[type=checkbox]{width:16px;height:16px;accent-color:var(--brand)}
+
+/* Shared dialog used by every create/edit form, and by first-run setup */
+.modal-back{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(2px)}
+.firstrun-note{font-size:12.5px;line-height:1.55;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:11px 12px;margin-bottom:4px}
+
+.modal-layer{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px}
+.modal-card{position:relative;z-index:1;width:100%;max-width:520px;max-height:calc(100vh - 48px);display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-2);outline:none;animation:modal-in .14s ease-out}
+@keyframes modal-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.modal-card{animation:none}}
+.modal-head{display:flex;align-items:flex-start;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:16px;font-weight:800;color:var(--text);margin:0}
+.modal-sub{font-size:12.5px;color:var(--text-muted);margin-top:3px}
+.modal-close{margin-left:auto;flex:none;width:32px;height:32px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-muted);display:grid;place-items:center;cursor:pointer}
+.modal-close:hover:not(:disabled){color:var(--text);background:var(--surface-3)}
+.modal-close:disabled{opacity:.45;cursor:not-allowed}
+.modal-body{padding:18px 20px 20px;overflow-y:auto}
+.modal-field{margin-bottom:14px}
+.modal-field .signin-label{margin-top:0}
+.modal-hint{font-size:11.5px;color:var(--text-subtle);margin-top:5px;line-height:1.45}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media (max-width:520px){.modal-grid{grid-template-columns:1fr}}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.modal-actions .btnP:disabled,.modal-actions .btnO:disabled{opacity:.5;cursor:not-allowed}
+.firstrun-card{position:relative;z-index:1;max-width:460px;box-shadow:var(--shadow-2)}
+
+/* Curriculum module + confirm dialog */
+.btn-danger{background:var(--danger)!important;border-color:var(--danger)!important}
+.confirm-body{font-size:13.5px;line-height:1.6;color:var(--text-muted);margin-bottom:4px}
+.note-strip{font-size:12.5px;line-height:1.5;color:var(--text-muted);background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px}
+.check-list{max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:12px}
+.check-row{display:flex;align-items:center;gap:11px;padding:11px 13px;border-bottom:1px solid var(--border);cursor:pointer}
+.check-row:last-child{border-bottom:0}
+.check-row:hover{background:var(--surface-2)}
+.check-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--brand);flex:none}
+.check-main{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+.lesson-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.chip{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted)}
+.tnode{display:flex;align-items:flex-start;gap:12px}
+.rowbtn.danger{color:var(--danger)}
+.modal-section{display:flex;flex-direction:column;gap:2px;margin:22px 0 14px;padding-top:16px;border-top:1px solid var(--border)}
+.modal-section-title{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text)}
+.modal-section-note{font-size:11.5px;color:var(--text-subtle);line-height:1.45}
+
+/* Icon-only row actions */
+.act-group{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.iconact{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--text-subtle);cursor:pointer;transition:background .12s,color .12s,border-color .12s}
+.iconact:hover:not(:disabled){background:var(--surface-2);border-color:var(--border);color:var(--brand)}
+.iconact:focus-visible{outline:2px solid var(--brand);outline-offset:1px;color:var(--brand)}
+.iconact.danger:hover:not(:disabled){color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,transparent);background:color-mix(in srgb,var(--danger) 8%,transparent)}
+.iconact.danger:focus-visible{outline-color:var(--danger);color:var(--danger)}
+.iconact:disabled{opacity:.4;cursor:not-allowed}
+@media (prefers-reduced-motion:reduce){.iconact{transition:none}}
+.drowbtns .db{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.input-affix{position:relative;display:flex;align-items:center}
+.input-affix .signin-input{padding-right:64px}
+.affix-btn{position:absolute;right:8px;padding:4px 9px;border-radius:999px;border:0;background:var(--brand-soft);color:var(--brand);font:inherit;font-size:11.5px;font-weight:700;cursor:pointer}
+.affix-btn:hover{filter:brightness(.96)}
+
+/* Sidebar user chip: now a button that opens the profile page */
+.side .userchip{width:100%;border:1px solid transparent;font:inherit;text-align:left;cursor:pointer;transition:background .12s,border-color .12s}
+.side .userchip:hover{background:rgba(255,255,255,.1)}
+.side .userchip.on{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.18)}
+.side .userchip:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.side .userchip .uinfo{min-width:0;flex:1}
+.side .userchip .un,.side .userchip .ur{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side .userchip .uchev{flex:none;opacity:.5}
+@media(max-width:1000px){.side .userchip .uchev{display:none}}
+
+/* Profile page */
+.profile-head{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.profile-avatar{width:56px;height:56px;flex:none;border-radius:50%;display:grid;place-items:center;font-family:var(--fd);font-weight:900;font-size:19px}
+.profile-name{font-family:var(--fd);font-weight:900;font-size:22px;color:var(--text)}
+.profile-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px}

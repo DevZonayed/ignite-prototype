@@ -55,7 +55,7 @@ export class ImportsController {
   })
   @ApiResponse({ status: 201, description: 'CSV uploaded and import job created' })
   @ApiResponse({ status: 400, description: 'Invalid file or validation error' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async uploadCsv(
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser('id') uploadedById: string,
@@ -77,7 +77,7 @@ export class ImportsController {
   @ApiParam({ name: 'id', description: 'Import job UUID' })
   @ApiResponse({ status: 201, description: 'Column mapping saved' })
   @ApiResponse({ status: 404, description: 'Import job not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async saveColumnMapping(
     @Param('id') id: string,
     @Body() dto: ColumnMappingDto,
@@ -90,7 +90,7 @@ export class ImportsController {
   @ApiParam({ name: 'id', description: 'Import job UUID' })
   @ApiResponse({ status: 201, description: 'Validation completed' })
   @ApiResponse({ status: 404, description: 'Import job not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async validate(@Param('id') id: string) {
     return this.importsService.validate(id);
   }
@@ -100,7 +100,7 @@ export class ImportsController {
   @ApiParam({ name: 'id', description: 'Import job UUID' })
   @ApiResponse({ status: 201, description: 'Import completed' })
   @ApiResponse({ status: 404, description: 'Import job not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async runImport(@Param('id') id: string) {
     return this.importsService.runImport(id);
   }
@@ -111,7 +111,7 @@ export class ImportsController {
   @ApiParam({ name: 'row', description: 'Row number with the error' })
   @ApiResponse({ status: 200, description: 'Error row corrected' })
   @ApiResponse({ status: 404, description: 'Import job not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async fixErrorRow(
     @Param('id') id: string,
     @Param('row', ParseIntPipe) row: number,

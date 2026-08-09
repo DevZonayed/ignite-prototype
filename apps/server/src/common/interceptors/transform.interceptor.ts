@@ -20,9 +20,14 @@ const SENSITIVE_FIELDS = [
   'passwordHash',
   'otpCode',
   'otpExpiresAt',
+  'passwordResetOtp',
+  'passwordResetOtpExpiresAt',
+  'passwordResetOtpAttempts',
   'resetToken',
   'resetTokenExpiresAt',
   'rememberToken',
+  // NOTE: `inviteCode` is deliberately NOT stripped — POST /users/invite returns
+  // it so an admin can pass it to the invitee. It is admin-only by route guard.
 ];
 
 /**

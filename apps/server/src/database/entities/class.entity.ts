@@ -26,8 +26,10 @@ export class Class {
   @Column({ type: 'varchar' })
   schoolId: string;
 
+  // Nullable so a class outlives the teacher who led it: deleting a user sets
+  // this to NULL (ON DELETE SET NULL) and the class shows as unassigned.
   @Column({ type: 'varchar', nullable: true })
-  teacherId: string;
+  teacherId: string | null;
 
   @Column({ type: 'int', default: 0 })
   learnerCount: number;

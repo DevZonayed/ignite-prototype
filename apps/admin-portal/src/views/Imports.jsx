@@ -1,41 +1,106 @@
-export default function Imports({ active }) {
+import { useState } from 'react'
+import { useResource, useAction } from '../api/useResource.js'
+import { getImportTemplate, getImportJob } from '../api/endpoints.js'
+import { Loading, ErrorState } from '../components/States.jsx'
+
+/** Turn the template into a downloadable CSV without leaving the page. */
+function downloadCsv(template) {
+  const headers = template.headers.join(',')
+  const sample = template.headers.map((h) => template.sampleRow?.[h] ?? '').join(',')
+  const blob = new Blob([`${headers}\n${sample}\n`], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'ignite-bulk-import-template.csv'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+export default function Imports({ active, onToast }) {
+  const template = useResource(() => getImportTemplate(), [], { enabled: active })
+  const [jobId, setJobId] = useState('')
+  const [job, setJob] = useState(null)
+  const lookup = useAction()
+
+  async function checkJob(e) {
+    e.preventDefault()
+    const res = await lookup.run(() => getImportJob(jobId.trim()))
+    if (res.ok) setJob(res.value)
+    else { setJob(null); onToast(res.error.message) }
+  }
+
   return (
     <section className={'view' + (active ? ' active' : '')} id="view-imports">
-      <div className="panel">
-        <div className="stepper">
-          <div className="stp done"><span className="sc">✓</span><span className="sl">Template</span></div><div className="stpline done"></div>
-          <div className="stp done"><span className="sc">✓</span><span className="sl">Upload</span></div><div className="stpline done"></div>
-          <div className="stp done"><span className="sc">✓</span><span className="sl">Map</span></div><div className="stpline done"></div>
-          <div className="stp cur"><span className="sc">4</span><span className="sl">Validate</span></div><div className="stpline"></div>
-          <div className="stp next"><span className="sc">5</span><span className="sl">Import</span></div>
-        </div>
-        <div className="grid2 even">
-          <div>
-            <h3 style={{ fontSize: '15px', marginBottom: '12px' }}>Column mapping</h3>
-            <table>
-              <thead><tr><th>Source column</th><th>Mapped to</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>full_name</td><td>Learner name</td><td><span className="mapped">✓ Mapped</span></td></tr>
-                <tr><td>dob</td><td>Date of birth</td><td><span className="mapped">✓ Mapped</span></td></tr>
-                <tr><td>class</td><td>Class</td><td><span className="mapped">✓ Mapped</span></td></tr>
-                <tr><td>guardian_email</td><td>Guardian email</td><td><span className="mapped">✓ Mapped</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div>
-            <h3 style={{ fontSize: '15px', marginBottom: '12px' }}>Validation results</h3>
-            <div className="valhead">
-              <div className="valcirc"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><path d="M5 12l5 5L20 7" /></svg></div>
-              <div>
-                <div className="valn">318 of 320 rows valid</div>
-                <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>320 input rows · 318 valid · 2 errors</div>
+      <div className="grid2">
+        <div className="panel">
+          <div className="ph"><h3>CSV template</h3></div>
+          {template.loading && !template.data ? <Loading /> : null}
+          {template.error ? <ErrorState error={template.error} onRetry={template.reload} /> : null}
+          {template.data ? (
+            <>
+              <p className="fm" style={{ marginBottom: 10 }}>
+                Bulk-onboard users by uploading a CSV with these columns. Download the
+                template, fill it in, then upload it via <code>POST /api/imports/upload</code>.
+              </p>
+              <table>
+                <thead><tr><th>Column</th><th>Example</th></tr></thead>
+                <tbody>
+                  {template.data.headers.map((h) => (
+                    <tr key={h}>
+                      <td className="strong">{h}</td>
+                      <td className="fm">{template.data.sampleRow?.[h] || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="pubbar">
+                <button className="btnP" onClick={() => downloadCsv(template.data)}>
+                  Download template
+                </button>
               </div>
+            </>
+          ) : null}
+        </div>
+
+        <div className="panel">
+          <div className="ph"><h3>Check an import job</h3></div>
+          <form className="annseg" onSubmit={checkJob}>
+            <label className="signin-label" htmlFor="job-id">Job ID</label>
+            <input
+              id="job-id"
+              className="signin-input"
+              placeholder="Type job ID"
+              value={jobId}
+              onChange={(e) => setJobId(e.target.value)}
+            />
+            <div className="pubbar">
+              <button className="btnO" type="submit" disabled={!jobId.trim() || lookup.busy}>
+                {lookup.busy ? 'Checking…' : 'Check status'}
+              </button>
             </div>
-            <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--danger)', marginBottom: '9px' }}>Errors (2)</div>
-            <div className="errrow"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg> Row 44 — missing guardian email <span className="fix">Fix</span></div>
-            <div className="errrow"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" /></svg> Row 210 — invalid class 'JSS4' <span className="fix">Fix</span></div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '18px' }}><button className="btnO">Back</button><button className="btnP">Run import (318 rows)</button></div>
-          </div>
+          </form>
+
+          {lookup.error ? <div className="signin-err">{lookup.error.message}</div> : null}
+
+          {job ? (
+            <div className="stepper">
+              <div className="stepitem">
+                <span className="stp">Status</span>
+                <span className={'badge ' + (job.status === 'completed' ? 'b-green' : 'b-amber')}>
+                  {job.status}
+                </span>
+              </div>
+              <div className="stepitem">
+                <span className="stp">Rows</span>
+                <span>{job.totalRows ?? '-'} total · {job.successRows ?? 0} ok · {job.errorRows ?? 0} failed</span>
+              </div>
+              {job.filename ? (
+                <div className="stepitem"><span className="stp">File</span><span>{job.filename}</span></div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

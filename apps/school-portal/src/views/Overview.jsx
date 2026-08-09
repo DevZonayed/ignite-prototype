@@ -1,195 +1,135 @@
-import { tiles } from '../data.js'
+import { useResource } from '../api/useResource.js'
+import {
+  getSchoolDashboard, getLessonsDelivered, getCoverage, listAnnouncements,
+} from '../api/endpoints.js'
+import { Loading, ErrorState, EmptyState } from '../components/States.jsx'
+import { fmtNumber, fmtRelative, coverageColor } from '../lib/format.js'
 
-export default function Overview({ active, onNavigate }) {
+function Bars({ points }) {
+  const max = Math.max(1, ...points.map((p) => p.count))
   return (
-    <section className={'view' + (active ? ' active' : '')} id="view-overview">
-      <div className="tiles" id="ovTiles">
-        {tiles.map((t) => (
-          <div className="tile" key={t[0]}>
-            <div className="th">
-              <span
-                className="ti"
-                style={{ background: `color-mix(in srgb,${t[2]} 15%,transparent)`, color: t[2] }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="9" />
-                </svg>
-              </span>
-              <span className="tl">{t[0]}</span>
-            </div>
-            <div className="tn">{t[1]}</div>
-            <div className="tf">{t[3]}</div>
+    <div className="chart">
+      {points.map((p) => (
+        <div className="chart-col" key={p.day} title={`${p.day}: ${p.count}`}>
+          <div className="chart-bar" style={{ height: `${Math.round((p.count / max) * 100)}%` }}>
+            <span className="chart-val">{p.count}</span>
+          </div>
+          <span className="chart-lbl">{p.day}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function Overview({ schoolId, onNavigate }) {
+  const dash = useResource(() => getSchoolDashboard(schoolId), [schoolId])
+  const delivered = useResource(() => getLessonsDelivered(), [])
+  const coverage = useResource(() => getCoverage(schoolId), [schoolId])
+  const news = useResource(() => listAnnouncements({ limit: 5 }), [])
+
+  if (dash.loading && !dash.data) {
+    return <section className="view active"><Loading label="Loading your school…" /></section>
+  }
+  if (dash.error) {
+    return <section className="view active"><ErrorState error={dash.error} onRetry={dash.reload} /></section>
+  }
+
+  const d = dash.data || {}
+  const rows = coverage.data ?? []
+  const avgCoverage = rows.length
+    ? Math.round(rows.reduce((n, c) => n + (c.coveragePercent || 0), 0) / rows.length)
+    : 0
+
+  return (
+    <section className="view active" id="view-overview">
+      <div className="tiles">
+        <div className="tile">
+          <div className="th"><span className="tl">Teachers</span></div>
+          <div className="tn">{fmtNumber(d.teacherCount)}</div>
+          <div className="tf">on staff</div>
+        </div>
+        <div className="tile">
+          <div className="th"><span className="tl">Learners</span></div>
+          <div className="tn">{fmtNumber(d.learnerCount)}</div>
+          <div className="tf">enrolled</div>
+        </div>
+        <div className="tile">
+          <div className="th"><span className="tl">Lessons today</span></div>
+          <div className="tn">{fmtNumber(d.lessonsToday)}</div>
+          <div className="tf">delivered so far</div>
+        </div>
+        <div className="tile">
+          <div className="th"><span className="tl">Curriculum coverage</span></div>
+          <div className="tn">{d.curriculumCompletionPercent ?? avgCoverage}%</div>
+          <div className={'tf' + ((d.curriculumCompletionPercent ?? avgCoverage) >= 85 ? ' up' : '')}>
+            across {rows.length} class{rows.length === 1 ? '' : 'es'}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid2">
+        <div className="panel">
+          <div className="ph">
+            <h3>Lessons delivered (last 7 days)</h3>
+            <span className="link" onClick={delivered.reload}>Refresh</span>
+          </div>
+          {delivered.loading && !delivered.data ? <Loading /> : null}
+          {delivered.error ? <ErrorState error={delivered.error} onRetry={delivered.reload} /> : null}
+          {delivered.data && delivered.data.length === 0 ? (
+            <EmptyState title="No lessons delivered yet" hint="Sessions your teachers complete will chart here." />
+          ) : null}
+          {delivered.data && delivered.data.length > 0 ? <Bars points={delivered.data} /> : null}
+        </div>
+
+        <div className="panel">
+          <div className="ph">
+            <h3>Coverage by class</h3>
+            <span className="link" onClick={() => onNavigate('curriculum')}>Open curriculum →</span>
+          </div>
+          {coverage.loading && !coverage.data ? <Loading /> : null}
+          {coverage.error ? <ErrorState error={coverage.error} onRetry={coverage.reload} /> : null}
+          {coverage.data && rows.length === 0 ? (
+            <EmptyState title="No classes yet" hint="Create a class to start tracking coverage." />
+          ) : null}
+          {rows.length > 0 ? (
+            <table>
+              <thead><tr><th>Class</th><th>Delivered</th><th>Coverage</th></tr></thead>
+              <tbody>
+                {rows.map((c) => (
+                  <tr key={c.classId}>
+                    <td className="strong">{c.className}</td>
+                    <td>{c.deliveredLessons}/{c.totalLessons}</td>
+                    <td>
+                      <span className="cbar">
+                        <i style={{ width: `${c.coveragePercent}%`, background: coverageColor(c.coveragePercent) }} />
+                      </span>
+                      {c.coveragePercent}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="panel">
+        <div className="ph">
+          <h3>Announcements from IGNITE</h3>
+          <span className="link" onClick={news.reload}>Refresh</span>
+        </div>
+        {news.loading && !news.data ? <Loading /> : null}
+        {news.error ? <ErrorState error={news.error} onRetry={news.reload} /> : null}
+        {news.data && (news.data.data ?? []).length === 0 ? (
+          <EmptyState title="No announcements" hint="Notices posted by IGNITE admin appear here." />
+        ) : null}
+        {(news.data?.data ?? []).map((a) => (
+          <div className="mcard" key={a.id}>
+            <div className="strong">{a.title}</div>
+            <div className="fm" style={{ margin: '5px 0 6px' }}>{a.message}</div>
+            <div className="fm">{fmtRelative(a.createdAt)}</div>
           </div>
         ))}
-      </div>
-      <div className="grid2">
-        <div className="panel">
-          <div className="ph">
-            <h3>Attendance trend — last 6 weeks</h3>
-            <span className="link" data-view="attendance" onClick={() => onNavigate('attendance')}>
-              Details →
-            </span>
-          </div>
-          <svg className="chart" viewBox="0 0 520 190" aria-label="Attendance trend">
-            <line x1="40" y1="20" x2="40" y2="160" stroke="var(--border)" />
-            <line x1="40" y1="160" x2="510" y2="160" stroke="var(--border)" />
-            <polyline
-              points="70,66 150,52 230,45 310,38 390,42 470,42"
-              fill="none"
-              stroke="var(--brand)"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <polygon
-              points="70,66 150,52 230,45 310,38 390,42 470,42 470,160 70,160"
-              fill="color-mix(in srgb,var(--brand) 10%,transparent)"
-            />
-            <g fill="var(--brand)">
-              <circle cx="70" cy="66" r="4" />
-              <circle cx="150" cy="52" r="4" />
-              <circle cx="230" cy="45" r="4" />
-              <circle cx="310" cy="38" r="4" />
-              <circle cx="390" cy="42" r="4" />
-              <circle cx="470" cy="42" r="4" />
-            </g>
-            <g fontSize="10" fill="var(--text-subtle)" textAnchor="middle">
-              <text x="70" y="178">W1</text>
-              <text x="150" y="178">W2</text>
-              <text x="230" y="178">W3</text>
-              <text x="310" y="178">W4</text>
-              <text x="390" y="178">W5</text>
-              <text x="470" y="178">W6</text>
-            </g>
-          </svg>
-        </div>
-        <div className="panel">
-          <div className="ph">
-            <h3>Curriculum coverage</h3>
-          </div>
-          <div className="cov">
-            <span className="cn">JSS 1</span>
-            <div className="cbar2">
-              <i style={{ width: '95%' }}></i>
-            </div>
-            <span className="cp">95%</span>
-          </div>
-          <div className="cov">
-            <span className="cn">JSS 2</span>
-            <div className="cbar2">
-              <i style={{ width: '88%' }}></i>
-            </div>
-            <span className="cp">88%</span>
-          </div>
-          <div className="cov">
-            <span className="cn">JSS 3</span>
-            <div className="cbar2">
-              <i style={{ width: '75%', background: 'var(--warning)' }}></i>
-            </div>
-            <span className="cp">75%</span>
-          </div>
-          <div className="cov">
-            <span className="cn">P 6</span>
-            <div className="cbar2">
-              <i style={{ width: '91%' }}></i>
-            </div>
-            <span className="cp">91%</span>
-          </div>
-          <div className="cov">
-            <span className="cn">P 5</span>
-            <div className="cbar2">
-              <i style={{ width: '83%' }}></i>
-            </div>
-            <span className="cp">83%</span>
-          </div>
-        </div>
-      </div>
-      <div className="grid2">
-        <div className="panel">
-          <div className="ph">
-            <h3>Teacher activity</h3>
-            <span className="link" data-view="teachers" onClick={() => onNavigate('teachers')}>
-              All teachers →
-            </span>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Teacher</th>
-                <th>Lessons delivered</th>
-                <th>Last active</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="strong">Mr. Adewale Balogun</td>
-                <td>28</td>
-                <td>Today, 10:24</td>
-              </tr>
-              <tr>
-                <td className="strong">Mrs. Funke Okafor</td>
-                <td>24</td>
-                <td>Today, 08:57</td>
-              </tr>
-              <tr>
-                <td className="strong">Mr. Chinedu Nwosu</td>
-                <td>19</td>
-                <td>Yesterday</td>
-              </tr>
-              <tr>
-                <td className="strong">Ms. Aisha Bello</td>
-                <td>22</td>
-                <td>Today, 09:40</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div className="panel">
-          <div className="ph">
-            <h3>Needs attention</h3>
-          </div>
-          <div className="alert">
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--warning)"
-              strokeWidth="2"
-              style={{ flex: 'none' }}
-            >
-              <path d="M12 9v4M12 17h.01" />
-              <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
-            </svg>
-            <div>
-              <div className="an">JSS 3 · 2 lessons behind sequence</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Robotics unit — nudge sent to teacher</div>
-            </div>
-          </div>
-          <div
-            className="alert"
-            data-view="homework"
-            style={{ cursor: 'pointer' }}
-            onClick={() => onNavigate('homework')}
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#ef4444"
-              strokeWidth="2"
-              style={{ flex: 'none' }}
-            >
-              <path d="M9 11l3 3 8-8" />
-              <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9" />
-            </svg>
-            <div style={{ flex: 1 }}>
-              <div className="an">Homework · 14 pending, 9 late this week</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>JSS 3 lowest at 68% — open compliance →</div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   )

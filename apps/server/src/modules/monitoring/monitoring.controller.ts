@@ -29,7 +29,7 @@ export class MonitoringController {
   @Roles('platform_admin', 'principal')
   @ApiOperation({ summary: 'Platform monitoring stats' })
   @ApiResponse({ status: 200, description: 'Monitoring stats returned' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async getStats(@Query() query: MonitoringQueryDto) {
     return this.monitoringService.getStats(query.schoolId);
   }
@@ -41,7 +41,7 @@ export class MonitoringController {
     status: 200,
     description: 'Array of { day, count } for the requested week',
   })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async getLessonsDelivered(@Query() query: MonitoringQueryDto) {
     return this.monitoringService.getLessonsDelivered(
       query.schoolId,

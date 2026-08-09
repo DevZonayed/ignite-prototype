@@ -16,3 +16,7 @@ node_modules
 
 # Orca session artifacts (transcripts, drops) — never publish
 .orca/
+
+# Continuum session artifacts (transcripts, telemetry) — never publish
+.continuum/
+**/.continuum/

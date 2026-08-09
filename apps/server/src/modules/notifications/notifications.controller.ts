@@ -67,7 +67,7 @@ export class NotificationsController {
   @Roles('platform_admin')
   @ApiOperation({ summary: 'Create a notification (admin / internal use)' })
   @ApiResponse({ status: 201, description: 'Notification created' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async create(@Body() dto: CreateNotificationDto) {
     return this.notificationsService.create(dto);
   }
