@@ -7,6 +7,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum SyncQueueStatus {
   QUEUED = 'queued',
   SYNCING = 'syncing',
@@ -40,7 +42,7 @@ export class SyncQueue {
   @Column({ type: 'varchar', enum: SyncQueueStatus, default: SyncQueueStatus.QUEUED })
   status: SyncQueueStatus;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   queuedAt: Date;
 
   @CreateDateColumn()

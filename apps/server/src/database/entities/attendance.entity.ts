@@ -7,6 +7,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum AttendanceStatus {
   PRESENT = 'present',
   ABSENT = 'absent',
@@ -33,7 +35,7 @@ export class Attendance {
   @Column({ type: 'varchar', enum: AttendanceStatus })
   status: AttendanceStatus;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   markedAt: Date;
 
   @CreateDateColumn()

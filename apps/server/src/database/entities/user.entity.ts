@@ -9,6 +9,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum UserRole {
   PLATFORM_ADMIN = 'platform_admin',
   CURRICULUM_ADMIN = 'curriculum_admin',
@@ -76,7 +78,7 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   otpCode: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   otpExpiresAt: Date | null;
 
   // Password-reset OTP is kept separate from the step-up `otpCode` above so a
@@ -84,7 +86,7 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   passwordResetOtp: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   passwordResetOtpExpiresAt: Date | null;
 
   @Column({ type: 'int', default: 0 })
@@ -96,19 +98,19 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   resetToken: string | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   resetTokenExpiresAt: Date | null;
 
   @Column({ type: 'varchar', default: ThemePreference.SYSTEM })
   themePreference: ThemePreference;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   lastActiveAt: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   lastLoginAt: Date | null;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   acceptedTermsAt: Date | null;
 
   @CreateDateColumn()

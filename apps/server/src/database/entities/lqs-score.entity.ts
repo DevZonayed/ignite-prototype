@@ -7,6 +7,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 @Entity('lqs_scores')
 export class LqsScore {
   @PrimaryGeneratedColumn('uuid')
@@ -27,7 +29,7 @@ export class LqsScore {
   @Column({ type: 'varchar', nullable: true })
   term: string;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   savedAt: Date;
 
   @CreateDateColumn()
