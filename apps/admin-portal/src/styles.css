@@ -387,3 +387,26 @@ textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
 
 /* Screen-reader-only: keeps the loading announcement without showing text. */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ── phones ──────────────────────────────────────────────────────────────
+   See the school portal for the full reasoning. In short: the topbar is a
+   nowrap flex row whose items default to min-width:auto, so the title
+   refused to shrink and pushed the sign-out button off-screen; and data
+   tables are width:100% with no scroll container, so wide tables widened
+   the whole document instead of scrolling inside their card. */
+@media(max-width:640px){
+  .topbar{padding:12px 14px;gap:8px}
+  .topbar>div:first-child{min-width:0}
+  .topbar h1{font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar .crumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .whoami{min-width:0;margin-right:0}
+  .whoami .whoami-name{display:none}
+  .iconbtn{width:38px;height:38px;flex:none}
+  .search{display:none}
+
+  .content{padding:14px}
+  .tiles{grid-template-columns:1fr}
+
+  .panel:has(table){overflow-x:auto}
+  .panel table{min-width:520px}
+}

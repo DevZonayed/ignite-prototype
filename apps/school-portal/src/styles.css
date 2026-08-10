@@ -303,3 +303,31 @@ textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
 
 /* Screen-reader-only: keeps the loading announcement without showing text. */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ── phones ──────────────────────────────────────────────────────────────
+   The 1000px breakpoint above only collapses the sidebar to a 64px icon
+   rail. Below that nothing else adapts, and two things pushed the page
+   wider than the screen at 375px:
+
+   1. .topbar is a nowrap flex row whose items default to min-width:auto, so
+      the title block refused to shrink and shoved the sign-out button ~37px
+      past the viewport. min-width:0 restores normal flex shrinking; the
+      icon buttons get flex:none so they keep their touch target instead of
+      being squeezed to half width.
+   2. Data tables are width:100% with no scroll container, so a 7-column
+      table widens the whole document. They now scroll inside their card. */
+@media(max-width:640px){
+  .topbar{padding:12px 14px;gap:8px}
+  .topbar>div:first-child{min-width:0}
+  .topbar h1{font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar .crumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .whoami{min-width:0;margin-right:0}
+  .whoami .whoami-name{display:none}
+  .iconbtn{width:38px;height:38px;flex:none}
+
+  .content{padding:14px}
+  .tiles{grid-template-columns:1fr}
+
+  .panel:has(table){overflow-x:auto}
+  .panel table{min-width:520px}
+}
