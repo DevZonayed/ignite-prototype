@@ -13,9 +13,18 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix('api');
 
-  // CORS
+  // CORS. CORS_ORIGIN is a comma-separated list, and it has to be split into an
+  // array: handing the raw string to `origin` echoes it back verbatim, and
+  // `Access-Control-Allow-Origin: a,b` is not a valid header — the browser
+  // compares it to the request's origin as a whole and rejects every request.
+  // With an array, the cors package matches and echoes the single caller.
+  const corsOrigin = (process.env.CORS_ORIGIN ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: corsOrigin.length > 0 ? corsOrigin : '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
