@@ -6,6 +6,7 @@ import { User, UserRole, UserStatus } from '../../database/entities/user.entity'
 import { School } from '../../database/entities/school.entity';
 import { Lesson } from '../../database/entities/lesson.entity';
 import { LessonSession } from '../../database/entities/lesson-session.entity';
+import { isoDayExpr } from '../../common/database/sql-dialect';
 
 @Injectable()
 export class MonitoringService {
@@ -156,7 +157,10 @@ export class MonitoringService {
 
     const qb = this.lessonSessionsRepository
       .createQueryBuilder('ls')
-      .select("strftime('%Y-%m-%d', ls.startedAt)", 'day')
+      .select(
+        isoDayExpr(this.lessonSessionsRepository.manager.connection, 'ls.startedAt'),
+        'day',
+      )
       .addSelect('COUNT(*)', 'count')
       .where('ls.startedAt >= :start AND ls.startedAt < :end', {
         start: weekStart.toISOString(),
