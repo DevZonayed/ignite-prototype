@@ -13,6 +13,11 @@ import {
 } from 'typeorm';
 
 import {
+  isoWeekLabelExpr,
+  weekNumberExpr,
+} from '../../common/database/sql-dialect';
+
+import {
   Attendance,
   AttendanceStatus,
 } from '../../database/entities/attendance.entity';
@@ -225,10 +230,7 @@ export class AttendanceService {
       .createQueryBuilder()
       .select('a.classId', 'classId')
       .addSelect('c.name', 'className')
-      .addSelect(
-        "CAST(strftime('%W', a.date) AS INTEGER)",
-        'week',
-      )
+      .addSelect(weekNumberExpr(this.dataSource, 'a.date'), 'week')
       .addSelect('COUNT(*)', 'total')
       .addSelect(
         "SUM(CASE WHEN a.status IN ('present', 'late') THEN 1 ELSE 0 END)",
@@ -290,10 +292,7 @@ export class AttendanceService {
 
     const qb = this.dataSource
       .createQueryBuilder()
-      .select(
-        "strftime('%Y-W%W', a.date)",
-        'week',
-      )
+      .select(isoWeekLabelExpr(this.dataSource, 'a.date'), 'week')
       .addSelect('COUNT(*)', 'total')
       .addSelect(
         "SUM(CASE WHEN a.status IN ('present', 'late') THEN 1 ELSE 0 END)",
@@ -353,10 +352,7 @@ export class AttendanceService {
   > {
     const qb = this.dataSource
       .createQueryBuilder()
-      .select(
-        "strftime('%Y-W%W', a.date)",
-        'week',
-      )
+      .select(isoWeekLabelExpr(this.dataSource, 'a.date'), 'week')
       .addSelect(
         "SUM(CASE WHEN a.status = 'present' THEN 1 ELSE 0 END)",
         'present',
