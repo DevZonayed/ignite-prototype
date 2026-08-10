@@ -49,7 +49,7 @@ export class HomeworkController {
   @Roles('teacher')
   @ApiOperation({ summary: 'Create a new homework assignment' })
   @ApiResponse({ status: 201, description: 'Homework created' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async create(@Body() dto: CreateHomeworkDto) {
     return this.homeworkService.create(dto);
   }
@@ -58,7 +58,7 @@ export class HomeworkController {
   @Roles('principal', 'platform_admin', 'curriculum_admin')
   @ApiOperation({ summary: 'Per-class homework compliance breakdown' })
   @ApiResponse({ status: 200, description: 'Array of per-class compliance stats' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async getCompliance(
     @Query('schoolId') schoolId?: string,
     @Query('term') term?: string,
@@ -70,7 +70,7 @@ export class HomeworkController {
   @Roles('teacher', 'principal')
   @ApiOperation({ summary: 'Send bulk reminders to parents of pending/late learners' })
   @ApiResponse({ status: 201, description: 'Reminders queued' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   @ApiResponse({ status: 404, description: 'Homework not found' })
   async sendReminders(@Body('homeworkId') homeworkId: string) {
     return this.homeworkService.sendReminders(homeworkId);
@@ -102,7 +102,7 @@ export class HomeworkController {
   @ApiOperation({ summary: 'Publish teacher feedback on a submission' })
   @ApiParam({ name: 'submissionId', description: 'Submission UUID' })
   @ApiResponse({ status: 200, description: 'Feedback published' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   @ApiResponse({ status: 404, description: 'Submission not found' })
   async publishFeedback(@Param('submissionId') submissionId: string) {
     return this.homeworkService.publishFeedback(submissionId);
@@ -122,7 +122,7 @@ export class HomeworkController {
   @ApiOperation({ summary: 'Send a message on a submission thread' })
   @ApiParam({ name: 'submissionId', description: 'Submission UUID' })
   @ApiResponse({ status: 201, description: 'Message sent' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   @ApiResponse({ status: 404, description: 'Submission not found' })
   async createMessage(
     @Param('submissionId') submissionId: string,
@@ -145,7 +145,7 @@ export class HomeworkController {
   @ApiOperation({ summary: 'Update a homework assignment' })
   @ApiParam({ name: 'id', description: 'Homework UUID' })
   @ApiResponse({ status: 200, description: 'Homework updated' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   @ApiResponse({ status: 404, description: 'Homework not found' })
   async update(@Param('id') id: string, @Body() dto: UpdateHomeworkDto) {
     return this.homeworkService.update(id, dto);
@@ -157,7 +157,7 @@ export class HomeworkController {
   @ApiParam({ name: 'id', description: 'Homework UUID' })
   @ApiResponse({ status: 200, description: 'Homework deleted' })
   @ApiResponse({ status: 400, description: 'Only draft homework can be deleted' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   @ApiResponse({ status: 404, description: 'Homework not found' })
   async remove(@Param('id') id: string) {
     return this.homeworkService.remove(id);
@@ -182,7 +182,7 @@ export class HomeworkController {
   @ApiOperation({ summary: 'Create a submission (parent uploads for child)' })
   @ApiParam({ name: 'id', description: 'Homework UUID' })
   @ApiResponse({ status: 201, description: 'Submission created' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   @ApiResponse({ status: 404, description: 'Homework not found' })
   async createSubmission(
     @Param('id') id: string,

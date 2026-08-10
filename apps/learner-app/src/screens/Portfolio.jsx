@@ -2,9 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { projects, thumbFor } from '../data';
 import Gradient from '../components/Gradient';
 import { PageTitle } from '../components/common';
+import { AsyncList } from '../components/ScreenState';
+import { useApi } from '../api/useApi';
+import { getPortfolio } from '../api/endpoints';
+import { flattenGroups, styleFor, subtitleFor } from '../lib/project';
 import {
   PlayIcon,
   PythonBracketsIcon,
@@ -27,34 +30,51 @@ function ThumbGlyph({ kind }) {
   return <CodeBracketsIcon size={30} color="#fff" strokeWidth={2} />;
 }
 
-export default function Portfolio({ onOpenItem }) {
+export default function Portfolio({ user, onOpenItem }) {
   const { colors } = useTheme();
+  const learnerId = user?.id ?? null;
+
+  const portfolio = useApi(() => getPortfolio(learnerId), [learnerId], { skip: !learnerId });
+  const state = { ...portfolio, data: flattenGroups(portfolio.data) };
+
   return (
     <View>
-      <PageTitle title="My Portfolio" sub="Term 2 · tap a project" />
-      <View style={styles.pgrid}>
-        {projects.map((p, i) => {
-          const t = thumbFor(p.f);
-          return (
-            <Pressable
-              key={i}
-              onPress={() => onOpenItem(i)}
-              style={[styles.pcard, { borderColor: colors.border, backgroundColor: colors.surface }]}
-            >
-              <Gradient colors={p.c} style={styles.top}>
-                <ThumbGlyph kind={t.kind} />
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{t.badge}</Text>
-                </View>
-              </Gradient>
-              <View style={styles.meta}>
-                <Text style={[styles.pt, { color: colors.text }]}>{p.t}</Text>
-                <Text style={[styles.pf, { color: colors.textSubtle }]}>{p.f}</Text>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+      <PageTitle title="My Portfolio" sub="Tap a project" />
+
+      <AsyncList
+        state={state}
+        loadingLabel="Loading portfolio…"
+        empty={{
+          title: 'Your portfolio is empty',
+          sub: 'Projects your teacher saves will be collected here.',
+        }}
+      >
+        {(projects) => (
+          <View style={styles.pgrid}>
+            {projects.map((p) => {
+              const t = styleFor(p);
+              return (
+                <Pressable
+                  key={p.id}
+                  onPress={() => onOpenItem(p.id)}
+                  style={[styles.pcard, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                >
+                  <Gradient colors={t.gradient} style={styles.top}>
+                    <ThumbGlyph kind={t.kind} />
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{t.badge}</Text>
+                    </View>
+                  </Gradient>
+                  <View style={styles.meta}>
+                    <Text style={[styles.pt, { color: colors.text }]}>{p.title}</Text>
+                    <Text style={[styles.pf, { color: colors.textSubtle }]}>{subtitleFor(p)}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+      </AsyncList>
     </View>
   );
 }

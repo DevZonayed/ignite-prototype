@@ -3,9 +3,56 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
 import { SubHead } from '../components/common';
+import { Loading, ErrorState, EmptyState } from '../components/ScreenState';
+import { useApi } from '../api/useApi';
+import { getCertificate } from '../api/endpoints';
 
-export default function Certificate({ onBack, onToast }) {
+/** "2026-06-28" → "28 Jun 2026". Left as-is if the server sends something else. */
+function formatDate(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+export default function Certificate({ user, onBack, onToast }) {
   const { colors } = useTheme();
+  const learnerId = user?.id ?? null;
+
+  const certificate = useApi(() => getCertificate(learnerId), [learnerId], { skip: !learnerId });
+  const cert = certificate.data ?? null;
+  const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || '';
+
+  if (certificate.loading && !cert) {
+    return (
+      <View>
+        <SubHead title="Certificate" onBack={onBack} />
+        <Loading label="Loading certificate…" />
+      </View>
+    );
+  }
+
+  if (certificate.error && !cert) {
+    return (
+      <View>
+        <SubHead title="Certificate" onBack={onBack} />
+        <ErrorState error={certificate.error} onRetry={certificate.reload} />
+      </View>
+    );
+  }
+
+  if (!cert) {
+    return (
+      <View>
+        <SubHead title="Certificate" onBack={onBack} />
+        <EmptyState
+          title="No certificate yet"
+          sub="Your certificate appears here once your school issues it."
+        />
+      </View>
+    );
+  }
+
   return (
     <View>
       <SubHead title="Certificate" onBack={onBack} />
@@ -15,20 +62,24 @@ export default function Certificate({ onBack, onToast }) {
           <Text style={[styles.brand, { color: colors.brand }]}>IGNITE</Text>
           <Text style={[styles.title, { color: colors.text }]}>Certificate of Achievement</Text>
           <View style={styles.rule} />
-          <Text style={[styles.name, { color: colors.ink }]}>Amara Eze</Text>
-          <Text style={[styles.meta, { color: colors.textMuted }]}>Digital Innovation · Term 2</Text>
+          <Text style={[styles.name, { color: colors.ink }]}>{name}</Text>
           <Text style={[styles.meta, { color: colors.textMuted }]}>
-            Bright Future Academy · 17 Jul 2026
+            {[cert.course, cert.term].filter(Boolean).join(' · ')}
+          </Text>
+          <Text style={[styles.meta, { color: colors.textMuted }]}>
+            {[cert.school, formatDate(cert.issueDate)].filter(Boolean).join(' · ')}
           </Text>
           <Text style={[styles.verified, { color: colors.textSubtle }]}>
-            Verified · ID IGN-2026-0148
+            Verified · ID {cert.verifiedId ?? cert.id}
           </Text>
         </View>
       </View>
 
+      {/* The server exposes a download route, but it needs a file writer and a
+          share sheet to be useful on a phone — not wired yet. */}
       <Pressable
         style={[styles.btn, { backgroundColor: colors.brand }]}
-        onPress={() => onToast('Certificate downloaded (PDF)')}
+        onPress={() => onToast('Ask your teacher for a printed copy')}
       >
         <Text style={styles.btnText}>⬇ Download PDF</Text>
       </Pressable>

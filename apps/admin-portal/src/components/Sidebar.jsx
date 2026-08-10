@@ -1,3 +1,4 @@
+import { humanize } from '../lib/format.js'
 const navItems = [
   { view: 'overview', label: 'Overview', icon: (
     <svg className="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></svg>
@@ -38,7 +39,19 @@ const LockIcon = () => (
   <svg className="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
 )
 
-export default function Sidebar({ view, onNavigate }) {
+
+function displayName(user) {
+  if (!user) return 'Signed in'
+  const name = [user.firstName, user.lastName].filter(Boolean).join(' ')
+  return name || user.email || 'Signed in'
+}
+
+function initialsOf(user) {
+  if (user?.initials) return user.initials
+  return displayName(user).split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?'
+}
+
+export default function Sidebar({ view, onNavigate, user }) {
   return (
     <aside className="side">
       <div className="brand">
@@ -58,10 +71,23 @@ export default function Sidebar({ view, onNavigate }) {
       <div className="sep"></div>
       <a className="lock"><LockIcon /><span>Analytics</span><span className="p3">Phase 3</span></a>
       <a className="lock"><LockIcon /><span>Benchmarking</span><span className="p3">Phase 3</span></a>
-      <div className="userchip">
-        <span className="ua">ZA</span>
-        <div><div className="un">Zonayed A.</div><div className="ur">Platform Admin</div></div>
-      </div>
+      <button
+        type="button"
+        className={'userchip' + (view === 'profile' ? ' on' : '')}
+        onClick={() => onNavigate('profile')}
+        title="Open your profile"
+      >
+        <span className="ua" style={user?.avatarBg ? { background: user.avatarBg, color: user.avatarColor } : undefined}>
+          {initialsOf(user)}
+        </span>
+        <div className="uinfo">
+          <div className="un">{displayName(user)}</div>
+          <div className="ur">{humanize(user?.role)}</div>
+        </div>
+        <svg className="uchev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </button>
     </aside>
   )
 }

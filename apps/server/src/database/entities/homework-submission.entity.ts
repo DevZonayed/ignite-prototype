@@ -9,6 +9,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum ReviewStatus {
   PENDING = 'pending',
   REVIEWED = 'reviewed',
@@ -25,7 +27,7 @@ export class HomeworkSubmission {
   @Column({ type: 'varchar' })
   learnerId: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   submittedAt: Date;
 
   @Column({ type: 'varchar', nullable: true })
@@ -43,7 +45,7 @@ export class HomeworkSubmission {
   @Column({ type: 'varchar', enum: ReviewStatus, default: ReviewStatus.PENDING })
   reviewStatus: ReviewStatus;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   feedbackPublishedAt: Date;
 
   @CreateDateColumn()

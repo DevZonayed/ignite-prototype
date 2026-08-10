@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -31,6 +31,9 @@ import { useTheme } from './ThemeContext';
 import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
 
+import Auth from './screens/Auth';
+import { loadSession, clearSession, setUnauthorizedHandler } from './api/auth';
+
 import Home from './screens/Home';
 import Portfolio from './screens/Portfolio';
 import Projects from './screens/Projects';
@@ -54,10 +57,24 @@ export default function AppRoot() {
     Inter_700Bold,
   });
 
-  // Router: stack of screen ids. Item detail carries its project index.
+  // Router: stack of screen ids. Item detail carries the project's id — an
+  // index would point at the wrong project as soon as a list reorders.
   const [stack, setStack] = useState(['home']);
-  const [itemIndex, setItemIndex] = useState(0);
+  const [itemId, setItemId] = useState(null);
   const scrollRef = useRef(null);
+
+  // Session: null while the stored one is still being read, so the sign-in
+  // screen never flashes in front of a learner who is already signed in.
+  const [user, setUser] = useState(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSession()
+      .then((stored) => { if (!cancelled) setUser(stored); })
+      .finally(() => { if (!cancelled) setSessionChecked(true); });
+    return () => { cancelled = true; };
+  }, []);
 
   // Toast
   const [toast, setToast] = useState({ message: '', visible: false });
@@ -89,16 +106,36 @@ export default function AppRoot() {
     scrollTop();
   }, []);
 
-  const openItem = useCallback((i) => {
-    setItemIndex(i);
+  const openItem = useCallback((id) => {
+    setItemId(id);
     navTo('item', false);
   }, [navTo]);
 
-  if (!fontsLoaded || !ready) {
+  // An expired or revoked token makes every screen fail the same way. Drop the
+  // session so the app returns to sign-in by itself instead of showing errors.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+      setStack(['home']);
+      clearSession();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
+  if (!fontsLoaded || !ready || !sessionChecked) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.bg }]}>
         <ActivityIndicator color={colors.brand} />
       </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SafeAreaView style={[styles.root, { backgroundColor: colors.bg, paddingTop: ANDROID_TOP }]}>
+        <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+        <Auth onSignedIn={setUser} />
+      </SafeAreaView>
     );
   }
 
@@ -108,28 +145,28 @@ export default function AppRoot() {
   let screen = null;
   switch (current) {
     case 'home':
-      screen = <Home onOpenItem={openItem} />;
+      screen = <Home user={user} onOpenItem={openItem} />;
       break;
     case 'portfolio':
-      screen = <Portfolio onOpenItem={openItem} />;
+      screen = <Portfolio user={user} onOpenItem={openItem} />;
       break;
     case 'projects':
-      screen = <Projects onOpenItem={openItem} />;
+      screen = <Projects user={user} onOpenItem={openItem} />;
       break;
     case 'skills':
-      screen = <Skills />;
+      screen = <Skills user={user} />;
       break;
     case 'profile':
-      screen = <Profile onOpenCertificate={() => navTo('certificate', false)} />;
+      screen = <Profile user={user} onOpenCertificate={() => navTo('certificate', false)} />;
       break;
     case 'item':
-      screen = <ItemDetail index={itemIndex} onBack={goBack} onToast={showToast} />;
+      screen = <ItemDetail projectId={itemId} onBack={goBack} onToast={showToast} />;
       break;
     case 'certificate':
-      screen = <Certificate onBack={goBack} onToast={showToast} />;
+      screen = <Certificate user={user} onBack={goBack} onToast={showToast} />;
       break;
     default:
-      screen = <Home onOpenItem={openItem} />;
+      screen = <Home user={user} onOpenItem={openItem} />;
   }
 
   return (

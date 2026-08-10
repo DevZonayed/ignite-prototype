@@ -7,6 +7,8 @@ import {
   OneToMany,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum CurriculumVersionStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
@@ -26,7 +28,7 @@ export class CurriculumVersion {
   @Column({ type: 'varchar', enum: CurriculumVersionStatus, default: CurriculumVersionStatus.DRAFT })
   status: CurriculumVersionStatus;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   publishedAt: Date;
 
   @Column({ type: 'boolean', default: false })

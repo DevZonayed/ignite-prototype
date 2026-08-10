@@ -7,6 +7,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 @Entity('assessments')
 export class Assessment {
   @PrimaryGeneratedColumn('uuid')
@@ -24,7 +26,7 @@ export class Assessment {
   @Column({ type: 'int' })
   score: number;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   savedAt: Date;
 
   @CreateDateColumn()

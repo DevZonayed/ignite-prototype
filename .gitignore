@@ -20,3 +20,7 @@ temp_interactive_push.bat
 
 # Orca session artifacts (transcripts, drops) — never publish
 .orca/
+
+# Continuum session artifacts (transcripts, telemetry) — never publish
+.continuum/
+**/.continuum/

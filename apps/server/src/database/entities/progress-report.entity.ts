@@ -8,6 +8,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum ProgressReportStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
@@ -53,7 +55,7 @@ export class ProgressReport {
   @Column({ type: 'varchar', enum: GeneratedBy, nullable: true })
   generatedBy: GeneratedBy;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   publishedAt: Date;
 
   @CreateDateColumn()

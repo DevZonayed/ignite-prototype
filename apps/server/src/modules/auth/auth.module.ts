@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { User } from '../../database/entities/user.entity';
+import { AuditLog } from '../../database/entities/audit-log.entity';
 import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -21,7 +22,7 @@ import { getJwtConfig } from '../../config/jwt.config';
       inject: [ConfigService],
       useFactory: getJwtConfig,
     }),
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, AuditLog]),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, LocalStrategy],

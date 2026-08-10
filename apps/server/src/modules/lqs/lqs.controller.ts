@@ -45,10 +45,10 @@ export class LqsController {
 
   @Put('dimensions')
   @Roles('platform_admin', 'curriculum_admin')
-  @ApiOperation({ summary: 'Save rubric config — weights must total 100' })
+  @ApiOperation({ summary: 'Save rubric config, weights must total 100' })
   @ApiResponse({ status: 200, description: 'Dimensions updated' })
   @ApiResponse({ status: 400, description: 'Weights do not total 100' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async updateDimensions(@Body() dto: UpdateDimensionsDto) {
     return this.lqsService.updateDimensions(dto);
   }
@@ -66,7 +66,7 @@ export class LqsController {
   @Roles('teacher')
   @ApiOperation({ summary: 'Save rubric scores for a learner' })
   @ApiResponse({ status: 201, description: 'Scores saved' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async saveScore(@Body() dto: SaveScoreDto) {
     return this.lqsService.saveScore(dto);
   }
@@ -75,7 +75,7 @@ export class LqsController {
   @Roles('teacher')
   @ApiOperation({ summary: 'Save rubric scores for multiple learners at once' })
   @ApiResponse({ status: 201, description: 'Bulk scores saved' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async saveScoresBulk(@Body() dto: SaveScoresBulkDto) {
     return this.lqsService.saveScoresBulk(dto);
   }
@@ -109,7 +109,7 @@ export class LqsController {
   @Roles('platform_admin', 'curriculum_admin')
   @ApiOperation({ summary: 'Create a new badge definition' })
   @ApiResponse({ status: 201, description: 'Badge created' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async createBadge(@Body() dto: CreateBadgeDto) {
     return this.lqsService.createBadge(dto);
   }
@@ -120,7 +120,7 @@ export class LqsController {
   @ApiParam({ name: 'id', description: 'Badge UUID' })
   @ApiResponse({ status: 200, description: 'Badge updated' })
   @ApiResponse({ status: 404, description: 'Badge not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async updateBadge(
     @Param('id') id: string,
     @Body() dto: Partial<CreateBadgeDto>,
@@ -129,7 +129,7 @@ export class LqsController {
   }
 
   @Get('badges/learner/:learnerId')
-  @ApiOperation({ summary: 'Badges for a learner — earned and locked' })
+  @ApiOperation({ summary: 'Badges for a learner, earned and locked' })
   @ApiParam({ name: 'learnerId', description: 'Learner UUID' })
   @ApiResponse({ status: 200, description: 'Learner badges' })
   async getLearnerBadges(@Param('learnerId') learnerId: string) {
@@ -141,7 +141,7 @@ export class LqsController {
   @ApiOperation({ summary: 'Award a badge to a learner' })
   @ApiResponse({ status: 201, description: 'Badge awarded' })
   @ApiResponse({ status: 404, description: 'Badge not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async awardBadge(@Body() dto: AwardBadgeDto) {
     return this.lqsService.awardBadge(dto);
   }
@@ -152,7 +152,7 @@ export class LqsController {
   @Roles('platform_admin', 'curriculum_admin')
   @ApiOperation({ summary: 'Get certificate template' })
   @ApiResponse({ status: 200, description: 'Certificate template' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async getTemplate() {
     return this.lqsService.getTemplate();
   }
@@ -161,7 +161,7 @@ export class LqsController {
   @Roles('platform_admin', 'curriculum_admin')
   @ApiOperation({ summary: 'Update certificate template' })
   @ApiResponse({ status: 200, description: 'Template updated' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async updateTemplate(@Body() body: { templateHtml: string }) {
     return this.lqsService.updateTemplate(body.templateHtml);
   }
@@ -170,7 +170,7 @@ export class LqsController {
   @Roles('platform_admin', 'curriculum_admin')
   @ApiOperation({ summary: 'Preview certificate with sample data' })
   @ApiResponse({ status: 200, description: 'Template preview HTML' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async previewTemplate() {
     return this.lqsService.previewTemplate();
   }

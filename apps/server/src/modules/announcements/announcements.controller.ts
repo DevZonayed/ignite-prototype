@@ -59,7 +59,7 @@ export class AnnouncementsController {
   @ApiOperation({ summary: 'Create a new announcement' })
   @ApiResponse({ status: 201, description: 'Announcement created' })
   @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async create(
     @Body() dto: CreateAnnouncementDto,
     @CurrentUser('id') createdById: string,
@@ -82,7 +82,7 @@ export class AnnouncementsController {
   @ApiParam({ name: 'id', description: 'Announcement UUID' })
   @ApiResponse({ status: 200, description: 'Announcement deleted' })
   @ApiResponse({ status: 404, description: 'Announcement not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async remove(@Param('id') id: string) {
     return this.announcementsService.remove(id);
   }

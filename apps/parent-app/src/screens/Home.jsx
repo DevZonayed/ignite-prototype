@@ -3,14 +3,58 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Icon from '../components/Icon';
 import ChildSwitcher from '../components/ChildSwitcher';
 import { useTheme } from '../ThemeContext';
+import { useChildren } from '../context/ChildContext';
+import { useApi } from '../api/useApi';
+import { getWeeklySummary, getChildFeed, listHomework } from '../api/endpoints';
+import { Loading, ErrorState, EmptyState } from '../components/ScreenState';
+import { firstName } from '../lib/user';
+
+/** "2026-07-18" → "Fri 18 Jul". Left as-is if it is not a date. */
+function formatDue(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
 
 // HOME screen — child switcher, "This week" card, action rows.
-export default function Home({ current, onSelectChild, onNavigate }) {
+export default function Home({ onNavigate }) {
   const { colors, fonts } = useTheme();
+  const { activeChild, activeChildId, loading: childrenLoading, error: childrenError, reload } =
+    useChildren();
+
+  const summary = useApi(() => getWeeklySummary(activeChildId), [activeChildId], {
+    skip: !activeChildId,
+  });
+  const feed = useApi(() => getChildFeed(activeChildId), [activeChildId], {
+    skip: !activeChildId,
+    initial: [],
+  });
+  const homework = useApi(() => listHomework(activeChildId), [activeChildId], {
+    skip: !activeChildId,
+    initial: [],
+  });
+
+  if (childrenLoading && !activeChild) return <Loading label="Loading your children…" />;
+  if (childrenError) return <ErrorState error={childrenError} onRetry={reload} />;
+  if (!activeChild) {
+    return (
+      <EmptyState
+        title="No children linked yet"
+        sub="Ask your school to link your account to your child's record."
+      />
+    );
+  }
+
+  const stats = summary.data;
+  // The newest unread-ish item drives the "message from teacher" row.
+  const latestMessage = (feed.data ?? []).find((f) => f.type === 'message');
+  const latestReport = (feed.data ?? []).find((f) => f.type === 'report');
+  const nextHomework = (homework.data ?? [])[0];
 
   return (
     <View>
-      <ChildSwitcher current={current} onSelect={onSelectChild} />
+      <ChildSwitcher />
 
       {/* This week */}
       <View
@@ -22,68 +66,76 @@ export default function Home({ current, onSelectChild, onNavigate }) {
         <Text style={[styles.weekTitle, { color: colors.text, fontFamily: fonts.display }]}>
           This week
         </Text>
-        <View style={styles.wk}>
-          <WeekStat
-            bg="#dcfce7"
-            icon={<Icon name="check" size={19} color="#16a34a" strokeWidth={2} />}
-            n="4/5"
-            l="present"
-          />
-          <WeekStat
-            bg={colors.brandSoft}
-            icon={<Icon name="calendar" size={19} color={colors.brand} strokeWidth={2} />}
-            n="2"
-            l="projects"
-          />
-          <WeekStat
-            bg="#f5f3ff"
-            icon={<Icon name="file" size={19} color={colors.violet} strokeWidth={2} />}
-            n="1"
-            l="new report"
-          />
-        </View>
+        {summary.loading && !stats ? (
+          <Loading label="Loading this week…" />
+        ) : (
+          <View style={styles.wk}>
+            <WeekStat
+              bg="#dcfce7"
+              icon={<Icon name="check" size={19} color="#16a34a" strokeWidth={2} />}
+              n={String(stats?.daysPresent ?? 0)}
+              l="days present"
+            />
+            <WeekStat
+              bg={colors.brandSoft}
+              icon={<Icon name="calendar" size={19} color={colors.brand} strokeWidth={2} />}
+              n={String(stats?.activeProjects ?? 0)}
+              l="projects"
+            />
+            <WeekStat
+              bg="#f5f3ff"
+              icon={<Icon name="file" size={19} color={colors.violet} strokeWidth={2} />}
+              n={String(stats?.newReports ?? 0)}
+              l={stats?.newReports === 1 ? 'new report' : 'new reports'}
+            />
+          </View>
+        )}
       </View>
 
       {/* Homework due */}
-      <Pressable
-        style={[styles.arow, { backgroundColor: colors.surface, borderColor: colors.border }]}
-        onPress={() => onNavigate('homework')}
-      >
-        <View style={[styles.ai, { backgroundColor: 'rgba(249,115,22,0.14)' }]}>
-          <Icon name="pencil" size={21} color={colors.ignite} strokeWidth={2} />
-        </View>
-        <View style={{ flexShrink: 1 }}>
-          <Text style={[styles.at, { color: colors.text, fontFamily: fonts.display800 }]}>
-            Homework due
-          </Text>
-          <Text style={[styles.as, { color: colors.textMuted, fontFamily: fonts.ui }]}>
-            Smart Reading Lamp · Fri 18 Jul
-          </Text>
-        </View>
-        <View style={[styles.go, { backgroundColor: colors.ignite }]}>
-          <Text style={[styles.goText, { color: '#3b1d05', fontFamily: fonts.ui700 }]}>
-            Upload
-          </Text>
-        </View>
-      </Pressable>
+      {nextHomework ? (
+        <Pressable
+          style={[styles.arow, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={() => onNavigate('homework')}
+        >
+          <View style={[styles.ai, { backgroundColor: 'rgba(249,115,22,0.14)' }]}>
+            <Icon name="pencil" size={21} color={colors.ignite} strokeWidth={2} />
+          </View>
+          <View style={{ flexShrink: 1 }}>
+            <Text style={[styles.at, { color: colors.text, fontFamily: fonts.display800 }]}>
+              Homework due
+            </Text>
+            <Text style={[styles.as, { color: colors.textMuted, fontFamily: fonts.ui }]}>
+              {[nextHomework.title, formatDue(nextHomework.dueDate)].filter(Boolean).join(' · ')}
+            </Text>
+          </View>
+          <View style={[styles.go, { backgroundColor: colors.ignite }]}>
+            <Text style={[styles.goText, { color: '#3b1d05', fontFamily: fonts.ui700 }]}>
+              Open
+            </Text>
+          </View>
+        </Pressable>
+      ) : null}
 
       {/* New message from teacher */}
-      <Pressable
-        style={[styles.arow, { backgroundColor: colors.surface, borderColor: colors.border }]}
-        onPress={() => onNavigate('child')}
-      >
-        <View style={[styles.ai, { backgroundColor: '#ccfbf1' }]}>
-          <Icon name="message" size={21} color={colors.teal} strokeWidth={2} />
-        </View>
-        <View style={{ flexShrink: 1 }}>
-          <Text style={[styles.at, { color: colors.text, fontFamily: fonts.display800 }]}>
-            New message from teacher
-          </Text>
-          <Text style={[styles.as, { color: colors.textMuted, fontFamily: fonts.ui }]}>
-            "Ask Amara to point to the button…"
-          </Text>
-        </View>
-      </Pressable>
+      {latestMessage ? (
+        <Pressable
+          style={[styles.arow, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          onPress={() => onNavigate('homework')}
+        >
+          <View style={[styles.ai, { backgroundColor: '#ccfbf1' }]}>
+            <Icon name="message" size={21} color={colors.teal} strokeWidth={2} />
+          </View>
+          <View style={{ flexShrink: 1 }}>
+            <Text style={[styles.at, { color: colors.text, fontFamily: fonts.display800 }]}>
+              New message from teacher
+            </Text>
+            <Text style={[styles.as, { color: colors.textMuted, fontFamily: fonts.ui }]}>
+              {latestMessage.title}
+            </Text>
+          </View>
+        </Pressable>
+      ) : null}
 
       {/* AI report ready */}
       <Pressable
@@ -95,10 +147,10 @@ export default function Home({ current, onSelectChild, onNavigate }) {
         </View>
         <View style={{ flexShrink: 1 }}>
           <Text style={[styles.at, { color: colors.text, fontFamily: fonts.display800 }]}>
-            AI report ready
+            {latestReport ? latestReport.title : 'Progress report'}
           </Text>
           <Text style={[styles.as, { color: colors.textMuted, fontFamily: fonts.ui }]}>
-            Term 2 · Digital Innovation
+            {firstName(activeChild)}'s termly report
           </Text>
         </View>
         <View style={[styles.go, { backgroundColor: colors.brand }]}>

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, useWindowDimensions, Platform, StatusBar as RNStatusBar } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -39,8 +39,19 @@ import ProjectScreen from './screens/ProjectScreen';
 import ReflectionScreen from './screens/ReflectionScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import SignInScreen from './screens/SignInScreen';
+import { loadSession, clearSession, setUnauthorizedHandler } from './api/auth';
+import { ClassProvider } from './context/ClassContext';
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
+import ActivateScreen from './screens/ActivateScreen';
 
 const MAINS = ['home', 'lessons', 'learners', 'homework', 'ai', 'profile'];
+
+/** Nav params are flat id bags, so one level of comparison is enough. */
+function shallowEqual(a = {}, b = {}) {
+  const ak = Object.keys(a);
+  const bk = Object.keys(b);
+  return ak.length === bk.length && ak.every((k) => a[k] === b[k]);
+}
 
 // Real device status-bar inset. RN's SafeAreaView ignores the Android status bar,
 // so reserve its height explicitly; iOS notch handled with a safe default; web = 0.
@@ -55,15 +66,35 @@ function Shell() {
   const { colors, mode } = useTheme();
   const { width, height } = useWindowDimensions();
 
-  const [stack, setStack] = useState(['home']);
+  // Entries are { id, params }: detail screens need to know which lesson,
+  // learner or submission they were opened for, and that has to survive going
+  // back and forward through the stack.
+  const [stack, setStack] = useState([{ id: 'home', params: {} }]);
   const [toast, setToast] = useState({ msg: '', visible: false });
   const [modalOpen, setModalOpen] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [user, setUser] = useState(null);
+  // Which pre-auth screen is showing, and the address to prefill on return
+  // from a completed password reset.
+  const [authView, setAuthView] = useState('signin');
+  const [resetIdentifier, setResetIdentifier] = useState('');
+  // Null while we check storage, so we don't flash the sign-in screen at
+  // someone who is already signed in.
+  const [restoring, setRestoring] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSession()
+      .then((stored) => { if (!cancelled && stored) setUser(stored); })
+      .finally(() => { if (!cancelled) setRestoring(false); });
+    return () => { cancelled = true; };
+  }, []);
   const toastTimer = useRef(null);
   const scrollRef = useRef(null);
 
-  const current = stack[stack.length - 1];
+  const currentEntry = stack[stack.length - 1];
+  const current = currentEntry.id;
+  const params = currentEntry.params;
   const isMain = MAINS.indexOf(current) >= 0;
 
   const showToast = useCallback((msg) => {
@@ -72,12 +103,15 @@ function Shell() {
     toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, visible: false })), 1900);
   }, []);
 
-  const navTo = useCallback((id, asMain) => {
-    const main = asMain !== undefined ? asMain : MAINS.indexOf(id) >= 0;
+  const navTo = useCallback((id, navParams = {}) => {
+    const main = MAINS.indexOf(id) >= 0;
     setStack((prev) => {
-      if (main) return [id];
-      if (prev[prev.length - 1] === id) return prev;
-      return [...prev, id];
+      if (main) return [{ id, params: navParams }];
+      const top = prev[prev.length - 1];
+      // Re-tapping the screen you are on is a no-op, but opening the same
+      // screen for a different learner or lesson is a real navigation.
+      if (top.id === id && shallowEqual(top.params, navParams)) return prev;
+      return [...prev, { id, params: navParams }];
     });
     if (scrollRef.current) scrollRef.current.scrollTo({ y: 0, animated: false });
   }, []);
@@ -88,35 +122,51 @@ function Shell() {
   }, []);
 
   const goHome = useCallback(() => {
-    setStack(['home']);
+    setStack([{ id: 'home', params: {} }]);
     if (scrollRef.current) scrollRef.current.scrollTo({ y: 0, animated: false });
   }, []);
 
   // Bottom nav taps reset the stack (main screens)
-  const onNav = useCallback((id) => navTo(id, true), [navTo]);
+  const onNav = useCallback((id) => navTo(id), [navTo]);
 
   // Sign out: drop the session AND reset nav, so signing back in starts at home
   // rather than resuming on the profile screen.
   const doSignOut = useCallback(() => {
     setSignOutOpen(false);
     setModalOpen(false);
-    setStack(['home']);
+    setStack([{ id: 'home', params: {} }]);
     setUser(null);
+    setAuthView('signin');
+    clearSession();
   }, []);
 
   const doSignIn = useCallback(
     (u) => {
       setUser(u);
-      setStack(['home']);
+      setStack([{ id: 'home', params: {} }]);
     },
     []
   );
 
+  // An expired or revoked token makes every screen fail the same way. Drop the
+  // session so the app returns to sign-in by itself instead of showing errors.
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+      setAuthView('signin');
+      setStack([{ id: 'home', params: {} }]);
+      clearSession();
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
   function renderScreen() {
-    const p = { navTo, goBack, goHome, showToast };
+    // `user` goes to every screen: several need the signed-in teacher's name to
+    // label what they send (homework messages, reflections).
+    const p = { navTo, goBack, goHome, showToast, params, user };
     switch (current) {
       case 'home':
-        return <HomeScreen {...p} user={user} />;
+        return <HomeScreen {...p} />;
       case 'lessons':
         return <LessonsScreen {...p} />;
       case 'lesson-detail':
@@ -142,7 +192,7 @@ function Shell() {
       case 'ai':
         return <AIScreen {...p} />;
       case 'profile':
-        return <ProfileScreen {...p} user={user} onSignOut={() => setSignOutOpen(true)} />;
+        return <ProfileScreen {...p} onSignOut={() => setSignOutOpen(true)} />;
       case 'sync':
         return <SyncScreen {...p} openRemoveModal={() => setModalOpen(true)} />;
       case 'assessment':
@@ -174,15 +224,51 @@ function Shell() {
         ]}
       >
         <View style={[styles.viewport, { backgroundColor: colors.bg, borderRadius: narrow ? 0 : 34 }]}>
-          <ScrollView
-            ref={scrollRef}
-            style={{ flex: 1 }}
-            contentContainerStyle={{ paddingHorizontal: 18, paddingTop: TOP_INSET + 10, paddingBottom: 92 }}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {user ? renderScreen() : <SignInScreen onSignedIn={doSignIn} showToast={showToast} />}
-          </ScrollView>
+          {/* Sign-in owns the full viewport so its hero can bleed to the edges;
+              signed-in screens keep the shared padded scroll container. */}
+          {restoring ? (
+            <View style={{ flex: 1, backgroundColor: colors.bg }} />
+          ) : user ? (
+            // Mounted inside the signed-in branch so the class list is fetched
+            // with a token, and thrown away on sign-out.
+            <ClassProvider>
+              <ScrollView
+                ref={scrollRef}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingHorizontal: 18, paddingTop: TOP_INSET + 10, paddingBottom: 92 }}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {renderScreen()}
+              </ScrollView>
+            </ClassProvider>
+          ) : authView === 'forgot' ? (
+            <ForgotPasswordScreen
+              onDone={(identifier) => {
+                setResetIdentifier(identifier);
+                setAuthView('signin');
+              }}
+              onCancel={() => setAuthView('signin')}
+              showToast={showToast}
+              topInset={TOP_INSET}
+            />
+          ) : authView === 'activate' ? (
+            <ActivateScreen
+              onActivated={doSignIn}
+              onCancel={() => setAuthView('signin')}
+              showToast={showToast}
+              topInset={TOP_INSET}
+            />
+          ) : (
+            <SignInScreen
+              onSignedIn={doSignIn}
+              onForgotPassword={() => setAuthView('forgot')}
+              onActivate={() => setAuthView('activate')}
+              showToast={showToast}
+              topInset={TOP_INSET}
+              initialIdentifier={resetIdentifier}
+            />
+          )}
 
           <Toast message={toast.msg} visible={toast.visible} />
 
