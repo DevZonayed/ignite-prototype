@@ -5,9 +5,11 @@ import {
   Param,
   Post,
   Put,
+  Res,
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -178,18 +180,37 @@ export class LqsController {
   @Get('certificates/learner/:learnerId')
   @ApiOperation({ summary: "Get a learner's certificate" })
   @ApiParam({ name: 'learnerId', description: 'Learner UUID' })
-  @ApiResponse({ status: 200, description: 'Learner certificate' })
-  @ApiResponse({ status: 404, description: 'Certificate not found' })
+  @ApiResponse({ status: 200, description: 'Learner certificate, or null if none earned yet' })
   async getLearnerCertificate(@Param('learnerId') learnerId: string) {
     return this.lqsService.getLearnerCertificate(learnerId);
   }
 
-  @Get('certificates/learner/:learnerId/download')
-  @ApiOperation({ summary: 'Download certificate as PDF' })
+  @Post('certificates/learner/:learnerId')
+  @Roles('platform_admin', 'curriculum_admin', 'principal', 'teacher')
+  @ApiOperation({ summary: 'Issue a certificate to a learner' })
   @ApiParam({ name: 'learnerId', description: 'Learner UUID' })
-  @ApiResponse({ status: 200, description: 'PDF download' })
-  @ApiResponse({ status: 404, description: 'Certificate not found' })
-  async downloadCertificate(@Param('learnerId') learnerId: string) {
-    return this.lqsService.downloadCertificate(learnerId);
+  @ApiResponse({ status: 201, description: 'Certificate issued' })
+  @ApiResponse({ status: 400, description: 'User is not a learner' })
+  @ApiResponse({ status: 404, description: 'Learner not found' })
+  async issueCertificate(
+    @Param('learnerId') learnerId: string,
+    @Body() body: { course?: string; term?: string },
+  ) {
+    return this.lqsService.issueCertificate(learnerId, body ?? {});
+  }
+
+  @Get('certificates/learner/:learnerId/download')
+  @ApiOperation({ summary: 'Download a learner certificate as printable HTML' })
+  @ApiParam({ name: 'learnerId', description: 'Learner UUID' })
+  @ApiResponse({ status: 200, description: 'Certificate document' })
+  @ApiResponse({ status: 404, description: 'No certificate issued' })
+  async downloadCertificate(
+    @Param('learnerId') learnerId: string,
+    @Res() res: Response,
+  ) {
+    const { filename, html } = await this.lqsService.downloadCertificate(learnerId);
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(html);
   }
 }

@@ -6,12 +6,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, ILike } from 'typeorm';
+import { Repository, FindOptionsWhere, ILike, In } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 
 import { User, UserRole, UserStatus } from '../../database/entities/user.entity';
 import { Class } from '../../database/entities/class.entity';
+import { ParentChild } from '../../database/entities/parent-child.entity';
 import { Evidence } from '../../database/entities/evidence.entity';
 import { LessonSession } from '../../database/entities/lesson-session.entity';
 import { MailService } from '../mail/mail.service';
@@ -24,6 +25,9 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+
+    @InjectRepository(ParentChild)
+    private readonly parentChildRepository: Repository<ParentChild>,
 
     @InjectRepository(Class)
     private readonly classRepository: Repository<Class>,
@@ -299,5 +303,77 @@ export class UsersService {
    */
   async count(): Promise<number> {
     return this.usersRepository.count();
+  }
+
+  /**
+   * Link learners to a parent.
+   *
+   * `parent_children` had no write path anywhere in the system — only the demo
+   * seed ever created a row — so a real parent account could never see a child
+   * and the whole parent app sat empty. Both sides must share a school.
+   */
+  async linkChildren(parentId: string, childIds: string[]): Promise<ParentChild[]> {
+    const parent = await this.usersRepository.findOne({ where: { id: parentId } });
+    if (!parent) {
+      throw new NotFoundException(`User with ID "${parentId}" not found`);
+    }
+    if (parent.role !== UserRole.PARENT) {
+      throw new BadRequestException(`User "${parentId}" is not a parent`);
+    }
+
+    const children = await this.usersRepository.find({
+      where: { id: In(childIds) },
+    });
+    const missing = childIds.filter((id) => !children.some((c) => c.id === id));
+    if (missing.length) {
+      throw new NotFoundException(`Learner(s) not found: ${missing.join(', ')}`);
+    }
+    for (const child of children) {
+      if (child.role !== UserRole.LEARNER) {
+        throw new BadRequestException(`User "${child.id}" is not a learner`);
+      }
+      if (parent.schoolId && child.schoolId !== parent.schoolId) {
+        throw new BadRequestException(
+          `Learner "${child.id}" is at a different school to this parent`,
+        );
+      }
+    }
+
+    const existing = await this.parentChildRepository.find({
+      where: { parentId, childId: In(childIds) },
+    });
+    const fresh = childIds.filter(
+      (childId) => !existing.some((link) => link.childId === childId),
+    );
+
+    if (fresh.length) {
+      await this.parentChildRepository.save(
+        fresh.map((childId) => this.parentChildRepository.create({ parentId, childId })),
+      );
+    }
+
+    return this.parentChildRepository.find({ where: { parentId } });
+  }
+
+  /** Remove one parent-child link. */
+  async unlinkChild(parentId: string, childId: string): Promise<{ deleted: boolean }> {
+    const link = await this.parentChildRepository.findOne({
+      where: { parentId, childId },
+    });
+    if (!link) {
+      throw new NotFoundException('That child is not linked to this parent');
+    }
+    await this.parentChildRepository.remove(link);
+    return { deleted: true };
+  }
+
+  /** Learners linked to a parent, as full user records. */
+  async findLinkedChildren(parentId: string): Promise<User[]> {
+    const links = await this.parentChildRepository.find({ where: { parentId } });
+    if (!links.length) return [];
+    return this.usersRepository.find({
+      where: { id: In(links.map((l) => l.childId)) },
+      order: { firstName: 'ASC' },
+    });
   }
 }

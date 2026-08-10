@@ -91,6 +91,11 @@ export default function People({ active, role, schoolId, onOpenDetail, onToast }
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE))
   const label = humanize(role).toLowerCase()
 
+  // Only learners sit on a class register, so the column is theirs alone.
+  const isLearnerList = role === 'learner'
+  const classNameFor = (classId) =>
+    (classes.data?.data ?? []).find((c) => c.id === classId)?.name || ''
+
   return (
     <section className={'view' + (active ? ' active' : '')}>
       <div className="toolbar">
@@ -106,14 +111,28 @@ export default function People({ active, role, schoolId, onOpenDetail, onToast }
         <div className="panel" style={{ padding: '6px 8px' }}>
           <table>
             <thead>
-              <tr><th>Name</th><th>Email</th><th>Status</th><th>Last active</th><th /></tr>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                {isLearnerList ? <th>Class</th> : null}
+                <th>Status</th>
+                <th>Last active</th>
+                <th />
+              </tr>
             </thead>
-            {people.loading && !people.data ? <TableSkeleton rows={6} cols={5} /> : (
+            {people.loading && !people.data ? <TableSkeleton rows={6} cols={isLearnerList ? 6 : 5} /> : (
               <tbody>
                 {rows.map((u) => (
                   <tr key={u.id}>
                     <td className="strong">{fullName(u)}</td>
                     <td>{u.email || '-'}</td>
+                    {isLearnerList ? (
+                      <td>
+                        {classNameFor(u.classId) || (
+                          <span className="fm">Not enrolled</span>
+                        )}
+                      </td>
+                    ) : null}
                     <td><span className={'badge ' + statusBadge(u.status)}>{humanize(u.status)}</span></td>
                     <td>{fmtRelative(u.lastActiveAt || u.lastLoginAt)}</td>
                     <td>

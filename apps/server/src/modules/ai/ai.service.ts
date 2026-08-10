@@ -4,12 +4,17 @@ import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
 import { AiMessage, AiMessageRole } from '../../database/entities/ai-message.entity';
+import { ClaudeService } from './claude.service';
 import { AiConfig, ModelTier } from '../../database/entities/ai-config.entity';
 import { UpdateConfigDto } from './dto/update-config.dto';
+
+/** How many prior turns to replay as context. */
+const HISTORY_TURNS = 20;
 
 @Injectable()
 export class AiService {
   constructor(
+    private readonly claude: ClaudeService,
     @InjectRepository(AiMessage)
     private readonly messageRepository: Repository<AiMessage>,
     @InjectRepository(AiConfig)
@@ -42,15 +47,35 @@ export class AiService {
 
   /**
    * Send a message and return a mock AI response.
-   * In production this will call the AI provider; for now it persists the user
-   * message and returns a stub assistant reply.
+   * Ask the tutor a question and persist both turns.
+   *
+   * This used to persist the question and answer it with a fixed placeholder
+   * string, which a learner reads as a real reply.
    */
   async sendMessage(
     userId: string,
     content: string,
     lessonId?: string,
   ): Promise<{ userMessage: AiMessage; assistantMessage: AiMessage }> {
-    // Persist the user message
+    // Prior turns give follow-ups something to resolve against; without them
+    // every question arrives cold and "why?" is unanswerable.
+    const priorTurns = await this.messageRepository.find({
+      where: { userId, ...(lessonId ? { lessonId } : {}) },
+      order: { createdAt: 'ASC' },
+      take: HISTORY_TURNS,
+    });
+    const history = priorTurns.map((m) => ({
+      role: m.role === AiMessageRole.USER ? ('user' as const) : ('assistant' as const),
+      content: m.content,
+    }));
+
+    const config = await this.getConfig();
+
+    // Ask the model before persisting anything: if it refuses or the service
+    // is down, the learner gets an error rather than a question recorded
+    // against an answer that never came.
+    const answer = await this.claude.reply(content, history, config.modelTier);
+
     const userMessage = this.messageRepository.create({
       userId,
       lessonId: lessonId ?? undefined,
@@ -59,14 +84,11 @@ export class AiService {
     });
     await this.messageRepository.save(userMessage);
 
-    // Generate a stub assistant reply
     const assistantMessage = this.messageRepository.create({
       userId,
       lessonId: lessonId ?? undefined,
       role: AiMessageRole.ASSISTANT,
-      content:
-        'Thank you for your question! This is a placeholder response. ' +
-        'The AI integration is not yet connected to a live model.',
+      content: answer.text,
     });
     await this.messageRepository.save(assistantMessage);
 

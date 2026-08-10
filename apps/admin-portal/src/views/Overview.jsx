@@ -33,7 +33,7 @@ export default function Overview({ onNavigate }) {
   const audit = useResource(() => listAudit({ limit: 5 }), [])
 
   if (dash.loading && !dash.data) {
-    return <section className="view active"><Loading label="Loading platform overview…" /></section>
+    return <section className="view active"><Loading label="Loading platform overview…" variant="page" /></section>
   }
   if (dash.error) {
     return <section className="view active"><ErrorState error={dash.error} onRetry={dash.reload} /></section>
@@ -74,9 +74,9 @@ export default function Overview({ onNavigate }) {
         <div className="panel">
           <div className="ph">
             <h3>Adoption by school</h3>
-            <span className="link" onClick={() => onNavigate('schools')}>View all →</span>
+            <button type="button" className="linkbtn" onClick={() => onNavigate('schools')}>View all →</button>
           </div>
-          {schools.loading && !schools.data ? <Loading /> : null}
+          {schools.loading && !schools.data ? <Loading label="Loading schools…" variant="rows" /> : null}
           {schools.error ? <ErrorState error={schools.error} onRetry={schools.reload} /> : null}
           {schools.data && schools.data.data.length === 0 ? (
             <EmptyState title="No schools yet" hint="Schools you create will appear here." />
@@ -106,9 +106,9 @@ export default function Overview({ onNavigate }) {
         <div className="panel">
           <div className="ph">
             <h3>Audit activity</h3>
-            <span className="link" onClick={() => onNavigate('security')}>Open log →</span>
+            <button type="button" className="linkbtn" onClick={() => onNavigate('security')}>Open log →</button>
           </div>
-          {audit.loading && !audit.data ? <Loading /> : null}
+          {audit.loading && !audit.data ? <Loading label="Loading audit activity…" variant="rows" /> : null}
           {audit.error ? <ErrorState error={audit.error} onRetry={audit.reload} /> : null}
           {audit.data && audit.data.data.length === 0 ? (
             <EmptyState title="No audit entries yet" />

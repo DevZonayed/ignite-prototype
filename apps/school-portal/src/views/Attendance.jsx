@@ -47,9 +47,9 @@ export default function Attendance({ active, schoolId }) {
         <div className="panel">
           <div className="ph">
             <h3>Attendance trend (last 6 weeks)</h3>
-            <span className="link" onClick={trend.reload}>Refresh</span>
+            <button type="button" className="linkbtn" onClick={trend.reload}>Refresh</button>
           </div>
-          {trend.loading && !trend.data ? <Loading /> : null}
+          {trend.loading && !trend.data ? <Loading label="Loading attendance trend…" variant="chart" /> : null}
           {trend.error ? <ErrorState error={trend.error} onRetry={trend.reload} /> : null}
           {trend.data && trendRows.length === 0 ? (
             <EmptyState
@@ -63,9 +63,9 @@ export default function Attendance({ active, schoolId }) {
         <div className="panel">
           <div className="ph">
             <h3>Assessment distribution</h3>
-            <span className="link" onClick={dist.reload}>Refresh</span>
+            <button type="button" className="linkbtn" onClick={dist.reload}>Refresh</button>
           </div>
-          {dist.loading && !dist.data ? <Loading /> : null}
+          {dist.loading && !dist.data ? <Loading label="Loading assessment spread…" variant="bars" /> : null}
           {dist.error ? <ErrorState error={dist.error} onRetry={dist.reload} /> : null}
           {dist.data && distTotal === 0 ? (
             <EmptyState
@@ -110,9 +110,9 @@ export default function Attendance({ active, schoolId }) {
       <div className="panel">
         <div className="ph">
           <h3>Attendance by class</h3>
-          <span className="link" onClick={heatmap.reload}>Refresh</span>
+          <button type="button" className="linkbtn" onClick={heatmap.reload}>Refresh</button>
         </div>
-        {heatmap.loading && !heatmap.data ? <Loading /> : null}
+        {heatmap.loading && !heatmap.data ? <Loading label="Loading attendance heatmap…" variant="rows" /> : null}
         {heatmap.error ? <ErrorState error={heatmap.error} onRetry={heatmap.reload} /> : null}
         {heatmap.data && heatRows.length === 0 ? (
           <EmptyState

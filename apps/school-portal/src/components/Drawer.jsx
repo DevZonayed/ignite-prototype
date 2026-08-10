@@ -78,7 +78,7 @@ function ClassBody({ cls, teacher }) {
       </div>
 
       <div className="dsec">Learners</div>
-      {learners.loading && !learners.data ? <Loading /> : null}
+      {learners.loading && !learners.data ? <Loading label="Loading learners…" variant="list" /> : null}
       {learners.error ? <ErrorState error={learners.error} onRetry={learners.reload} /> : null}
       {learners.data && rows.length === 0 ? (
         <EmptyState title="No learners in this class yet" />

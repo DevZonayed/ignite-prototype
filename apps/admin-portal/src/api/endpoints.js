@@ -38,6 +38,11 @@ export const inviteUser = (body) => api.post('/users/invite', body)
 export const updateUser = (id, body) => api.patch(`/users/${id}`, body)
 export const updateUserStatus = (id, status) => api.patch(`/users/${id}/status`, { status })
 export const resetUserPassword = (id) => api.post(`/users/${id}/reset-password`)
+export const listLinkedChildren = (parentId) => api.get(`/users/${parentId}/children`)
+export const linkChildren = (parentId, childIds) =>
+  api.post(`/users/${parentId}/children`, { childIds })
+export const unlinkChild = (parentId, childId) =>
+  api.del(`/users/${parentId}/children/${childId}`)
 export const deleteUser = (id) => api.del(`/users/${id}`)
 
 /* curriculum */
@@ -48,6 +53,11 @@ export const createCurriculum = (name) => api.post('/curriculum', { name })
 export const publishCurriculum = (id) => api.put(`/curriculum/${id}/publish`)
 export const assignCurriculum = (id, schoolIds) => api.post(`/curriculum/${id}/assign`, { schoolIds })
 export const addUnit = (id, body) => api.post(`/curriculum/${id}/units`, body)
+export const createLesson = (curriculumId, unitId, body) =>
+  api.post(`/curriculum/${curriculumId}/units/${unitId}/lessons`, body)
+export const updateLesson = (id, body) => api.patch(`/lessons/${id}`, body)
+export const setLessonStatus = (id, status) =>
+  api.patch(`/lessons/${id}/status`, { status })
 export const updateUnit = (id, unitId, body) => api.patch(`/curriculum/${id}/units/${unitId}`, body)
 export const deleteUnit = (id, unitId) => api.del(`/curriculum/${id}/units/${unitId}`)
 

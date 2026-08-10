@@ -5,12 +5,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere } from 'typeorm';
+import { randomUUID } from 'crypto';
 
 import { LqsDimension } from '../../database/entities/lqs-dimension.entity';
 import { LqsScore } from '../../database/entities/lqs-score.entity';
 import { Badge } from '../../database/entities/badge.entity';
 import { BadgeAward } from '../../database/entities/badge-award.entity';
 import { Certificate } from '../../database/entities/certificate.entity';
+import { User, UserRole } from '../../database/entities/user.entity';
+import { School } from '../../database/entities/school.entity';
 import { UpdateDimensionsDto } from './dto/update-dimensions.dto';
 import { SaveScoreDto } from './dto/save-score.dto';
 import { SaveScoresBulkDto } from './dto/save-scores-bulk.dto';
@@ -35,6 +38,12 @@ export class LqsService {
 
     @InjectRepository(Certificate)
     private readonly certificateRepo: Repository<Certificate>,
+
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+
+    @InjectRepository(School)
+    private readonly schoolRepo: Repository<School>,
   ) {}
 
   // ── Dimensions ──────────────────────────────────────────────────────
@@ -407,24 +416,96 @@ export class LqsService {
   /**
    * Get a learner's certificate.
    */
-  async getLearnerCertificate(learnerId: string): Promise<Certificate> {
-    const cert = await this.certificateRepo.findOne({
-      where: { learnerId },
-    });
-    if (!cert) {
-      throw new NotFoundException(
-        `Certificate for learner "${learnerId}" not found`,
-      );
-    }
-    return cert;
+  /**
+   * A learner who has not earned a certificate yet is a normal state, not an
+   * error — most learners are in that state for most of the year. Throwing 404
+   * pushed the Profile screen into its error branch for an ordinary case, so
+   * this answers with null and lets the client render the empty state.
+   */
+  async getLearnerCertificate(learnerId: string): Promise<Certificate | null> {
+    return this.certificateRepo.findOne({ where: { learnerId } });
   }
 
   /**
-   * Download a learner's certificate as PDF (stub).
+   * Issue a certificate to a learner.
+   *
+   * Nothing could create one before, so `certificates` only ever held the row
+   * that `updateTemplate` used as a place to park the template — the download
+   * endpoint had nothing to download. The id is the human-facing reference
+   * printed on the certificate, and `verifiedId` is what a third party checks.
+   */
+  async issueCertificate(
+    learnerId: string,
+    dto: { course?: string; term?: string } = {},
+  ): Promise<Certificate> {
+    const learner = await this.userRepo.findOne({ where: { id: learnerId } });
+    if (!learner) {
+      throw new NotFoundException(`Learner with ID "${learnerId}" not found`);
+    }
+    if (learner.role !== UserRole.LEARNER) {
+      throw new BadRequestException(`User "${learnerId}" is not a learner`);
+    }
+
+    const existing = await this.certificateRepo.findOne({ where: { learnerId } });
+    if (existing) return existing;
+
+    const school = learner.schoolId
+      ? await this.schoolRepo.findOne({ where: { id: learner.schoolId } })
+      : null;
+
+    const year = new Date().getFullYear();
+    // Sequence within the year, so ids read IGN-2026-0001, -0002, ...
+    const issuedThisYear = await this.certificateRepo
+      .createQueryBuilder('c')
+      .where('c.id LIKE :prefix', { prefix: `IGN-${year}-%` })
+      .getCount();
+    const id = `IGN-${year}-${String(issuedThisYear + 1).padStart(4, '0')}`;
+
+    const certificate = this.certificateRepo.create({
+      id,
+      learnerId,
+      course: dto.course ?? school?.subject ?? 'Digital Innovation',
+      term: dto.term ?? school?.currentTerm ?? undefined,
+      school: school?.name ?? undefined,
+      issueDate: new Date().toISOString().slice(0, 10),
+      verifiedId: randomUUID(),
+    });
+
+    return this.certificateRepo.save(certificate);
+  }
+
+  /**
+   * Render a learner's certificate.
+   *
+   * Returns the filled-in template as HTML rather than a PDF: the template the
+   * admin edits *is* HTML, so this prints exactly what they designed, and any
+   * browser turns it into a PDF. Generating a PDF server-side would need a
+   * headless-browser dependency to render the same markup.
    */
   async downloadCertificate(
     learnerId: string,
-  ): Promise<{ message: string }> {
-    return { message: 'PDF generation not yet implemented' };
+  ): Promise<{ filename: string; html: string }> {
+    const cert = await this.certificateRepo.findOne({ where: { learnerId } });
+    if (!cert) {
+      throw new NotFoundException(
+        `No certificate has been issued to learner "${learnerId}"`,
+      );
+    }
+
+    const learner = await this.userRepo.findOne({ where: { id: learnerId } });
+    const learnerName = learner
+      ? `${learner.firstName} ${learner.lastName}`.trim()
+      : 'Learner';
+
+    const { templateHtml } = await this.getTemplate();
+    const html = templateHtml
+      .replace(/\{\{learnerName\}\}/g, learnerName)
+      .replace(/\{\{course\}\}/g, cert.course ?? '')
+      .replace(/\{\{term\}\}/g, cert.term ?? '')
+      .replace(/\{\{school\}\}/g, cert.school ?? '')
+      .replace(/\{\{issueDate\}\}/g, cert.issueDate ?? '')
+      .replace(/\{\{certificateId\}\}/g, cert.id);
+
+    return { filename: `${cert.id}.html`, html };
   }
 }

@@ -3,7 +3,7 @@ import { useResource, useAction } from '../api/useResource.js'
 import {
   listCurricula, getCurriculum, getCoverage, createCurriculum,
   publishCurriculum, assignCurriculum, addUnit, updateUnit, deleteUnit,
-  listSchools,
+  listSchools, createLesson, updateLesson,
 } from '../api/endpoints.js'
 import { Loading, ErrorState, EmptyState } from '../components/States.jsx'
 import Modal, { ModalActions, Field } from '../components/Modal.jsx'
@@ -117,6 +117,136 @@ function UnitModal({ curriculumId, unit, nextOrder, onClose, onSaved, onToast })
   )
 }
 
+/**
+ * Lesson authoring.
+ *
+ * The API has always been able to create lessons; nothing in either portal
+ * called it, so a fresh install had no way to author a single lesson and the
+ * whole downstream chain — sessions, homework, coverage — had nothing to run
+ * on. Only the fields a curriculum author needs to get a lesson teachable are
+ * here; the deeper NERDC and engineering sections stay on the API.
+ */
+const LESSON_STATUSES = ['locked', 'pending', 'current', 'done']
+
+function LessonFormModal({ curriculumId, unit, lesson, onClose, onSaved, onToast }) {
+  const editing = !!lesson
+  const initial = {
+    title: lesson?.title || '',
+    order: lesson?.order ?? (unit.lessons?.length ?? 0) + 1,
+    durationMinutes: lesson?.durationMinutes ?? 40,
+    week: lesson?.week || '',
+    theme: lesson?.theme || '',
+    bigIdea: lesson?.bigIdea || '',
+    essentialQuestion: lesson?.essentialQuestion || '',
+    status: lesson?.status || 'locked',
+  }
+  const [form, setForm] = useState(initial)
+  const { run, busy, error } = useAction()
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  async function submit(e) {
+    e.preventDefault()
+    const body = {
+      title: form.title.trim(),
+      order: Number(form.order),
+      status: form.status,
+    }
+    if (form.durationMinutes) body.durationMinutes = Number(form.durationMinutes)
+    // Optional text stays out of the payload when blank so an untouched field
+    // cannot overwrite something authored elsewhere with an empty string.
+    ;['week', 'theme', 'bigIdea', 'essentialQuestion'].forEach((k) => {
+      if (form[k].trim()) body[k] = form[k].trim()
+    })
+
+    const res = await run(() =>
+      editing ? updateLesson(lesson.id, body) : createLesson(curriculumId, unit.id, body))
+    if (res.ok) {
+      onToast(editing ? `${res.value.title} updated` : `${res.value.title} added to ${unit.title}`)
+      onSaved()
+      onClose()
+    }
+  }
+
+  return (
+    <Modal
+      title={editing ? 'Edit lesson' : 'Add lesson'}
+      subtitle={unit.title}
+      onClose={onClose}
+      busy={busy}
+    >
+      <form onSubmit={submit}>
+        <Field label="Lesson title" htmlFor="l-title">
+          <input
+            id="l-title"
+            className="signin-input"
+            placeholder="Type lesson title"
+            value={form.title}
+            onChange={set('title')}
+            required
+          />
+        </Field>
+        <div className="modal-grid">
+          <Field label="Order" htmlFor="l-order" hint="Position within the unit.">
+            <input
+              id="l-order"
+              className="signin-input"
+              type="number"
+              min="1"
+              placeholder="Type order"
+              value={form.order}
+              onChange={set('order')}
+              required
+            />
+          </Field>
+          <Field label="Duration (minutes)" htmlFor="l-duration">
+            <input
+              id="l-duration"
+              className="signin-input"
+              type="number"
+              min="1"
+              placeholder="Type duration"
+              value={form.durationMinutes}
+              onChange={set('durationMinutes')}
+            />
+          </Field>
+        </div>
+        <div className="modal-grid">
+          <Field label="Week" htmlFor="l-week">
+            <input id="l-week" className="signin-input" placeholder="Type week" value={form.week} onChange={set('week')} />
+          </Field>
+          <Field label="Status" htmlFor="l-status">
+            <select id="l-status" className="signin-input" value={form.status} onChange={set('status')}>
+              {LESSON_STATUSES.map((s) => <option key={s} value={s}>{humanize(s)}</option>)}
+            </select>
+          </Field>
+        </div>
+        <Field label="Theme" htmlFor="l-theme">
+          <input id="l-theme" className="signin-input" placeholder="Type theme" value={form.theme} onChange={set('theme')} />
+        </Field>
+        <Field label="Big idea" htmlFor="l-bigidea">
+          <input id="l-bigidea" className="signin-input" placeholder="Type big idea" value={form.bigIdea} onChange={set('bigIdea')} />
+        </Field>
+        <Field label="Essential question" htmlFor="l-question">
+          <input
+            id="l-question"
+            className="signin-input"
+            placeholder="Type essential question"
+            value={form.essentialQuestion}
+            onChange={set('essentialQuestion')}
+          />
+        </Field>
+        {error ? <div className="signin-err">{error.message}</div> : null}
+        <ModalActions
+          onCancel={onClose}
+          submitLabel={editing ? 'Save lesson' : 'Add lesson'}
+          busy={busy}
+          disabled={!form.title.trim()}
+        />
+      </form>
+    </Modal>
+  )
+}
+
 function AssignModal({ curriculum, schools, onClose, onAssigned, onToast }) {
   const [selected, setSelected] = useState(
     () => new Set(schools.filter((s) => s.curriculumVersionId === curriculum.id).map((s) => s.id)),
@@ -190,6 +320,7 @@ export default function Curriculum({ active, onToast }) {
   const [selectedId, setSelectedId] = useState(null)
   const [newVersion, setNewVersion] = useState(false)
   const [unitModal, setUnitModal] = useState(null)   // { unit } | { unit: null }
+  const [lessonModal, setLessonModal] = useState(null) // { unit, lesson | null }
   const [confirm, setConfirm] = useState(null)       // { kind, unit? }
   const [assigning, setAssigning] = useState(false)
 
@@ -273,7 +404,7 @@ export default function Curriculum({ active, onToast }) {
         </button>
       </div>
 
-      {curricula.loading && !curricula.data ? <Loading label="Loading curricula…" /> : null}
+      {curricula.loading && !curricula.data ? <Loading label="Loading curricula…" variant="list" rows={3} /> : null}
       {curricula.error ? <ErrorState error={curricula.error} onRetry={curricula.reload} /> : null}
       {curricula.data && list.length === 0 ? (
         <EmptyState
@@ -323,12 +454,13 @@ export default function Curriculum({ active, onToast }) {
               <div className="ph">
                 <h3>Units</h3>
                 {!locked ? (
-                  <span
-                    className="link"
+                  <button
+                    type="button"
+                    className="linkbtn"
                     onClick={() => setUnitModal({ unit: null })}
                   >
                     + Add unit
-                  </span>
+                  </button>
                 ) : null}
               </div>
 
@@ -338,7 +470,7 @@ export default function Curriculum({ active, onToast }) {
                 </div>
               ) : null}
 
-              {detail.loading && !detail.data ? <Loading /> : null}
+              {detail.loading && !detail.data ? <Loading label="Loading units…" variant="rows" /> : null}
               {detail.error ? <ErrorState error={detail.error} onRetry={detail.reload} /> : null}
               {detail.data && units.length === 0 ? (
                 <EmptyState
@@ -359,11 +491,33 @@ export default function Curriculum({ active, onToast }) {
                           {u.status ? ` · ${humanize(u.status)}` : ''}
                         </div>
                         {u.lessons?.length ? (
-                          <div className="lesson-chips">
+                          <ul className="lessonlist">
                             {u.lessons.map((l) => (
-                              <span className="chip" key={l.id}>{l.title}</span>
+                              <li key={l.id}>
+                                <span className="lessonord">{l.order}</span>
+                                <span className="lessonttl">{l.title}</span>
+                                <span className={'badge ' + (l.status === 'done' ? 'b-green' : 'b-grey')}>
+                                  {humanize(l.status)}
+                                </span>
+                                {!locked ? (
+                                  <IconButton
+                                    label={`Edit ${l.title}`}
+                                    icon={<IconPencil />}
+                                    onClick={() => setLessonModal({ unit: u, lesson: l })}
+                                  />
+                                ) : null}
+                              </li>
                             ))}
-                          </div>
+                          </ul>
+                        ) : null}
+                        {!locked ? (
+                          <button
+                            type="button"
+                            className="linkbtn"
+                            onClick={() => setLessonModal({ unit: u, lesson: null })}
+                          >
+                            + Add lesson
+                          </button>
                         ) : null}
                       </div>
                       {!locked ? (
@@ -391,9 +545,9 @@ export default function Curriculum({ active, onToast }) {
             <div className="panel">
               <div className="ph">
                 <h3>Schools on this version</h3>
-                <span className="link" onClick={schools.reload}>Refresh</span>
+                <button type="button" className="linkbtn" onClick={schools.reload}>Refresh</button>
               </div>
-              {schools.loading && !schools.data ? <Loading /> : null}
+              {schools.loading && !schools.data ? <Loading label="Loading schools…" variant="list" /> : null}
               {schools.error ? <ErrorState error={schools.error} onRetry={schools.reload} /> : null}
               {schools.data && usingThis.length === 0 ? (
                 <EmptyState
@@ -420,9 +574,9 @@ export default function Curriculum({ active, onToast }) {
 
               <div className="ph" style={{ marginTop: 18 }}>
                 <h3>Coverage by class</h3>
-                <span className="link" onClick={coverage.reload}>Refresh</span>
+                <button type="button" className="linkbtn" onClick={coverage.reload}>Refresh</button>
               </div>
-              {coverage.loading && !coverage.data ? <Loading /> : null}
+              {coverage.loading && !coverage.data ? <Loading label="Loading coverage…" variant="bars" /> : null}
               {coverage.error ? <ErrorState error={coverage.error} onRetry={coverage.reload} /> : null}
               {coverage.data && coverage.data.length === 0 ? (
                 <EmptyState
@@ -468,6 +622,17 @@ export default function Curriculum({ active, onToast }) {
           unit={unitModal.unit}
           nextOrder={units.length + 1}
           onClose={() => setUnitModal(null)}
+          onSaved={detail.reload}
+          onToast={onToast}
+        />
+      ) : null}
+
+      {lessonModal && current ? (
+        <LessonFormModal
+          curriculumId={current.id}
+          unit={lessonModal.unit}
+          lesson={lessonModal.lesson}
+          onClose={() => setLessonModal(null)}
           onSaved={detail.reload}
           onToast={onToast}
         />

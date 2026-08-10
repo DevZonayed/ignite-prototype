@@ -36,7 +36,7 @@ export default function Imports({ active, onToast }) {
       <div className="grid2">
         <div className="panel">
           <div className="ph"><h3>CSV template</h3></div>
-          {template.loading && !template.data ? <Loading /> : null}
+          {template.loading && !template.data ? <Loading variant="rows" rows={5} /> : null}
           {template.error ? <ErrorState error={template.error} onRetry={template.reload} /> : null}
           {template.data ? (
             <>

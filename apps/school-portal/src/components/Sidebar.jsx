@@ -115,12 +115,20 @@ export default function Sidebar({ view, onNavigate, user }) {
         </svg>{' '}
         <span>IGNITE School</span>
       </div>
+      {/*
+        A real href, not a bare onClick. Without one these were anchors with no
+        destination: not focusable, not reachable by keyboard, and invisible to
+        assistive tech. The app already listens for hashchange, so the href does
+        the navigating and onClick just saves the round trip.
+      */}
       {NAV.map((n) => (
         <a
           key={n.view}
+          href={`#${n.view}`}
           className={view === n.view ? 'on' : undefined}
           data-view={n.view}
-          onClick={() => onNavigate(n.view)}
+          aria-current={view === n.view ? 'page' : undefined}
+          onClick={(e) => { e.preventDefault(); onNavigate(n.view) }}
         >
           {n.icon}
           <span>{n.label}</span>

@@ -22,6 +22,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole, UserStatus } from '../../database/entities/user.entity';
+import { LinkChildrenDto } from './dto/link-children.dto';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -122,5 +123,44 @@ export class UsersController {
     @CurrentUser() actor: { id: string; role: UserRole; schoolId: string | null },
   ) {
     return this.usersService.remove(id, actor);
+  }
+
+  // ── Parent ↔ child links ────────────────────────────────────────────
+  //
+  // Nothing in the system could create one of these, so every real parent
+  // account opened to an empty app.
+
+  @Get(':id/children')
+  @Roles('platform_admin', 'curriculum_admin', 'principal')
+  @ApiOperation({ summary: 'Learners linked to a parent' })
+  @ApiParam({ name: 'id', description: 'Parent UUID' })
+  @ApiResponse({ status: 200, description: 'Linked learners' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
+  async listChildren(@Param('id') id: string) {
+    return this.usersService.findLinkedChildren(id);
+  }
+
+  @Post(':id/children')
+  @Roles('platform_admin', 'principal')
+  @ApiOperation({ summary: 'Link learners to a parent' })
+  @ApiParam({ name: 'id', description: 'Parent UUID' })
+  @ApiResponse({ status: 201, description: 'Updated link list' })
+  @ApiResponse({ status: 400, description: 'Not a parent/learner, or wrong school' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
+  @ApiResponse({ status: 404, description: 'Parent or learner not found' })
+  async linkChildren(@Param('id') id: string, @Body() dto: LinkChildrenDto) {
+    return this.usersService.linkChildren(id, dto.childIds);
+  }
+
+  @Delete(':id/children/:childId')
+  @Roles('platform_admin', 'principal')
+  @ApiOperation({ summary: 'Remove a parent-child link' })
+  @ApiParam({ name: 'id', description: 'Parent UUID' })
+  @ApiParam({ name: 'childId', description: 'Learner UUID' })
+  @ApiResponse({ status: 200, description: 'Link removed' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
+  @ApiResponse({ status: 404, description: 'Link not found' })
+  async unlinkChild(@Param('id') id: string, @Param('childId') childId: string) {
+    return this.usersService.unlinkChild(id, childId);
   }
 }

@@ -100,7 +100,7 @@ export default function Homework({ user, showToast }) {
     }
   }
 
-  if (childrenLoading && !activeChild) return <Loading label="Loading…" />;
+  if (childrenLoading && !activeChild) return <Loading label="Loading…" variant="tiles" />;
   if (!activeChild) {
     return (
       <EmptyState

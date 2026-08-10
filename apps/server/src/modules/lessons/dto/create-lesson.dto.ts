@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -8,6 +9,8 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+
+import { LessonStatus } from '../../../database/entities/lesson.entity';
 
 export class CreateLessonDto {
   @ApiProperty({ description: 'Lesson title', example: 'Introduction to Sensors' })
@@ -19,6 +22,14 @@ export class CreateLessonDto {
   @IsInt()
   @Min(0)
   order: number;
+
+  // An author decides where a new lesson sits in the sequence at the moment
+  // they write it; without this the entity default (locked) was the only
+  // option and the authoring form's status picker was rejected outright.
+  @ApiPropertyOptional({ description: 'Lesson status', enum: LessonStatus })
+  @IsOptional()
+  @IsEnum(LessonStatus)
+  status?: LessonStatus;
 
   @ApiPropertyOptional({ description: 'Programme name' })
   @IsOptional()

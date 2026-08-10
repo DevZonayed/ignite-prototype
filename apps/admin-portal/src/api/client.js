@@ -6,8 +6,14 @@
 
 const DEFAULT_BASE = 'http://localhost:4000/api'
 
+// Deployed containers write /runtime-config.js at start-up, so the API address
+// is a restart away rather than a rebuild. In dev that file 404s and this is
+// undefined, leaving the Vite variable and then localhost.
+const RUNTIME_BASE =
+  typeof window !== 'undefined' ? window.__IGNITE_API_BASE_URL__ : undefined
+
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || DEFAULT_BASE
+  RUNTIME_BASE || import.meta.env.VITE_API_BASE_URL || DEFAULT_BASE
 
 const TOKEN_KEY = 'ignite_admin_token'
 const USER_KEY = 'ignite_admin_user'
@@ -102,7 +108,14 @@ async function request(method, path, body) {
     throw new ApiError(message, { status: response.status, fieldErrors })
   }
 
-  return payload?.data ?? payload ?? null
+  // `data: null` is a real answer — "no current lesson session", "no active
+  // child" — so it must not fall through to the raw envelope. `?? payload`
+  // did exactly that, handing callers `{ data: null, meta }`, which is truthy
+  // and made every "nothing here" read as "something here".
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return payload.data;
+  }
+  return payload ?? null;
 }
 
 export const api = {

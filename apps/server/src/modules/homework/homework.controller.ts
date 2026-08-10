@@ -60,10 +60,15 @@ export class HomeworkController {
   @ApiResponse({ status: 200, description: 'Array of per-class compliance stats' })
   @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async getCompliance(
+    @CurrentUser() user: any,
     @Query('schoolId') schoolId?: string,
     @Query('term') term?: string,
   ) {
-    return this.homeworkService.getCompliance(schoolId, term);
+    // A principal is pinned to their own school whatever the query says;
+    // only platform-level roles may look across schools.
+    const scopedSchoolId =
+      user.role === 'principal' ? user.schoolId : schoolId;
+    return this.homeworkService.getCompliance(scopedSchoolId, term);
   }
 
   @Post('reminders')

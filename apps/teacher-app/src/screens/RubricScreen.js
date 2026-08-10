@@ -81,7 +81,7 @@ export default function RubricScreen({ goBack, showToast, navTo, params }) {
     return (
       <View>
         <SubHead title="LQS rubric" onBack={goBack} />
-        <Loading label="Loading rubric…" />
+        <Loading label="Loading rubric…" variant="bars" />
       </View>
     );
   }

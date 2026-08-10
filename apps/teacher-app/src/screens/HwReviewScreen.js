@@ -111,7 +111,7 @@ export default function HwReviewScreen({ goBack, showToast, params, user }) {
       </Card>
 
       <SectionTitle>Messages</SectionTitle>
-      {thread.loading && !messages.length ? <Loading label="Loading thread…" /> : null}
+      {thread.loading && !messages.length ? <Loading label="Loading thread…" variant="text" lines={3} /> : null}
       {thread.error && !messages.length ? <ErrorState error={thread.error} onRetry={thread.reload} /> : null}
       {!thread.loading && !messages.length ? (
         <Text style={{ fontSize: 12.5, color: colors.textSubtle, marginBottom: 12 }}>

@@ -77,7 +77,7 @@ export default function Skills({ user }) {
       </View>
 
       {loading && !dims.length ? (
-        <Loading label="Loading your skills…" />
+        <Loading label="Loading your skills…" variant="bars" rows={5} />
       ) : !dims.length ? (
         <EmptyState
           title="No skills scored yet"

@@ -15,6 +15,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { Roles } from '../../common/decorators/roles.decorator';
 import { AttendanceService } from './attendance.service';
 import { MarkAttendanceDto, SaveSessionAttendanceDto } from './dto/mark-attendance.dto';
 import { AttendanceFilterDto } from './dto/attendance-filter.dto';
@@ -34,18 +35,24 @@ export class AttendanceController {
     return this.attendanceService.findAll(filters);
   }
 
+  // Attendance is a register: only the teacher who runs the lesson writes it.
+  // Leaving these open let a learner mark themselves present.
   @Post('bulk')
+  @Roles('teacher', 'platform_admin')
   @ApiOperation({ summary: 'Bulk mark attendance for a session (upsert)' })
   @ApiResponse({ status: 201, description: 'Attendance records created or updated' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient role' })
   @ApiResponse({ status: 404, description: 'Lesson session not found' })
   async bulkMark(@Body() dto: MarkAttendanceDto) {
     return this.attendanceService.bulkMark(dto.lessonSessionId, dto.records);
   }
 
   @Put('session/:sessionId')
+  @Roles('teacher', 'platform_admin')
   @ApiOperation({ summary: 'Save/replace all attendance for a session' })
   @ApiParam({ name: 'sessionId', description: 'Lesson session UUID' })
   @ApiResponse({ status: 200, description: 'Session attendance saved' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient role' })
   @ApiResponse({ status: 404, description: 'Lesson session not found' })
   async saveSessionAttendance(
     @Param('sessionId') sessionId: string,

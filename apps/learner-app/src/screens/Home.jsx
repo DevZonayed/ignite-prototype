@@ -68,7 +68,7 @@ export default function Home({ user, onOpenItem }) {
       {/* term progress ring */}
       <Card>
         {progress.loading && !progress.data ? (
-          <Loading label="Loading progress…" />
+          <Loading label="Loading progress…" variant="tiles" />
         ) : (
           <View style={styles.ringrow}>
             <ProgressRing size={78} percent={progress.data?.termProgressPercent ?? 0} />

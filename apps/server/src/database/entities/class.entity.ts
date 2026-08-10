@@ -52,6 +52,9 @@ export class Class {
   @JoinColumn({ name: 'teacherId' })
   teacher: any;
 
+  @OneToMany('User', 'class')
+  learners: any[];
+
   @OneToMany('LessonSession', 'class')
   lessonSessions: any[];
 

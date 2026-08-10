@@ -104,7 +104,7 @@ export default function ActiveScreen({ navTo, goBack, params }) {
     return (
       <View>
         <SubHead title="Active lesson" onBack={goBack} />
-        <Loading label="Finding the running lesson…" />
+        <Loading label="Finding the running lesson…" variant="tiles" />
       </View>
     );
   }

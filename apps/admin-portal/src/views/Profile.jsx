@@ -66,7 +66,7 @@ export default function Profile({ active, user, onUserChanged, onToast, extraRow
   }
 
   if (active && me.loading && !me.data && !user) {
-    return <section className="view active"><Loading label="Loading your profile…" /></section>
+    return <section className="view active"><Loading variant="form" label="Loading your profile…" /></section>
   }
 
   return (

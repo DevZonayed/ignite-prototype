@@ -1,6 +1,6 @@
 import { useResource } from '../api/useResource.js'
 import { getCoverage, listCurricula, getSchool } from '../api/endpoints.js'
-import { Loading, ErrorState, EmptyState } from '../components/States.jsx'
+import { Loading, ErrorState, EmptyState, Skel } from '../components/States.jsx'
 import { fmtDate, humanize, coverageColor } from '../lib/format.js'
 
 export default function Curriculum({ active, schoolId }) {
@@ -21,7 +21,7 @@ export default function Curriculum({ active, schoolId }) {
         <div className="tile">
           <div className="th"><span className="tl">Assigned curriculum</span></div>
           <div className="tn" style={{ fontSize: 20 }}>
-            {school.loading && !school.data ? '…' : assigned ? `${assigned.name} v${assigned.version}` : 'None'}
+            {school.loading && !school.data ? <Skel w={140} h={14} /> : assigned ? `${assigned.name} v${assigned.version}` : 'None'}
           </div>
           <div className="tf">
             {assigned?.publishedAt ? `published ${fmtDate(assigned.publishedAt)}` : 'assigned by IGNITE admin'}
@@ -47,9 +47,9 @@ export default function Curriculum({ active, schoolId }) {
       <div className="panel">
         <div className="ph">
           <h3>Coverage by class</h3>
-          <span className="link" onClick={coverage.reload}>Refresh</span>
+          <button type="button" className="linkbtn" onClick={coverage.reload}>Refresh</button>
         </div>
-        {coverage.loading && !coverage.data ? <Loading /> : null}
+        {coverage.loading && !coverage.data ? <Loading label="Loading coverage…" variant="bars" /> : null}
         {coverage.error ? <ErrorState error={coverage.error} onRetry={coverage.reload} /> : null}
         {coverage.data && rows.length === 0 ? (
           <EmptyState
@@ -84,7 +84,7 @@ export default function Curriculum({ active, schoolId }) {
         <div className="note-strip">
           Curriculum content is authored by IGNITE and is read-only here.
         </div>
-        {curricula.loading && !curricula.data ? <Loading /> : null}
+        {curricula.loading && !curricula.data ? <Loading label="Loading curriculum…" variant="rows" /> : null}
         {!assigned && curricula.data ? (
           <EmptyState
             title="No curriculum assigned to your school"
