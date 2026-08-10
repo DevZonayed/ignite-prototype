@@ -43,7 +43,7 @@ export class CreateAnnouncementDto {
 
   @ApiPropertyOptional({
     description:
-      'School ID — required when audience is "by_school"',
+      'School ID, required when audience is "by_school"',
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
   @IsOptional()
@@ -52,7 +52,7 @@ export class CreateAnnouncementDto {
 
   @ApiPropertyOptional({
     description:
-      'Class ID — required when audience is "by_class"',
+      'Class ID, required when audience is "by_class"',
     example: 'f9e8d7c6-b5a4-3210-fedc-ba0987654321',
   })
   @IsOptional()

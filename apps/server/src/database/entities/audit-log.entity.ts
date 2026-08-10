@@ -5,6 +5,8 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum AuditResult {
   OK = 'ok',
   BLOCKED = 'blocked',
@@ -31,7 +33,7 @@ export class AuditLog {
   @Column({ type: 'varchar', enum: AuditResult, nullable: true })
   result: AuditResult;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   timestamp: Date;
 
   @CreateDateColumn()

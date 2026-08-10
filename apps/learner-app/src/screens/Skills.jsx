@@ -2,24 +2,51 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { dims } from '../data';
 import { PageTitle, Card } from '../components/common';
+import { Loading, ErrorState, EmptyState } from '../components/ScreenState';
 import RadarChart from '../components/RadarChart';
+import { useApi } from '../api/useApi';
+import { getLqs, getRadar } from '../api/endpoints';
 
-export default function Skills() {
+export default function Skills({ user }) {
   const { colors } = useTheme();
   const [tab, setTab] = useState('radar');
+  const learnerId = user?.id ?? null;
+
+  const lqs = useApi(() => getLqs(learnerId), [learnerId], { skip: !learnerId });
+  const radar = useApi(() => getRadar(learnerId), [learnerId], { skip: !learnerId });
+
+  const dims = lqs.data?.dimensions ?? [];
+  const radarDims = radar.data?.dimensions ?? [];
+
+  // The server's totalScore is a weighted sum, not a percentage. Show it as a
+  // whole number and leave the "out of 100" wording off unless it fits.
+  const score = lqs.data?.totalScore;
+  const displayScore = score == null ? '—' : Math.round(Number(score));
+
+  const loading = lqs.loading || radar.loading;
+  const error = lqs.error || radar.error;
 
   return (
     <View>
-      <PageTitle title="My skills" sub="Term 2 · Digital Innovation" />
+      <PageTitle title="My skills" sub="Digital Innovation" />
+
+      {error ? (
+        <ErrorState
+          error={error}
+          onRetry={() => {
+            lqs.reload();
+            radar.reload();
+          }}
+        />
+      ) : null}
 
       {/* LQS badge */}
       <View style={[styles.lqs, { backgroundColor: colors.brandSoft, borderColor: colors.border }]}>
-        <Text style={[styles.lqsBig, { color: colors.brand }]}>78</Text>
+        <Text style={[styles.lqsBig, { color: colors.brand }]}>{displayScore}</Text>
         <View>
           <Text style={[styles.lqsTitle, { color: colors.text }]}>Learner Quality Score</Text>
-          <Text style={[styles.lqsSub, { color: colors.textSubtle }]}>out of 100 · this term</Text>
+          <Text style={[styles.lqsSub, { color: colors.textSubtle }]}>across all dimensions</Text>
         </View>
       </View>
 
@@ -49,23 +76,32 @@ export default function Skills() {
         })}
       </View>
 
-      {tab === 'radar' ? (
+      {loading && !dims.length ? (
+        <Loading label="Loading your skills…" />
+      ) : !dims.length ? (
+        <EmptyState
+          title="No skills scored yet"
+          sub="Your teacher's rubric ratings will appear here once they start."
+        />
+      ) : tab === 'radar' ? (
         <Card style={{ padding: 8, alignItems: 'center' }}>
-          <RadarChart width={300} />
+          <RadarChart width={300} dims={radarDims} />
         </Card>
       ) : (
         <Card>
           {dims.map((d, i) => (
             <View
-              key={i}
+              key={d.dimensionId ?? d.name}
               style={[
                 styles.dimrow,
                 i < dims.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.surface2 },
               ]}
             >
-              <View style={[styles.dot, { backgroundColor: d[2] }]} />
-              <Text style={[styles.dimName, { color: colors.text }]}>{d[0]}</Text>
-              <Text style={[styles.lv, { color: colors.textSubtle }]}>{d[3].toUpperCase()}</Text>
+              <View style={[styles.dot, { backgroundColor: d.color }]} />
+              <Text style={[styles.dimName, { color: colors.text }]}>{d.name}</Text>
+              <Text style={[styles.lv, { color: colors.textSubtle }]}>
+                {String(d.level ?? '').toUpperCase()}
+              </Text>
             </View>
           ))}
         </Card>

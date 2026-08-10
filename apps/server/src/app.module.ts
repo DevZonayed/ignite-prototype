@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
 // Feature modules
+import { MailModule } from './modules/mail/mail.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { SchoolsModule } from './modules/schools/schools.module';
@@ -48,6 +49,7 @@ import { SeedModule } from './database/seeds/seed.module';
     }),
 
     // Feature modules
+    MailModule,
     AuthModule,
     UsersModule,
     SchoolsModule,

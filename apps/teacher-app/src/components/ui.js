@@ -64,7 +64,9 @@ export function Card({ style, children }) {
 }
 
 // Button variants: ignite | primary | ghost
-export function Button({ variant = 'primary', onPress, children, style, textStyle }) {
+// `disabled` blocks the press as well as dimming it — without it a submit
+// button that only looks disabled still fires on a second tap.
+export function Button({ variant = 'primary', onPress, children, style, textStyle, disabled = false }) {
   const { colors } = useTheme();
   const content = (
     <Text
@@ -84,7 +86,11 @@ export function Button({ variant = 'primary', onPress, children, style, textStyl
 
   if (variant === 'ignite') {
     return (
-      <Pressable onPress={onPress} style={[styles.btnWrap, style]}>
+      <Pressable
+        onPress={onPress}
+        disabled={disabled}
+        style={[styles.btnWrap, disabled ? { opacity: 0.5 } : null, style]}
+      >
         <IgniteGradient radius={12} style={StyleSheet.absoluteFill} />
         <View style={styles.btnInner}>{content}</View>
       </Pressable>
@@ -94,7 +100,9 @@ export function Button({ variant = 'primary', onPress, children, style, textStyl
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={[
+        disabled ? { opacity: 0.5 } : null,
         styles.btnWrap,
         {
           backgroundColor: variant === 'primary' ? colors.brand : colors.surface,

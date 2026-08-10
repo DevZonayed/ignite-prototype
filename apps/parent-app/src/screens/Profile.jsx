@@ -1,12 +1,15 @@
 import React, { useRef, useEffect } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import Icon from '../components/Icon';
-import { children } from '../data';
 import { useTheme } from '../ThemeContext';
+import { useChildren } from '../context/ChildContext';
+import { Loading, EmptyState } from '../components/ScreenState';
+import { displayName, initialsOf } from '../lib/user';
 
-// PROFILE screen — linked children, privacy row, dark-theme toggle.
-export default function Profile() {
+// PROFILE screen — linked children, privacy row, dark-theme toggle, sign out.
+export default function Profile({ user, onSignOut }) {
   const { colors, fonts, mode, toggleTheme } = useTheme();
+  const { children, loading: childrenLoading } = useChildren();
   const darkOn = mode === 'dark';
   const knobAnim = useRef(new Animated.Value(darkOn ? 1 : 0)).current;
 
@@ -29,27 +32,39 @@ export default function Profile() {
         Profile
       </Text>
       <Text style={[styles.pagesub, { color: colors.textMuted, fontFamily: fonts.ui }]}>
-        Parent account · Mr. Tunde Eze
+        {['Parent account', displayName(user)].filter(Boolean).join(' · ')}
       </Text>
 
       <Text style={[styles.section, { color: colors.text, fontFamily: fonts.display800 }]}>
         Linked children
       </Text>
 
+      {childrenLoading && !children.length ? <Loading label="Loading children…" /> : null}
+      {!childrenLoading && !children.length ? (
+        <EmptyState
+          title="No children linked"
+          sub="Ask your school to link your account to your child's record."
+        />
+      ) : null}
+
       {children.map((c) => (
         <View
-          key={c.av}
+          key={c.id}
           style={[styles.prow, { backgroundColor: colors.surface, borderColor: colors.border }]}
         >
-          <View style={[styles.pi, { backgroundColor: c.avc }]}>
-            <Text style={[styles.piText, { color: c.avt, fontFamily: fonts.display }]}>
-              {c.av}
+          <View style={[styles.pi, { backgroundColor: c.avatarBg || colors.brandSoft }]}>
+            <Text style={[styles.piText, { color: c.avatarColor || colors.brand, fontFamily: fonts.display }]}>
+              {initialsOf(c)}
             </Text>
           </View>
-          <Text style={[styles.pl, { color: colors.text, fontFamily: fonts.ui700 }]}>{c.n}</Text>
-          <Text style={[styles.verified, { color: colors.success, fontFamily: fonts.ui700 }]}>
-            Verified
+          <Text style={[styles.pl, { color: colors.text, fontFamily: fonts.ui700 }]}>
+            {displayName(c)}
           </Text>
+          {c.status === 'active' ? (
+            <Text style={[styles.verified, { color: colors.success, fontFamily: fonts.ui700 }]}>
+              Verified
+            </Text>
+          ) : null}
         </View>
       ))}
 
@@ -87,6 +102,18 @@ export default function Profile() {
           <Animated.View style={[styles.knob, { left: knobLeft }]} />
         </Pressable>
       </View>
+
+      <Pressable
+        onPress={onSignOut}
+        style={[styles.prow, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      >
+        <View style={[styles.pi, { backgroundColor: colors.surface2 }]}>
+          <Icon name="chevronRight" size={17} color={colors.danger} strokeWidth={2} />
+        </View>
+        <Text style={[styles.pl, { color: colors.danger, fontFamily: fonts.ui700 }]}>
+          Sign out
+        </Text>
+      </Pressable>
     </View>
   );
 }

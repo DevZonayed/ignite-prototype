@@ -2,35 +2,63 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { PageTitle, PageSub, EmptyState } from '../components/ui';
+import { PageTitle, PageSub } from '../components/ui';
+import { AsyncList } from '../components/ScreenState';
 import { IconChevronRight } from '../components/Icon';
-import { lr } from '../data';
+import { useClasses } from '../context/ClassContext';
+import { useApi } from '../api/useApi';
+import { listLearners } from '../api/endpoints';
+import { displayName, initialsOf } from '../lib/user';
 
 export default function LearnersScreen({ navTo }) {
   const { colors } = useTheme();
+  const { activeClass, activeClassId } = useClasses();
+
+  const state = useApi(() => listLearners(activeClassId), [activeClassId], {
+    skip: !activeClassId,
+    initial: [],
+  });
+
   return (
     <View>
       <PageTitle>Learners</PageTitle>
-      <PageSub>Tap a learner to rate the LQS rubric</PageSub>
-      {lr.length === 0 ? (
-        <EmptyState title="No learners yet" sub="Your class roster will appear here once it syncs." />
-      ) : null}
-      {lr.map((l, i) => (
-        <Pressable
-          key={i}
-          onPress={() => navTo('rubric')}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 11, marginBottom: 9 }}
-        >
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: l[2], alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 12, color: l[3] }}>{l[1]}</Text>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: fonts.body700, fontWeight: '700', fontSize: 13, color: colors.text }}>{l[0]}</Text>
-            <Text style={{ fontSize: 11.5, color: colors.textSubtle }}>Tap to rate LQS rubric</Text>
-          </View>
-          <IconChevronRight size={16} color={colors.textSubtle} />
-        </Pressable>
-      ))}
+      <PageSub>
+        {activeClass ? `${activeClass.name} — tap a learner to rate the LQS rubric` : 'Tap a learner to rate the LQS rubric'}
+      </PageSub>
+
+      <AsyncList
+        state={state}
+        loadingLabel="Loading roster…"
+        empty={{
+          title: 'No learners yet',
+          sub: activeClassId
+            ? 'This class has no learners on its roster.'
+            : 'You are not assigned to a class yet.',
+        }}
+      >
+        {(learners) =>
+          learners.map((l) => (
+            <Pressable
+              key={l.id}
+              onPress={() => navTo('rubric', { learnerId: l.id })}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 11, marginBottom: 9 }}
+            >
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: l.avatarBg || colors.brandSoft, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ fontFamily: fonts.display, fontWeight: '900', fontSize: 12, color: l.avatarColor || colors.brand }}>
+                  {initialsOf(l)}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: fonts.body700, fontWeight: '700', fontSize: 13, color: colors.text }}>
+                  {displayName(l)}
+                </Text>
+                <Text style={{ fontSize: 11.5, color: colors.textSubtle }}>Tap to rate LQS rubric</Text>
+              </View>
+              <IconChevronRight size={16} color={colors.textSubtle} />
+            </Pressable>
+          ))
+        }
+      </AsyncList>
     </View>
   );
 }

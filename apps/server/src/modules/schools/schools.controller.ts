@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -32,7 +33,7 @@ export class SchoolsController {
   @Roles('platform_admin', 'curriculum_admin', 'principal')
   @ApiOperation({ summary: 'List all schools with filters and pagination' })
   @ApiResponse({ status: 200, description: 'Paginated list of schools' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async findAll(@Query() filters: SchoolFilterDto) {
     return this.schoolsService.findAll(filters);
   }
@@ -42,7 +43,7 @@ export class SchoolsController {
   @ApiOperation({ summary: 'Create a new school' })
   @ApiResponse({ status: 201, description: 'School created successfully' })
   @ApiResponse({ status: 409, description: 'School with this name already exists' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async create(@Body() dto: CreateSchoolDto) {
     return this.schoolsService.create(dto);
   }
@@ -64,9 +65,25 @@ export class SchoolsController {
   @ApiResponse({ status: 200, description: 'School updated successfully' })
   @ApiResponse({ status: 404, description: 'School not found' })
   @ApiResponse({ status: 409, description: 'School with this name already exists' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async update(@Param('id') id: string, @Body() dto: UpdateSchoolDto) {
     return this.schoolsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles('platform_admin')
+  @ApiOperation({
+    summary: 'Delete a school',
+    description:
+      'Refused while the school still has classes or learners. Remaining staff accounts are detached from the school rather than deleted.',
+  })
+  @ApiParam({ name: 'id', description: 'School UUID' })
+  @ApiResponse({ status: 200, description: 'School deleted' })
+  @ApiResponse({ status: 404, description: 'School not found' })
+  @ApiResponse({ status: 409, description: 'School still has classes or learners' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
+  async remove(@Param('id') id: string) {
+    return this.schoolsService.remove(id);
   }
 
   @Get(':id/dashboard')
@@ -105,7 +122,7 @@ export class SchoolsController {
   @ApiParam({ name: 'id', description: 'School UUID' })
   @ApiResponse({ status: 200, description: 'School settings updated' })
   @ApiResponse({ status: 404, description: 'School not found' })
-  @ApiResponse({ status: 403, description: 'Forbidden — insufficient role' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async updateSettings(
     @Param('id') id: string,
     @Body() settings: Partial<School>,

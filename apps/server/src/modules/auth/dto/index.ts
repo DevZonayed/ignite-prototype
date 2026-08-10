@@ -3,5 +3,7 @@ export { ActivateDto } from './activate.dto';
 export { SendOtpDto } from './send-otp.dto';
 export { VerifyOtpDto } from './verify-otp.dto';
 export { ForgotPasswordDto } from './forgot-password.dto';
+export { VerifyResetOtpDto } from './verify-reset-otp.dto';
 export { ResetPasswordDto } from './reset-password.dto';
+export { ChangePasswordDto } from './change-password.dto';
 export { UpdateProfileDto } from './update-profile.dto';

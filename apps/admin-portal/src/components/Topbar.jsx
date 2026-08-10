@@ -1,3 +1,5 @@
+import { fullName, humanize } from '../lib/format.js'
+
 const sunPath = (
   <>
     <circle cx="12" cy="12" r="4" />
@@ -6,25 +8,32 @@ const sunPath = (
 )
 const moonPath = <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
 
-export default function Topbar({ title, theme, onToggleTheme }) {
+export default function Topbar({ title, theme, onToggleTheme, user, onSignOut }) {
   return (
     <header className="topbar">
       <div>
-        <h1 id="pageTitle">{title}</h1>
+        <h1>{title}</h1>
         <div className="crumb">IGNITE Admin · Phase 1 pilot</div>
       </div>
-      <span className="sp"></span>
-      <div className="search">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-        <input placeholder="Search schools, users, lessons…" />
-      </div>
-      <button className="iconbtn" id="themeBtn" title="Toggle theme" onClick={onToggleTheme}>
-        <svg id="themeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <span className="sp" />
+
+      {user ? (
+        <div className="whoami" title={user.email || ''}>
+          <span className="whoami-name">{fullName(user)}</span>
+          <span className="badge b-blue">{humanize(user.role)}</span>
+        </div>
+      ) : null}
+
+      <button className="iconbtn" title="Toggle theme" onClick={onToggleTheme}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           {theme === 'dark' ? sunPath : moonPath}
         </svg>
       </button>
-      <button className="iconbtn">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.7 21a2 2 0 0 1-3.4 0" /></svg>
+
+      <button className="iconbtn" title="Sign out" onClick={onSignOut}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+        </svg>
       </button>
     </header>
   )

@@ -1,0 +1,56 @@
+# Local Postgres for migration work and for verifying the API against the
+# database it actually deploys onto. Not a deployment artifact — Dokploy
+# provides its own Postgres and builds the API from the Dockerfile.
+#
+#   docker compose up -d db          # just the database
+#   docker compose up --build        # database + API on http://localhost:4000
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: ignite-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ignite
+    # Overridable because a locally installed Postgres binds 127.0.0.1:5432 and
+    # silently shadows this container: connections reach the local server, which
+    # has no `postgres` role, and fail with 28000. Export IGNITE_DB_PORT=55432
+    # (or anything free) when that happens.
+    ports:
+      - '${IGNITE_DB_PORT:-5432}:5432'
+    volumes:
+      - ignite-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d ignite']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+    container_name: ignite-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DB_TYPE: postgres
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: ignite
+      # Override both of these for anything reachable from outside this machine.
+      JWT_SECRET: local-compose-secret-not-for-deployment
+      # Mirrors a deployment by default. Set SEED_DEMO_DATA=true to bring the
+      # stack up populated when working on an app against it.
+      SEED_DEMO_DATA: '${SEED_DEMO_DATA:-false}'
+    ports:
+      - '4000:4000'
+
+volumes:
+  ignite-db-data:

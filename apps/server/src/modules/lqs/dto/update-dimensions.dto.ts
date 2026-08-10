@@ -38,7 +38,7 @@ export class DimensionItemDto {
 
 export class UpdateDimensionsDto {
   @ApiProperty({
-    description: 'Array of dimension definitions — weights must total 100',
+    description: 'Array of dimension definitions. Weights must total 100',
     type: [DimensionItemDto],
   })
   @IsArray()

@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Tabs from '../components/Tabs';
-import { children } from '../data';
 import { useTheme } from '../ThemeContext';
+import { useChildren } from '../context/ChildContext';
+import { useApi } from '../api/useApi';
+import { getAttendance, getChildPortfolio, getChildSkills } from '../api/endpoints';
+import { Loading, ErrorState, EmptyState } from '../components/ScreenState';
+import { displayName } from '../lib/user';
 
 const TABS = [
   { key: 'att', label: 'Attendance' },
@@ -10,115 +14,173 @@ const TABS = [
   { key: 'sk', label: 'Skills' },
 ];
 
-const PORTFOLIO = [
-  { top: '#2563EB', label: '.sb3', title: 'Maze Game', isText: true },
-  { top: '#16A34A', label: '.py', title: 'Number Guesser', isText: true },
-  { top: '#E11D48', label: '◎', title: 'Line Robot', isText: false },
-  { top: '#7C3AED', label: '✎', title: 'Digital Hero', isText: false },
-];
+// Portfolio thumbnails, derived from the project type the server sends.
+const TYPE_STYLE = {
+  scratch: { top: '#2563EB', label: '.sb3', isText: true },
+  python: { top: '#16A34A', label: '.py', isText: true },
+  robotics: { top: '#E11D48', label: '◎', isText: false },
+  design: { top: '#7C3AED', label: '✎', isText: false },
+  video: { top: '#14B8A6', label: '▶', isText: false },
+};
+const TYPE_FALLBACK = { top: '#64748B', label: '◎', isText: false };
 
-const SKILLS = [
-  { color: '#2563EB', name: 'Coding', lv: 'SECURE' },
-  { color: '#7C3AED', name: 'Creativity', lv: 'SECURE' },
-  { color: '#16A34A', name: 'Problem Solving', lv: 'SECURE' },
-  { color: '#E11D48', name: 'Robotics', lv: 'DEVELOPING' },
-  { color: '#F59E0B', name: 'Attendance', lv: 'SECURE' },
-];
+/** The rubric's 1-4 scale, as the words the report uses. */
+function levelLabel(level) {
+  if (level >= 3.5) return 'SECURE';
+  if (level >= 2.5) return 'DEVELOPING';
+  if (level > 0) return 'EMERGING';
+  return '—';
+}
+
+/** "2026-08-03" → "3 Aug". */
+function weekLabel(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value ?? '');
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
 
 // CHILD screen — title from active child, Attendance/Portfolio/Skills tabs.
-export default function Child({ current }) {
+export default function Child() {
   const { colors, fonts } = useTheme();
   const [tab, setTab] = useState('att');
-  const c = children[current];
+  const { activeChild, activeChildId, loading: childrenLoading } = useChildren();
+
+  const attendance = useApi(() => getAttendance(activeChildId), [activeChildId], {
+    skip: !activeChildId,
+  });
+  const portfolio = useApi(() => getChildPortfolio(activeChildId), [activeChildId], {
+    skip: !activeChildId,
+    initial: [],
+  });
+  const skills = useApi(() => getChildSkills(activeChildId), [activeChildId], {
+    skip: !activeChildId,
+  });
+
+  if (childrenLoading && !activeChild) return <Loading label="Loading…" />;
+  if (!activeChild) {
+    return (
+      <EmptyState
+        title="No children linked yet"
+        sub="Ask your school to link your account to your child's record."
+      />
+    );
+  }
+
+  const dims = skills.data?.dimensions ?? [];
 
   return (
     <View>
       <Text style={[styles.pagetitle, { color: colors.text, fontFamily: fonts.display }]}>
-        {c.short}
+        {displayName(activeChild)}
       </Text>
       <Text style={[styles.pagesub, { color: colors.textMuted, fontFamily: fonts.ui }]}>
-        {(c.n.split(' · ')[1] || 'JSS 1') + ' · Digital Innovation'}
+        Digital Innovation
       </Text>
 
       <Tabs tabs={TABS} active={tab} onChange={setTab} />
 
-      {tab === 'att' && (
-        <View>
-          <View
-            style={[
-              styles.card,
-              styles.rowBetween,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Text style={[styles.cardStrong, { color: colors.text, fontFamily: fonts.ui700 }]}>
-              This term
-            </Text>
-            <Text style={[styles.cardStrong, { color: colors.success, fontFamily: fonts.ui700 }]}>
-              92% present
-            </Text>
-          </View>
-          <View
-            style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          >
-            <Text style={[styles.cardMuted, { color: colors.textMuted, fontFamily: fonts.ui }]}>
-              Mon ✓ · Tue ✓ · Wed ✓ · Thu — absent · Fri ✓
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {tab === 'pf' && (
-        <View style={styles.pgrid}>
-          {PORTFOLIO.map((p) => (
+      {tab === 'att' &&
+        (attendance.loading && !attendance.data ? (
+          <Loading label="Loading attendance…" />
+        ) : attendance.error ? (
+          <ErrorState error={attendance.error} onRetry={attendance.reload} />
+        ) : (
+          <View>
             <View
-              key={p.title}
-              style={[styles.pcard, { borderColor: colors.border }]}
+              style={[
+                styles.card,
+                styles.rowBetween,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
             >
-              <View style={[styles.pcardTop, { backgroundColor: p.top }]}>
-                <Text
-                  style={
-                    p.isText
-                      ? { color: '#fff', fontWeight: '700', fontSize: 11 }
-                      : { color: '#fff', fontSize: 20 }
-                  }
-                >
-                  {p.label}
-                </Text>
-              </View>
-              <View style={styles.pcardMeta}>
-                <Text style={[styles.pt, { color: colors.text, fontFamily: fonts.ui700 }]}>
-                  {p.title}
-                </Text>
-              </View>
+              <Text style={[styles.cardStrong, { color: colors.text, fontFamily: fonts.ui700 }]}>
+                This term
+              </Text>
+              <Text style={[styles.cardStrong, { color: colors.success, fontFamily: fonts.ui700 }]}>
+                {attendance.data?.termPercent ?? 0}% present
+              </Text>
             </View>
-          ))}
-        </View>
-      )}
-
-      {tab === 'sk' && (
-        <View>
-          <View
-            style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          >
-            {SKILLS.map((s) => (
-              <View key={s.name} style={styles.dimrow}>
-                <View style={[styles.dot, { backgroundColor: s.color }]} />
-                <Text style={[styles.dimName, { color: colors.text, fontFamily: fonts.ui }]}>
-                  {s.name}
-                </Text>
-                <Text style={[styles.lv, { color: colors.textSubtle, fontFamily: fonts.ui700 }]}>
-                  {s.lv}
-                </Text>
-              </View>
-            ))}
+            <View
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+              <Text style={[styles.cardMuted, { color: colors.textMuted, fontFamily: fonts.ui }]}>
+                {(attendance.data?.weeklyBreakdown ?? []).length
+                  ? attendance.data.weeklyBreakdown
+                      .map((w) => `${weekLabel(w.week)} ${w.percent}%`)
+                      .join(' · ')
+                  : 'No attendance recorded yet.'}
+              </Text>
+            </View>
           </View>
-          <Text style={[styles.lqs, { color: colors.textSubtle, fontFamily: fonts.ui }]}>
-            Overall Learner Quality Score:{' '}
-            <Text style={{ color: colors.brand, fontWeight: '700' }}>78/100</Text>
-          </Text>
-        </View>
-      )}
+        ))}
+
+      {tab === 'pf' &&
+        (portfolio.loading && !portfolio.data?.length ? (
+          <Loading label="Loading portfolio…" />
+        ) : portfolio.error ? (
+          <ErrorState error={portfolio.error} onRetry={portfolio.reload} />
+        ) : !portfolio.data?.length ? (
+          <EmptyState
+            title="No work saved yet"
+            sub="Projects your child's teacher saves will appear here."
+          />
+        ) : (
+          <View style={styles.pgrid}>
+            {portfolio.data.map((p) => {
+              const st = TYPE_STYLE[p.type] ?? TYPE_FALLBACK;
+              return (
+                <View key={p.id} style={[styles.pcard, { borderColor: colors.border }]}>
+                  <View style={[styles.pcardTop, { backgroundColor: st.top }]}>
+                    <Text
+                      style={
+                        st.isText
+                          ? { color: '#fff', fontWeight: '700', fontSize: 11 }
+                          : { color: '#fff', fontSize: 20 }
+                      }
+                    >
+                      {st.label}
+                    </Text>
+                  </View>
+                  <View style={styles.pcardMeta}>
+                    <Text style={[styles.pt, { color: colors.text, fontFamily: fonts.ui700 }]}>
+                      {p.title}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ))}
+
+      {tab === 'sk' &&
+        (skills.loading && !dims.length ? (
+          <Loading label="Loading skills…" />
+        ) : skills.error ? (
+          <ErrorState error={skills.error} onRetry={skills.reload} />
+        ) : !dims.length ? (
+          <EmptyState
+            title="No skills scored yet"
+            sub="Your child's teacher rates these during lessons."
+          />
+        ) : (
+          <View>
+            <View
+              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+              {dims.map((d) => (
+                <View key={d.name} style={styles.dimrow}>
+                  <View style={[styles.dot, { backgroundColor: d.color }]} />
+                  <Text style={[styles.dimName, { color: colors.text, fontFamily: fonts.ui }]}>
+                    {d.name}
+                  </Text>
+                  <Text style={[styles.lv, { color: colors.textSubtle, fontFamily: fonts.ui700 }]}>
+                    {levelLabel(d.level)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ))}
     </View>
   );
 }

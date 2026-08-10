@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import {
   Repository,
   FindOptionsWhere,
@@ -13,7 +14,7 @@ import {
 } from 'typeorm';
 
 import { School } from '../../database/entities/school.entity';
-import { User, UserRole } from '../../database/entities/user.entity';
+import { User, UserRole, UserStatus } from '../../database/entities/user.entity';
 import { Class } from '../../database/entities/class.entity';
 import { LessonSession } from '../../database/entities/lesson-session.entity';
 import { Attendance, AttendanceStatus } from '../../database/entities/attendance.entity';
@@ -26,6 +27,23 @@ import { Lesson, LessonStatus } from '../../database/entities/lesson.entity';
 import { CreateSchoolDto } from './dto/create-school.dto';
 import { UpdateSchoolDto } from './dto/update-school.dto';
 import { SchoolFilterDto } from './dto/school-filter.dto';
+
+/**
+ * Best-effort display name from an email local part, since the create-school
+ * form collects credentials only. "ngozi.bello@x" becomes "Ngozi Bello";
+ * "principal@x" becomes "Principal" with no surname. The principal can correct
+ * this from their profile at any time.
+ */
+function nameFromEmail(email: string): { firstName: string; lastName: string } {
+  const local = email.split('@')[0] ?? '';
+  const parts = local
+    .split(/[._\-+]+/)
+    .filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1));
+
+  if (parts.length === 0) return { firstName: 'Principal', lastName: '' };
+  return { firstName: parts[0], lastName: parts.slice(1).join(' ') };
+}
 
 @Injectable()
 export class SchoolsService {
@@ -94,7 +112,11 @@ export class SchoolsService {
   /**
    * Create a new school. Throws ConflictException if a school with the same name already exists.
    */
-  async create(dto: CreateSchoolDto): Promise<School> {
+  async create(
+    dto: CreateSchoolDto,
+  ): Promise<School & { principal: Partial<User> }> {
+    const { principal, ...schoolFields } = dto;
+
     const existing = await this.schoolRepository.findOne({
       where: { name: dto.name },
     });
@@ -105,8 +127,89 @@ export class SchoolsService {
       );
     }
 
-    const school = this.schoolRepository.create(dto);
-    return this.schoolRepository.save(school);
+    // Check the principal's email BEFORE creating the school, so a clash cannot
+    // leave a school behind with nobody able to administer it.
+    const principalEmail = principal.email.trim().toLowerCase();
+    const emailTaken = await this.userRepository.findOne({
+      where: { email: principalEmail },
+    });
+    if (emailTaken) {
+      throw new ConflictException(
+        `A user with email "${principalEmail}" already exists`,
+      );
+    }
+
+    const school = await this.schoolRepository.save(
+      this.schoolRepository.create(schoolFields),
+    );
+
+    // A school without a principal is not a usable school, so if the account
+    // cannot be created the school is rolled back rather than left orphaned.
+    try {
+      const { firstName, lastName } = nameFromEmail(principalEmail);
+      const created = await this.userRepository.save(
+        this.userRepository.create({
+          firstName,
+          lastName,
+          email: principalEmail,
+          passwordHash: await bcrypt.hash(principal.password, 10),
+          role: UserRole.PRINCIPAL,
+          // Active straight away: they already have a password, so there is
+          // nothing to activate with an invite code.
+          status: UserStatus.ACTIVE,
+          schoolId: school.id,
+          acceptedTermsAt: new Date(),
+        }),
+      );
+      return Object.assign(school, { principal: created });
+    } catch (error) {
+      await this.schoolRepository.delete(school.id);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a school.
+   *
+   * Refuses while the school still holds academic records (classes or
+   * learners) — those would be orphaned and are not ours to discard silently.
+   * Staff accounts are detached rather than deleted, so the people keep their
+   * logins and an admin can reassign or remove them from the Users screen.
+   */
+  async remove(id: string): Promise<{
+    deleted: true;
+    detachedUsers: number;
+  }> {
+    const school = await this.schoolRepository.findOne({ where: { id } });
+    if (!school) {
+      throw new NotFoundException(`School with ID "${id}" not found`);
+    }
+
+    const [classCount, learnerCount] = await Promise.all([
+      this.classRepository.count({ where: { schoolId: id } }),
+      this.userRepository.count({
+        where: { schoolId: id, role: UserRole.LEARNER },
+      }),
+    ]);
+
+    if (classCount > 0 || learnerCount > 0) {
+      const blockers = [
+        classCount > 0 ? `${classCount} class${classCount === 1 ? '' : 'es'}` : null,
+        learnerCount > 0 ? `${learnerCount} learner${learnerCount === 1 ? '' : 's'}` : null,
+      ].filter(Boolean);
+      throw new ConflictException(
+        `"${school.name}" still has ${blockers.join(' and ')}. Move or remove them before deleting the school.`,
+      );
+    }
+
+    const staff = await this.userRepository.find({ where: { schoolId: id } });
+    for (const member of staff) {
+      member.schoolId = null;
+      await this.userRepository.save(member);
+    }
+
+    await this.schoolRepository.delete(id);
+    return { deleted: true, detachedUsers: staff.length };
   }
 
   /**

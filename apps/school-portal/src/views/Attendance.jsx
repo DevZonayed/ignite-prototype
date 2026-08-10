@@ -1,86 +1,140 @@
-import { useState } from 'react'
-import { weeks, heatColor } from '../data.js'
+import { useResource } from '../api/useResource.js'
+import {
+  getAttendanceTrend, getAttendanceHeatmap, getAssessmentDistribution,
+} from '../api/endpoints.js'
+import { Loading, ErrorState, EmptyState } from '../components/States.jsx'
+import { fmtNumber } from '../lib/format.js'
 
-export default function Attendance({ active }) {
-  const [tab, setTab] = useState('heat')
+/** Attendance percentage per week, drawn as a simple column chart. */
+function TrendChart({ points }) {
+  const max = Math.max(1, ...points.map((p) => p.attendancePercent ?? p.percent ?? 0))
+  return (
+    <div className="chart">
+      {points.map((p, i) => {
+        const value = p.attendancePercent ?? p.percent ?? 0
+        return (
+          <div className="chart-col" key={p.week ?? i} title={`${p.week ?? `Week ${i + 1}`}: ${value}%`}>
+            <div className="chart-bar" style={{ height: `${Math.round((value / max) * 100)}%` }}>
+              <span className="chart-val">{value}%</span>
+            </div>
+            <span className="chart-lbl">{p.week ?? `W${i + 1}`}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+const BANDS = [
+  { key: 'emerging', label: 'Emerging', color: 'var(--danger)' },
+  { key: 'developing', label: 'Developing', color: 'var(--warning)' },
+  { key: 'secure', label: 'Secure', color: 'var(--success)' },
+]
+
+export default function Attendance({ active, schoolId }) {
+  const trend = useResource(() => getAttendanceTrend(schoolId, 6), [schoolId], { enabled: active })
+  const heatmap = useResource(() => getAttendanceHeatmap(schoolId), [schoolId], { enabled: active })
+  const dist = useResource(() => getAssessmentDistribution(schoolId), [schoolId], { enabled: active })
+
+  const trendRows = trend.data ?? []
+  const heatRows = heatmap.data ?? []
+  const d = dist.data || {}
+  const distTotal = d.total ?? BANDS.reduce((n, b) => n + (d[b.key] || 0), 0)
 
   return (
-    <section className={'view' + (active ? ' active' : '')} id="view-attendance">
-      <div className="tabs">
-        <div className={'tab' + (tab === 'heat' ? ' on' : '')} data-tab="heat" onClick={() => setTab('heat')}>
-          Attendance heat-map
+    <section className={'view' + (active ? ' active' : '')}>
+      <div className="grid2">
+        <div className="panel">
+          <div className="ph">
+            <h3>Attendance trend (last 6 weeks)</h3>
+            <span className="link" onClick={trend.reload}>Refresh</span>
+          </div>
+          {trend.loading && !trend.data ? <Loading /> : null}
+          {trend.error ? <ErrorState error={trend.error} onRetry={trend.reload} /> : null}
+          {trend.data && trendRows.length === 0 ? (
+            <EmptyState
+              title="No attendance recorded yet"
+              hint="The trend builds once teachers mark attendance in their lessons."
+            />
+          ) : null}
+          {trendRows.length > 0 ? <TrendChart points={trendRows} /> : null}
         </div>
-        <div className={'tab' + (tab === 'assess' ? ' on' : '')} data-tab="assess" onClick={() => setTab('assess')}>
-          Assessment distribution
+
+        <div className="panel">
+          <div className="ph">
+            <h3>Assessment distribution</h3>
+            <span className="link" onClick={dist.reload}>Refresh</span>
+          </div>
+          {dist.loading && !dist.data ? <Loading /> : null}
+          {dist.error ? <ErrorState error={dist.error} onRetry={dist.reload} /> : null}
+          {dist.data && distTotal === 0 ? (
+            <EmptyState
+              title="No assessments recorded yet"
+              hint="Scores your teachers save against lessons appear here."
+            />
+          ) : null}
+          {distTotal > 0 ? (
+            <>
+              <div className="distbar">
+                {BANDS.map((b) => {
+                  const n = d[b.key] || 0
+                  if (!n) return null
+                  return (
+                    <span
+                      key={b.key}
+                      style={{ width: `${(n / distTotal) * 100}%`, background: b.color }}
+                      title={`${b.label}: ${n}`}
+                    />
+                  )
+                })}
+              </div>
+              <table>
+                <thead><tr><th>Band</th><th>Learners</th><th>Share</th></tr></thead>
+                <tbody>
+                  {BANDS.map((b) => (
+                    <tr key={b.key}>
+                      <td className="strong">
+                        <span className="dimdot" style={{ background: b.color }} /> {b.label}
+                      </td>
+                      <td>{fmtNumber(d[b.key] || 0)}</td>
+                      <td>{Math.round(((d[b.key] || 0) / distTotal) * 100)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          ) : null}
         </div>
       </div>
-      <div className={'tabpanel' + (tab === 'heat' ? ' on' : '')} id="tp-heat">
-        <div className="panel">
-          <table className="heat">
-            <thead>
-              <tr>
-                <th></th>
-                <th>JSS 1</th>
-                <th>JSS 2</th>
-                <th>JSS 3</th>
-              </tr>
-            </thead>
-            <tbody id="heatBody">
-              {weeks.map((w) => (
-                <tr key={w[0]}>
-                  <th style={{ textAlign: 'left', fontSize: '12px', color: 'var(--text-muted)' }}>{w[0]}</th>
-                  {[w[1], w[2], w[3]].map((v, k) => (
-                    <td key={k} style={{ background: heatColor(v) }}>
-                      {v}%
-                    </td>
-                  ))}
+
+      <div className="panel">
+        <div className="ph">
+          <h3>Attendance by class</h3>
+          <span className="link" onClick={heatmap.reload}>Refresh</span>
+        </div>
+        {heatmap.loading && !heatmap.data ? <Loading /> : null}
+        {heatmap.error ? <ErrorState error={heatmap.error} onRetry={heatmap.reload} /> : null}
+        {heatmap.data && heatRows.length === 0 ? (
+          <EmptyState
+            title="Nothing to show yet"
+            hint="Each class appears here once attendance has been marked for it."
+          />
+        ) : null}
+        {heatRows.length > 0 ? (
+          <table>
+            <thead><tr><th>Class</th><th>Present</th><th>Absent</th><th>Rate</th></tr></thead>
+            <tbody>
+              {heatRows.map((r, i) => (
+                <tr key={r.classId ?? i}>
+                  <td className="strong">{r.className ?? r.label ?? '-'}</td>
+                  <td>{fmtNumber(r.presentCount ?? r.present)}</td>
+                  <td>{fmtNumber(r.absentCount ?? r.absent)}</td>
+                  <td>{r.attendancePercent ?? r.percent ?? 0}%</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="legend">
-            <span>
-              <span className="sw" style={{ background: '#dcfce7' }}></span>Needs attention
-            </span>
-            <span>
-              <span className="sw" style={{ background: '#86efac' }}></span>Good
-            </span>
-            <span>
-              <span className="sw" style={{ background: '#16a34a' }}></span>Excellent
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className={'tabpanel' + (tab === 'assess' ? ' on' : '')} id="tp-assess">
-        <div className="panel">
-          <div className="ph">
-            <h3>Assessment distribution — Term 2</h3>
-          </div>
-          <svg className="chart" viewBox="0 0 420 220" aria-label="Assessment distribution">
-            <rect x="60" y="70" width="70" height="120" rx="6" fill="#EF4444" />
-            <text x="95" y="60" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--text)">
-              18
-            </text>
-            <text x="95" y="208" textAnchor="middle" fontSize="11" fill="var(--text-subtle)">
-              Emerging
-            </text>
-            <rect x="175" y="40" width="70" height="150" rx="6" fill="#F59E0B" />
-            <text x="210" y="30" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--text)">
-              42
-            </text>
-            <text x="210" y="208" textAnchor="middle" fontSize="11" fill="var(--text-subtle)">
-              Developing
-            </text>
-            <rect x="290" y="18" width="70" height="172" rx="6" fill="#16A34A" />
-            <text x="325" y="12" textAnchor="middle" fontSize="13" fontWeight="700" fill="var(--text)">
-              76
-            </text>
-            <text x="325" y="208" textAnchor="middle" fontSize="11" fill="var(--text-subtle)">
-              Secure
-            </text>
-            <line x1="40" y1="190" x2="390" y2="190" stroke="var(--border)" />
-          </svg>
-        </div>
+        ) : null}
       </div>
     </section>
   )

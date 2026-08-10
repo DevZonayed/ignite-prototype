@@ -7,6 +7,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 @Entity('badge_awards')
 export class BadgeAward {
   @PrimaryGeneratedColumn('uuid')
@@ -21,7 +23,7 @@ export class BadgeAward {
   @Column({ type: 'varchar', nullable: true })
   linkedProjectId: string;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: TIMESTAMP })
   awardedAt: Date;
 
   @CreateDateColumn()

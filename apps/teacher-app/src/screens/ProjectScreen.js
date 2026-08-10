@@ -1,9 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, TextInput } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { SubHead, Card, Button, SectionTitle, EmptyState, withAlpha } from '../components/ui';
+import { SubHead, Card, Button, SectionTitle, EmptyState, withAlpha, Hint } from '../components/ui';
+import { Loading, ErrorState } from '../components/ScreenState';
 import { IconShield } from '../components/Icon';
+import { useClasses } from '../context/ClassContext';
+import { useApi, useAction } from '../api/useApi';
+import { listLearners, createProject, getCurrentSession } from '../api/endpoints';
+import { displayName, initialsOf } from '../lib/user';
+
+// The server's fileType enum, with the labels this screen has always shown.
+const TYPES = [
+  ['scratch', 'Scratch (.sb3)'],
+  ['python', 'Python (.py)'],
+  ['robotics', 'Robotics'],
+  ['design', 'Design'],
+];
 
 function Chip({ label, on, onPress }) {
   const { colors } = useTheme();
@@ -24,14 +37,57 @@ function Chip({ label, on, onPress }) {
   );
 }
 
-export default function ProjectScreen({ goBack, showToast }) {
+export default function ProjectScreen({ goBack, showToast, params }) {
   const { colors } = useTheme();
-  // chip2 toggles: default 'on' from source
-  const [types, setTypes] = useState({ 0: true });
-  const [tags, setTags] = useState({});
+  const { activeClassId } = useClasses();
 
-  const typeLabels = ['Scratch (.sb3)', 'Python (.py)', 'Robotics', 'Design'];
-  const tagLabels = ['+ Add'];
+  const session = useApi(() => getCurrentSession(activeClassId), [activeClassId], {
+    skip: !activeClassId || !!params?.lessonId,
+  });
+  const lessonId = params?.lessonId ?? session.data?.lessonId ?? null;
+
+  const roster = useApi(() => listLearners(activeClassId), [activeClassId], {
+    skip: !activeClassId,
+    initial: [],
+  });
+
+  const [title, setTitle] = useState('');
+  // Single choice: a portfolio project has one fileType.
+  const [type, setType] = useState('scratch');
+  const [tagged, setTagged] = useState({});
+
+  const learners = roster.data ?? [];
+  const taggedIds = Object.keys(tagged).filter((id) => tagged[id]);
+  const canSave = !!title.trim() && taggedIds.length > 0;
+
+  // A portfolio project belongs to one learner, so tagging several learners
+  // records the same piece of work into each of their portfolios.
+  const save = useAction(() =>
+    Promise.all(
+      taggedIds.map((learnerId) =>
+        createProject({
+          title: title.trim(),
+          fileType: type,
+          learnerId,
+          ...(lessonId ? { lessonId } : {}),
+        }),
+      ),
+    ),
+  );
+
+  async function onSave() {
+    try {
+      await save.run();
+      showToast(
+        taggedIds.length > 1
+          ? `Saved to ${taggedIds.length} portfolios`
+          : 'Project saved to portfolio',
+      );
+      setTimeout(goBack, 240);
+    } catch {
+      // Rendered inline.
+    }
+  }
 
   return (
     <View>
@@ -39,21 +95,36 @@ export default function ProjectScreen({ goBack, showToast }) {
 
       <Card>
         <SectionTitle style={{ margin: 0, marginBottom: 6 }}>Project title</SectionTitle>
-        <Text style={{ fontSize: 12.5, color: colors.textMuted }}>Set when a project is loaded.</Text>
+        <TextInput
+          value={title}
+          onChangeText={setTitle}
+          placeholder="e.g. Catch the Star"
+          placeholderTextColor={colors.textSubtle}
+          style={{ fontSize: 13, color: colors.text }}
+        />
       </Card>
 
       <SectionTitle>Type</SectionTitle>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-        {typeLabels.map((l, i) => (
-          <Chip key={i} label={l} on={!!types[i]} onPress={() => setTypes((p) => ({ ...p, [i]: !p[i] }))} />
+        {TYPES.map(([value, label]) => (
+          <Chip key={value} label={label} on={type === value} onPress={() => setType(value)} />
         ))}
       </View>
 
       <SectionTitle>Tag learners</SectionTitle>
-      <EmptyState title="No learners to tag" sub="Your roster will appear here once it syncs." style={{ marginBottom: 14 }} />
+      {roster.loading ? <Loading label="Loading roster…" /> : null}
+      {roster.error ? <ErrorState error={roster.error} onRetry={roster.reload} /> : null}
+      {!roster.loading && learners.length === 0 ? (
+        <EmptyState title="No learners to tag" sub="Your class roster will appear here." style={{ marginBottom: 14 }} />
+      ) : null}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-        {tagLabels.map((l, i) => (
-          <Chip key={i} label={l} on={!!tags[i]} onPress={() => setTags((p) => ({ ...p, [i]: !p[i] }))} />
+        {learners.map((l) => (
+          <Chip
+            key={l.id}
+            label={`${initialsOf(l)} · ${displayName(l)}`}
+            on={!!tagged[l.id]}
+            onPress={() => setTagged((p) => ({ ...p, [l.id]: !p[l.id] }))}
+          />
         ))}
       </View>
 
@@ -64,9 +135,12 @@ export default function ProjectScreen({ goBack, showToast }) {
         </Text>
       </View>
 
-      <Button variant="primary" onPress={() => { showToast('Project saved to portfolios'); setTimeout(goBack, 240); }}>
-        Save to portfolio
+      {save.error ? <ErrorState error={save.error} /> : null}
+
+      <Button variant="primary" disabled={!canSave || save.pending} onPress={onSave}>
+        {save.pending ? 'Saving…' : 'Save to portfolio'}
       </Button>
+      {!canSave ? <Hint>Add a title and tag at least one learner.</Hint> : null}
     </View>
   );
 }

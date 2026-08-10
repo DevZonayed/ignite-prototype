@@ -7,6 +7,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum SyncStatus {
   SYNCING = 'syncing',
   SYNCED = 'synced',
@@ -26,13 +28,13 @@ export class LessonSession {
   @Column({ type: 'varchar' })
   teacherId: string;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: TIMESTAMP })
   startedAt: Date;
 
   @Column({ type: 'int', default: 0 })
   pausedDurationSeconds: number;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   completedAt: Date;
 
   @Column({ type: 'int', default: 0 })

@@ -1,62 +1,146 @@
-export default function Reports({ active }) {
+import { useState } from 'react'
+import { useResource, useAction } from '../api/useResource.js'
+import { listSchoolReports, createSchoolReport } from '../api/endpoints.js'
+import { API_BASE_URL, getToken } from '../api/client.js'
+import { Loading, ErrorState, EmptyState } from '../components/States.jsx'
+import Modal, { ModalActions, Field } from '../components/Modal.jsx'
+import { IconPlus } from '../components/Icons.jsx'
+import { fmtDateTime, humanize } from '../lib/format.js'
+
+const TYPES = [
+  { value: 'coverage_summary', label: 'Coverage summary' },
+  { value: 'attendance_register', label: 'Attendance register' },
+  { value: 'project_completion', label: 'Project completion' },
+  { value: 'teacher_activity', label: 'Teacher activity' },
+]
+const TERMS = ['Term 1', 'Term 2', 'Term 3']
+
+function GenerateModal({ schoolId, onClose, onCreated, onToast }) {
+  const [type, setType] = useState(TYPES[0].value)
+  const [term, setTerm] = useState(TERMS[0])
+  const { run, busy, error } = useAction()
+
+  async function submit(e) {
+    e.preventDefault()
+    const res = await run(() => createSchoolReport({ schoolId, type, term }))
+    if (res.ok) {
+      onToast('Report generated')
+      onCreated()
+      onClose()
+    }
+  }
+
   return (
-    <section className={'view' + (active ? ' active' : '')} id="view-reports">
+    <Modal title="Generate report" subtitle="Built from your school's current data" onClose={onClose} busy={busy}>
+      <form onSubmit={submit}>
+        <Field label="Report type" htmlFor="r-type">
+          <select id="r-type" className="signin-input" value={type} onChange={(e) => setType(e.target.value)}>
+            {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        </Field>
+        <Field label="Term" htmlFor="r-term">
+          <select id="r-term" className="signin-input" value={term} onChange={(e) => setTerm(e.target.value)}>
+            {TERMS.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </Field>
+        {error ? <div className="signin-err">{error.message}</div> : null}
+        <ModalActions onCancel={onClose} submitLabel="Generate" busy={busy} />
+      </form>
+    </Modal>
+  )
+}
+
+export default function Reports({ active, schoolId, onToast }) {
+  const [generating, setGenerating] = useState(false)
+  const [downloading, setDownloading] = useState(null)
+  const reports = useResource(
+    () => listSchoolReports({ schoolId, limit: 50 }),
+    [schoolId],
+    { enabled: active },
+  )
+
+  const rows = reports.data?.data ?? []
+
+  /**
+   * The download route needs the bearer token, so it cannot be a plain link.
+   * Fetch it, then hand the browser a blob.
+   */
+  async function download(report) {
+    setDownloading(report.id)
+    try {
+      const res = await fetch(`${API_BASE_URL}/reports/school/${report.id}/download`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      })
+      if (!res.ok) throw new Error(`Download failed (${res.status})`)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${report.type || 'report'}-${report.term || ''}`.replace(/\s+/g, '-').toLowerCase()
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      onToast(e.message)
+    } finally {
+      setDownloading(null)
+    }
+  }
+
+  return (
+    <section className={'view' + (active ? ' active' : '')}>
       <div className="toolbar">
-        <div className="filter">Term 2</div>
-        <span className="sp"></span>
-        <button className="btnP">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 3v12M8 11l4 4 4-4M4 21h16" />
-          </svg>{' '}
-          New report
+        <span className="count">{reports.data?.total ?? 0} report{(reports.data?.total ?? 0) === 1 ? '' : 's'}</span>
+        <span className="sp" />
+        <button className="btnP" onClick={() => setGenerating(true)}>
+          <IconPlus />
+          Generate report
         </button>
       </div>
+
       <div className="panel" style={{ padding: '6px 8px' }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Report</th>
-              <th>Scope</th>
-              <th>Generated</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="strong">Weekly coverage summary</td>
-              <td>All classes</td>
-              <td>Today</td>
-              <td>
-                <span className="rowbtn">Download PDF</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="strong">Attendance register — Term 2</td>
-              <td>JSS 1–3</td>
-              <td>Mon</td>
-              <td>
-                <span className="rowbtn">Download PDF</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="strong">Project completion report</td>
-              <td>Digital Innovation</td>
-              <td>Last week</td>
-              <td>
-                <span className="rowbtn">Download PDF</span>
-              </td>
-            </tr>
-            <tr>
-              <td className="strong">Teacher activity log</td>
-              <td>14 teachers</td>
-              <td>Last week</td>
-              <td>
-                <span className="rowbtn">Download PDF</span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        {reports.loading && !reports.data ? <Loading /> : null}
+        {reports.error ? <ErrorState error={reports.error} onRetry={reports.reload} /> : null}
+        {reports.data && rows.length === 0 ? (
+          <EmptyState
+            title="No reports yet"
+            hint='Use "Generate report" above to build one from your current data.'
+          />
+        ) : null}
+        {rows.length > 0 ? (
+          <table>
+            <thead><tr><th>Report</th><th>Term</th><th>Generated</th><th /></tr></thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <td className="strong">{humanize(r.type)}</td>
+                  <td>{r.term || '-'}</td>
+                  <td>{fmtDateTime(r.createdAt || r.generatedAt)}</td>
+                  <td>
+                    <button
+                      className="btnO"
+                      disabled={downloading === r.id}
+                      onClick={() => download(r)}
+                    >
+                      {downloading === r.id ? 'Preparing…' : 'Download'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : null}
       </div>
+
+      {generating ? (
+        <GenerateModal
+          schoolId={schoolId}
+          onClose={() => setGenerating(false)}
+          onCreated={reports.reload}
+          onToast={onToast}
+        />
+      ) : null}
     </section>
   )
 }

@@ -105,13 +105,13 @@ svg{display:block}
         <form id="signinForm" novalidate>
           <div class="field">
             <label for="si-id">Email or phone <span class="req">*</span></label>
-            <input class="input" id="si-id" type="text" autocomplete="username" placeholder="m.okafor@school.ng" />
+            <input class="input" id="si-id" type="text" autocomplete="username" placeholder="Type email or phone" />
             <div class="errmsg" id="si-id-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg> Enter your email or phone.</div>
           </div>
           <div class="field">
             <label for="si-pw">Password <span class="req">*</span></label>
             <div class="inputwrap">
-              <input class="input" id="si-pw" type="password" autocomplete="current-password" placeholder="••••••••" />
+              <input class="input" id="si-pw" type="password" autocomplete="current-password" placeholder="Type password" />
               <button type="button" class="reveal" data-reveal="si-pw" aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
             </div>
             <div class="errmsg" id="si-pw-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg> Enter your password.</div>
@@ -142,10 +142,10 @@ svg{display:block}
         <p class="sub">Your school created your account. Enter your invite and set a password.</p>
         <div class="notice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2" style="flex:none"><path d="M12 16v-4M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg> Phase-1 accounts are created by IGNITE/your school. Use the invite you received by email or SMS.</div>
         <form id="activateForm" novalidate>
-          <div class="field"><label for="ac-id">Email or phone <span class="req">*</span></label><input class="input" id="ac-id" type="text" placeholder="you@school.ng" /><div class="errmsg" id="ac-id-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Enter a valid email or phone.</div></div>
-          <div class="field"><label for="ac-code">Invite code <span class="req">*</span></label><input class="input" id="ac-code" type="text" placeholder="e.g. IGN-8F3A" /><div class="errmsg" id="ac-code-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Enter your invite code.</div></div>
+          <div class="field"><label for="ac-id">Email or phone <span class="req">*</span></label><input class="input" id="ac-id" type="text" placeholder="Type email or phone" /><div class="errmsg" id="ac-id-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Enter a valid email or phone.</div></div>
+          <div class="field"><label for="ac-code">Invite code <span class="req">*</span></label><input class="input" id="ac-code" type="text" placeholder="Type invite code" /><div class="errmsg" id="ac-code-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Enter your invite code.</div></div>
           <div class="field"><label for="ac-pw">Create password <span class="req">*</span></label>
-            <div class="inputwrap"><input class="input" id="ac-pw" type="password" placeholder="At least 8 characters" /><button type="button" class="reveal" data-reveal="ac-pw" aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+            <div class="inputwrap"><input class="input" id="ac-pw" type="password" placeholder="Type password" /><button type="button" class="reveal" data-reveal="ac-pw" aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
             <div class="pwrules"><div class="r" id="ac-r1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> At least 8 characters</div><div class="r" id="ac-r2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> A letter and a number</div></div>
           </div>
           <label class="remember" id="ac-consent" style="margin-bottom:18px"><span class="chk" id="ac-consentChk"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span> <span style="font-size:12.5px">I agree to the <a href="#" data-go="consent">Terms &amp; Privacy</a></span></label>
@@ -184,7 +184,7 @@ svg{display:block}
         <h1 class="h">Reset your password</h1>
         <p class="sub">Enter your email or phone and we'll send reset instructions.</p>
         <form id="forgotForm" novalidate>
-          <div class="field"><label for="fg-id">Email or phone <span class="req">*</span></label><input class="input" id="fg-id" type="text" placeholder="you@school.ng" /><div class="errmsg" id="fg-id-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Enter a valid email or phone.</div></div>
+          <div class="field"><label for="fg-id">Email or phone <span class="req">*</span></label><input class="input" id="fg-id" type="text" placeholder="Type email or phone" /><div class="errmsg" id="fg-id-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Enter a valid email or phone.</div></div>
           <button class="btn" type="submit">Send reset instructions</button>
         </form>
       </section>
@@ -204,10 +204,10 @@ svg{display:block}
         <p class="sub">Choose a strong password you don't use elsewhere.</p>
         <form id="resetForm" novalidate>
           <div class="field"><label for="rs-pw">New password <span class="req">*</span></label>
-            <div class="inputwrap"><input class="input" id="rs-pw" type="password" placeholder="At least 8 characters" /><button type="button" class="reveal" data-reveal="rs-pw" aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+            <div class="inputwrap"><input class="input" id="rs-pw" type="password" placeholder="Type new password" /><button type="button" class="reveal" data-reveal="rs-pw" aria-label="Show password"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
             <div class="pwrules"><div class="r" id="rs-r1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> At least 8 characters</div><div class="r" id="rs-r2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> A letter and a number</div></div>
           </div>
-          <div class="field"><label for="rs-pw2">Confirm password <span class="req">*</span></label><input class="input" id="rs-pw2" type="password" placeholder="Re-enter password" /><div class="errmsg" id="rs-pw2-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Passwords don't match.</div></div>
+          <div class="field"><label for="rs-pw2">Confirm password <span class="req">*</span></label><input class="input" id="rs-pw2" type="password" placeholder="Retype password" /><div class="errmsg" id="rs-pw2-err"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg> Passwords don't match.</div></div>
           <button class="btn" type="submit">Save password</button>
         </form>
       </section>

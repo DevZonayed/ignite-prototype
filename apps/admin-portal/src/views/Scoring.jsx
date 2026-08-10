@@ -1,37 +1,124 @@
-import { dims } from '../data.js'
+import { useEffect, useState } from 'react'
+import { useResource, useAction } from '../api/useResource.js'
+import { getDimensions, updateDimensions, getBadges } from '../api/endpoints.js'
+import { Loading, ErrorState, EmptyState } from '../components/States.jsx'
 
-export default function Scoring({ active }) {
+export default function Scoring({ active, onToast }) {
+  const dims = useResource(() => getDimensions(), [], { enabled: active })
+  const badges = useResource(() => getBadges(), [], { enabled: active })
+  const save = useAction()
+
+  // Local copy so weights can be edited before saving.
+  const [draft, setDraft] = useState(null)
+  useEffect(() => {
+    if (dims.data) setDraft(dims.data.map((d) => ({ ...d })))
+  }, [dims.data])
+
+  const total = (draft || []).reduce((sum, d) => sum + (Number(d.weight) || 0), 0)
+  const balanced = total === 100
+  const dirty =
+    draft && dims.data &&
+    draft.some((d, i) => Number(d.weight) !== Number(dims.data[i]?.weight))
+
+  function setWeight(id, value) {
+    const weight = Math.max(0, Math.min(100, Number(value) || 0))
+    setDraft((prev) => prev.map((d) => (d.id === id ? { ...d, weight } : d)))
+  }
+
+  async function onSave() {
+    const payload = draft.map(({ id, name, color, weight }) => ({ id, name, color, weight }))
+    const res = await save.run(() => updateDimensions(payload))
+    if (res.ok) {
+      onToast('Rubric weights saved')
+      dims.reload()
+    } else {
+      onToast(res.error.message)
+    }
+  }
+
   return (
     <section className={'view' + (active ? ' active' : '')} id="view-scoring">
       <div className="grid2">
         <div className="panel">
-          <div className="ph"><h3>Learner Quality Score — rubric</h3><span className="link">Save v3</span></div>
-          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '8px' }}>10 dimensions · weights configurable · total 100%</p>
-          <div className="dimlist" id="dimList">
-            {dims.map((d) => (
-              <div className="dimrow" key={d[0]}>
-                <span className="dimdot" style={{ background: d[1] }}></span>
-                <span className="dimname">{d[0]}</span>
-                <span className="dimtrack"><i style={{ width: (d[2] * 5) + '%', background: d[1] }}></i></span>
-                <span className="dimw">{d[2]}%</span>
+          <div className="ph">
+            <h3>LQS dimensions</h3>
+            <span className={'badge ' + (balanced ? 'b-green' : 'b-amber')}>
+              Total {total}%
+            </span>
+          </div>
+
+          {dims.loading && !dims.data ? <Loading /> : null}
+          {dims.error ? <ErrorState error={dims.error} onRetry={dims.reload} /> : null}
+          {dims.data && dims.data.length === 0 ? (
+            <EmptyState title="No dimensions configured" />
+          ) : null}
+
+          {draft ? (
+            <>
+              <div className="dimlist">
+                {draft.map((d) => (
+                  <div className="matrow" key={d.id}>
+                    <span className="dimdot" style={{ background: d.color }} />
+                    <span className="dimname">{d.name}</span>
+                    <span className="dimtrack">
+                      <i style={{ width: `${d.weight}%`, background: d.color }} />
+                    </span>
+                    <input
+                      className="dimw"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={d.weight}
+                      onChange={(e) => setWeight(d.id, e.target.value)}
+                      aria-label={`${d.name} weight`}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+
+              {!balanced ? (
+                <div className="signin-err" style={{ marginTop: 10 }}>
+                  Weights must total exactly 100% before they can be saved. They currently total {total}%.
+                </div>
+              ) : null}
+              {save.error ? <div className="signin-err" style={{ marginTop: 10 }}>{save.error.message}</div> : null}
+
+              <div className="pubbar">
+                <button className="btnP" onClick={onSave} disabled={!balanced || !dirty || save.busy}>
+                  {save.busy ? 'Saving…' : 'Save weights'}
+                </button>
+                <button
+                  className="btnO"
+                  onClick={() => setDraft(dims.data.map((d) => ({ ...d })))}
+                  disabled={!dirty || save.busy}
+                >
+                  Reset
+                </button>
+              </div>
+            </>
+          ) : null}
         </div>
-        <div>
-          <div className="panel">
-            <div className="ph"><h3>Badge rules</h3><span className="link">+ Add</span></div>
+
+        <div className="panel">
+          <div className="ph"><h3>Badges</h3></div>
+          {badges.loading && !badges.data ? <Loading /> : null}
+          {badges.error ? <ErrorState error={badges.error} onRetry={badges.reload} /> : null}
+          {badges.data && badges.data.length === 0 ? (
+            <EmptyState title="No badges defined" hint="Badges reward learners when a rule is met." />
+          ) : null}
+          {badges.data && badges.data.length > 0 ? (
             <div className="badgegrid">
-              <div className="bcard"><div className="bd"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3" /></svg></div><div className="bn">First Scratch</div><div className="bc">1st .sb3 saved</div></div>
-              <div className="bcard"><div className="bd"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M4 12a8 8 0 1 1 8 8" /></svg></div><div className="bn">Loop Master</div><div className="bc">loops project done</div></div>
-              <div className="bcard"><div className="bd"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><rect x="5" y="8" width="14" height="11" rx="2" /><path d="M12 8V5" /></svg></div><div className="bn">Robotics Rookie</div><div className="bc">1st robot build</div></div>
-              <div className="bcard"><div className="bd"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M8 6l-5 6 5 6M16 6l5 6-5 6" /></svg></div><div className="bn">Python Starter</div><div className="bc">1st .py file</div></div>
+              {badges.data.map((b) => (
+                <div className="bcard" key={b.id}>
+                  <div className="strong">{b.name}</div>
+                  <div className="fm">{b.description}</div>
+                  <div className="fm" style={{ marginTop: 6 }}>
+                    <span className="badge b-grey">{b.triggerRule}</span>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-          <div className="panel" style={{ marginBottom: 0 }}>
-            <div className="ph"><h3>Certificate template</h3><span className="link">Preview</span></div>
-            <div style={{ border: '2px solid #e7c98a', borderRadius: '10px', padding: '16px', textAlign: 'center', background: 'var(--surface-2)' }}><div style={{ fontFamily: 'var(--fd)', fontWeight: 900, color: 'var(--brand)', fontSize: '12px' }}>IGNITE</div><div style={{ fontFamily: 'var(--fd)', fontWeight: 900, fontSize: '15px', margin: '5px 0' }}>Certificate of Achievement</div><div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{'{{learner}}'} · Digital Innovation · {'{{term}}'}</div></div>
-          </div>
+          ) : null}
         </div>
       </div>
     </section>

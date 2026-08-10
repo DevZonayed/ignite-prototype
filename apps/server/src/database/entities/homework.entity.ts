@@ -9,6 +9,8 @@ import {
   JoinColumn,
 } from 'typeorm';
 
+import { TIMESTAMP } from '../column-types';
+
 export enum HomeworkStatus {
   DRAFT = 'draft',
   PUBLISHED = 'published',
@@ -34,7 +36,7 @@ export class Homework {
   @Column({ type: 'date', nullable: true })
   dueDate: string;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: TIMESTAMP, nullable: true })
   publishedAt: Date;
 
   @Column({ type: 'varchar', enum: HomeworkStatus, default: HomeworkStatus.DRAFT })

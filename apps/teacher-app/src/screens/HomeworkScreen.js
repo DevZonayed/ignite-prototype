@@ -2,8 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { useTheme } from '../ThemeContext';
 import { fonts } from '../theme';
-import { PageTitle, EmptyState, withAlpha } from '../components/ui';
+import { PageTitle, Button, withAlpha } from '../components/ui';
+import { AsyncList } from '../components/ScreenState';
 import { IconCheck } from '../components/Icon';
+import { useClasses } from '../context/ClassContext';
+import { useApi } from '../api/useApi';
+import { listClassSubmissions } from '../api/endpoints';
+import { displayName, initialsOf } from '../lib/user';
 
 function HwRow({ badge, badgeBg, badgeColor, title, meta, action, actionColor, onPress }) {
   const { colors } = useTheme();
@@ -30,7 +35,14 @@ function HwRow({ badge, badgeBg, badgeColor, title, meta, action, actionColor, o
 
 export default function HomeworkScreen({ navTo }) {
   const { colors } = useTheme();
+  const { activeClassId } = useClasses();
   const [tab, setTab] = useState('pending');
+
+  const state = useApi(
+    () => listClassSubmissions(activeClassId, tab),
+    [activeClassId, tab],
+    { skip: !activeClassId, initial: [] },
+  );
 
   return (
     <View>
@@ -47,11 +59,45 @@ export default function HomeworkScreen({ navTo }) {
         })}
       </View>
 
-      {tab === 'pending' ? (
-        <EmptyState title="No pending submissions" sub="Learner submissions will appear here for review." />
-      ) : (
-        <EmptyState title="Nothing reviewed yet" sub="Submissions you have given feedback to will appear here." />
-      )}
+      <Button variant="ghost" onPress={() => navTo('homework-create')} style={{ marginBottom: 13 }}>
+        + Set homework
+      </Button>
+
+      <AsyncList
+        state={state}
+        loadingLabel="Loading submissions…"
+        empty={
+          tab === 'pending'
+            ? { title: 'No pending submissions', sub: 'Learner submissions will appear here for review.' }
+            : { title: 'Nothing reviewed yet', sub: 'Submissions you have given feedback to will appear here.' }
+        }
+      >
+        {(subs) =>
+          subs.map((s) => {
+            const learner = s.learner ?? null;
+            const reviewed = s.reviewStatus === 'reviewed';
+            return (
+              <HwRow
+                key={s.id}
+                badge={
+                  reviewed ? (
+                    <IconCheck size={17} color={colors.success} strokeWidth={3} />
+                  ) : (
+                    initialsOf(learner)
+                  )
+                }
+                badgeBg={reviewed ? withAlpha(colors.success, 0.15) : learner?.avatarBg || colors.brandSoft}
+                badgeColor={learner?.avatarColor || colors.brand}
+                title={learner ? displayName(learner) : 'Learner'}
+                meta={s.homework?.title ?? 'Homework'}
+                action={reviewed ? 'Reviewed' : 'Review'}
+                actionColor={reviewed ? colors.success : colors.brand}
+                onPress={() => navTo('hw-review', { submissionId: s.id })}
+              />
+            );
+          })
+        }
+      </AsyncList>
     </View>
   );
 }

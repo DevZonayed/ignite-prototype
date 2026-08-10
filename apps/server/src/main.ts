@@ -42,7 +42,7 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('IGNITE API')
     .setDescription(
-      'IGNITE Platform Backend API — coding, robotics & STEAM education',
+      'IGNITE Platform Backend API for coding, robotics and STEAM education',
     )
     .setVersion('1.0')
     .addBearerAuth(
@@ -87,9 +87,15 @@ async function bootstrap() {
     },
   });
 
-  // Seed database on first run
-  const seedService = app.get(SeedService);
-  await seedService.seed();
+  // Seed demo content on first run. Set SEED_DEMO_DATA=false for a real
+  // deployment — the database then starts empty and the admin portal shows its
+  // first-run screen to create the initial platform administrator.
+  if (process.env.SEED_DEMO_DATA !== 'false') {
+    const seedService = app.get(SeedService);
+    await seedService.seed();
+  } else {
+    logger.log('SEED_DEMO_DATA=false, skipping demo seed');
+  }
 
   // Start
   const port = process.env.PORT || 4000;
