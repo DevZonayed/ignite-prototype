@@ -399,8 +399,10 @@ textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
   .topbar>div:first-child{min-width:0}
   .topbar h1{font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .topbar .crumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .whoami{min-width:0;margin-right:0}
-  .whoami .whoami-name{display:none}
+  /* Hiding just the name left the role badge to be crushed into the icon
+     buttons and clipped mid-word. The sidebar avatar already identifies the
+     signed-in user, so the whole chip goes. */
+  .whoami{display:none}
   .iconbtn{width:38px;height:38px;flex:none}
   .search{display:none}
 
