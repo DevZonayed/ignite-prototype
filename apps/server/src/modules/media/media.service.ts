@@ -1,69 +1,54 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
+import { ReadStream } from 'fs';
 
-import { MediaType } from '../../database/entities/lesson-media.entity';
+import {
+  MediaLibrary,
+  MediaLibraryType,
+} from '../../database/entities/media-library.entity';
 import { MediaFilterDto } from './dto/media-filter.dto';
 import { UploadMediaDto } from './dto/upload-media.dto';
-
-/**
- * Stub media record used until a dedicated Media entity is created.
- */
-export interface MediaRecord {
-  id: string;
-  name: string;
-  type: MediaType;
-  fileName: string;
-  unitId?: string;
-  uploadedById: string;
-  createdAt: string;
-}
+import { StorageService } from './storage.service';
 
 @Injectable()
 export class MediaService {
-  /** In-memory store — replaced by TypeORM repository once entity exists. */
-  private readonly mediaItems: MediaRecord[] = [];
+  constructor(
+    @InjectRepository(MediaLibrary)
+    private readonly mediaRepository: Repository<MediaLibrary>,
+    private readonly storage: StorageService,
+  ) {}
 
-  /**
-   * List media library items with optional filters and pagination.
-   */
   async findAll(
     filters: MediaFilterDto,
   ): Promise<{
-    data: MediaRecord[];
+    data: MediaLibrary[];
     total: number;
     page: number;
     limit: number;
   }> {
     const { type, unitId, page = 1, limit = 20 } = filters;
 
-    let items = [...this.mediaItems];
+    const where: FindOptionsWhere<MediaLibrary> = {};
+    if (type) where.type = type as unknown as MediaLibraryType;
+    if (unitId) where.unitId = unitId;
 
-    if (type) {
-      items = items.filter((item) => item.type === type);
-    }
-
-    if (unitId) {
-      items = items.filter((item) => item.unitId === unitId);
-    }
-
-    // Most recent first
-    items.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-
-    const total = items.length;
-    const start = (page - 1) * limit;
-    const data = items.slice(start, start + limit);
+    const [data, total] = await this.mediaRepository.findAndCount({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
 
     return { data, total, page, limit };
   }
 
-  /**
-   * Find a single media item by ID.
-   */
-  async findById(id: string): Promise<MediaRecord> {
-    const item = this.mediaItems.find((m) => m.id === id);
+  async findById(id: string): Promise<MediaLibrary> {
+    const item = await this.mediaRepository.findOne({ where: { id } });
     if (!item) {
       throw new NotFoundException(`Media item with ID "${id}" not found`);
     }
@@ -71,35 +56,58 @@ export class MediaService {
   }
 
   /**
-   * Create a media record. File storage is a stub — the record is saved
-   * in memory and no actual file I/O occurs.
+   * Store an upload.
+   *
+   * The file is required: this endpoint used to accept metadata alone and
+   * report success, which is how "uploaded" assets ended up with no bytes.
    */
   async upload(
     dto: UploadMediaDto,
     uploadedById: string,
-  ): Promise<MediaRecord> {
-    const record: MediaRecord = {
-      id: uuidv4(),
+    file?: Express.Multer.File,
+  ): Promise<MediaLibrary> {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException(
+        'No file received. Send the file as multipart/form-data under "file".',
+      );
+    }
+
+    const fileName = dto.fileName || file.originalname;
+    const storageKey = await this.storage.save(file.buffer, fileName);
+
+    const record = this.mediaRepository.create({
       name: dto.name,
-      type: dto.type,
-      fileName: dto.fileName,
+      type: dto.type as unknown as MediaLibraryType,
+      fileName,
+      storageKey,
+      mimeType: file.mimetype ?? null,
+      sizeBytes: file.size ?? file.buffer.length,
       unitId: dto.unitId,
       uploadedById,
-      createdAt: new Date().toISOString(),
-    };
+      uploadedAt: new Date(),
+    });
 
-    this.mediaItems.push(record);
-    return record;
+    return this.mediaRepository.save(record);
   }
 
-  /**
-   * Remove a media item by ID.
-   */
-  async remove(id: string): Promise<void> {
-    const index = this.mediaItems.findIndex((m) => m.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`Media item with ID "${id}" not found`);
+  /** The bytes for a media item, ready to pipe to the client. */
+  async openFile(
+    id: string,
+  ): Promise<{ stream: ReadStream; item: MediaLibrary }> {
+    const item = await this.findById(id);
+    const stream = item.storageKey ? this.storage.stream(item.storageKey) : null;
+    if (!stream) {
+      throw new NotFoundException(
+        `Media item "${id}" has no stored file. It was uploaded before file storage existed, or the file has been removed.`,
+      );
     }
-    this.mediaItems.splice(index, 1);
+    return { stream, item };
+  }
+
+  /** Delete the record and the file behind it. */
+  async remove(id: string): Promise<void> {
+    const item = await this.findById(id);
+    await this.storage.remove(item.storageKey);
+    await this.mediaRepository.remove(item);
   }
 }

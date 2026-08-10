@@ -27,7 +27,7 @@ export default function ItemDetail({ projectId, onBack }) {
     return (
       <View>
         <SubHead title="Project" onBack={onBack} />
-        <Loading label="Loading project…" />
+        <Loading label="Loading project…" variant="text" lines={5} />
       </View>
     );
   }

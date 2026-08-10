@@ -1,10 +1,19 @@
 import { useState } from 'react'
 import { useResource, useAction } from '../api/useResource.js'
-import { listClasses, createClass, updateClass, listUsers } from '../api/endpoints.js'
-import { ErrorState, EmptyState, TableSkeleton } from '../components/States.jsx'
+import {
+  listClasses,
+  createClass,
+  updateClass,
+  listUsers,
+  getClassLearners,
+  getEnrollableLearners,
+  enrolLearners,
+  unenrolLearner,
+} from '../api/endpoints.js'
+import { ErrorState, EmptyState, TableSkeleton, Loading } from '../components/States.jsx'
 import Modal, { ModalActions, Field } from '../components/Modal.jsx'
 import IconButton, { Actions } from '../components/IconButton.jsx'
-import { IconEye, IconPencil, IconPlus } from '../components/Icons.jsx'
+import { IconEye, IconPencil, IconPlus, IconUserCheck, IconTrash } from '../components/Icons.jsx'
 import { fullName, coverageColor } from '../lib/format.js'
 
 const PAGE_SIZE = 20
@@ -86,9 +95,136 @@ function ClassFormModal({ cls, schoolId, teachers, onClose, onSaved, onToast }) 
   )
 }
 
+/**
+ * The class register.
+ *
+ * Enrolment is what makes a class more than a label: attendance, homework
+ * compliance and every class-scoped report read this list. A learner sits on
+ * exactly one register, so adding them here moves them off any other.
+ */
+function RosterModal({ cls, onClose, onChanged, onToast }) {
+  const [picked, setPicked] = useState([])
+  const enrolled = useResource(() => getClassLearners(cls.id), [cls.id])
+  const available = useResource(() => getEnrollableLearners(cls.id), [cls.id])
+  const add = useAction()
+  const remove = useAction()
+
+  const enrolledRows = enrolled.data ?? []
+  const availableRows = available.data ?? []
+
+  function refresh() {
+    enrolled.reload()
+    available.reload()
+    onChanged()
+  }
+
+  function toggle(id) {
+    setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+  }
+
+  async function enrol() {
+    const res = await add.run(() => enrolLearners(cls.id, picked))
+    if (res.ok) {
+      onToast(`${picked.length} learner${picked.length === 1 ? '' : 's'} enrolled`)
+      setPicked([])
+      refresh()
+    }
+  }
+
+  async function drop(learner) {
+    const res = await remove.run(() => unenrolLearner(cls.id, learner.id))
+    if (res.ok) {
+      onToast(`${fullName(learner)} removed from ${cls.name}`)
+      refresh()
+    }
+  }
+
+  const busy = add.busy || remove.busy
+
+  return (
+    <Modal
+      title="Class register"
+      subtitle={`${cls.name}${cls.gradeLevel ? ` · ${cls.gradeLevel}` : ''}`}
+      onClose={onClose}
+      busy={busy}
+    >
+      <div className="modal-section-title">Enrolled ({enrolledRows.length})</div>
+      {enrolled.error ? <ErrorState error={enrolled.error} onRetry={enrolled.reload} /> : null}
+      {enrolled.loading && !enrolled.data ? <Loading variant="list" rows={3} /> : null}
+      {!enrolled.loading && enrolledRows.length === 0 ? (
+        <EmptyState title="Nobody on this register yet" hint="Add learners from the list below." />
+      ) : (
+        <ul className="rosterlist">
+          {enrolledRows.map((l) => (
+            <li key={l.id}>
+              <span>{fullName(l)}</span>
+              <span className="fm">{l.email || '-'}</span>
+              <IconButton
+                label={`Remove ${fullName(l)}`}
+                tone="danger"
+                icon={<IconTrash />}
+                disabled={busy}
+                onClick={() => drop(l)}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="modal-section-title" style={{ marginTop: 18 }}>
+        Available learners ({availableRows.length})
+      </div>
+      <div className="modal-section-note">
+        Learners at this school who are not on any register yet.
+      </div>
+      {available.error ? <ErrorState error={available.error} onRetry={available.reload} /> : null}
+      {available.loading && !available.data ? <Loading variant="list" rows={3} /> : null}
+      {!available.loading && availableRows.length === 0 ? (
+        <EmptyState
+          title="No unassigned learners"
+          hint="Every learner at this school is already on a register."
+        />
+      ) : (
+        <ul className="rosterlist">
+          {availableRows.map((l) => (
+            <li key={l.id}>
+              <label className="rosterpick">
+                <input
+                  type="checkbox"
+                  checked={picked.includes(l.id)}
+                  onChange={() => toggle(l.id)}
+                  disabled={busy}
+                />
+                <span>{fullName(l)}</span>
+              </label>
+              <span className="fm">{l.email || '-'}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {add.error ? <div className="signin-err">{add.error.message}</div> : null}
+      {remove.error ? <div className="signin-err">{remove.error.message}</div> : null}
+
+      <div className="rosterbar">
+        <button type="button" className="btnO" onClick={onClose} disabled={busy}>Done</button>
+        <button
+          type="button"
+          className="btnP"
+          onClick={enrol}
+          disabled={busy || picked.length === 0}
+        >
+          {add.busy ? 'Enrolling…' : `Enrol ${picked.length || ''}`.trim()}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
 export default function Classes({ active, schoolId, onOpenDetail, onToast }) {
   const [page, setPage] = useState(1)
   const [formFor, setFormFor] = useState(null)
+  const [rosterFor, setRosterFor] = useState(null)
 
   const classes = useResource(
     () => listClasses({ schoolId, page, limit: PAGE_SIZE }),
@@ -150,6 +286,11 @@ export default function Classes({ active, schoolId, onOpenDetail, onToast }) {
                             onClick={() => onOpenDetail({ detail: 'class', cls: c, teacher })}
                           />
                           <IconButton
+                            label="Manage register"
+                            icon={<IconUserCheck />}
+                            onClick={() => setRosterFor(c)}
+                          />
+                          <IconButton
                             label="Edit class"
                             icon={<IconPencil />}
                             onClick={() => setFormFor({ cls: c })}
@@ -183,6 +324,15 @@ export default function Classes({ active, schoolId, onOpenDetail, onToast }) {
           teachers={teacherList}
           onClose={() => setFormFor(null)}
           onSaved={classes.reload}
+          onToast={onToast}
+        />
+      ) : null}
+
+      {rosterFor ? (
+        <RosterModal
+          cls={rosterFor}
+          onClose={() => setRosterFor(null)}
+          onChanged={classes.reload}
           onToast={onToast}
         />
       ) : null}

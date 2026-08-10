@@ -69,7 +69,7 @@ export default function LessonDetailScreen({ navTo, goBack, showToast, params })
     return (
       <View>
         <SubHead title="Lesson" onBack={goBack} />
-        <Loading label="Loading lesson plan…" />
+        <Loading label="Loading lesson plan…" variant="text" lines={5} />
       </View>
     );
   }

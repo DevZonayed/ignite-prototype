@@ -16,6 +16,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { SyncService } from './sync.service';
 import { CreateSyncItemDto } from './dto/create-sync-item.dto';
@@ -24,6 +25,9 @@ import { UpdateSyncStatusDto } from './dto/update-sync-status.dto';
 @ApiTags('sync')
 @ApiBearerAuth()
 @Controller('sync')
+// Every route here is the teacher app's own offline queue, scoped to the
+// caller's id — no other role has a queue to read or write.
+@Roles('teacher', 'platform_admin')
 export class SyncController {
   constructor(private readonly syncService: SyncService) {}
 

@@ -12,6 +12,15 @@ import { StatusBar } from 'expo-status-bar';
 // RN's SafeAreaView handles the iOS notch but ignores the Android status bar,
 // so reserve its height explicitly on Android; iOS/web get it from SafeAreaView.
 const ANDROID_TOP = Platform.OS === 'android' ? RNStatusBar.currentHeight || 24 : 0;
+// The auth hero runs full-bleed under the status bar, so it needs the real
+// inset on every platform — ANDROID_TOP is 0 on iOS and would let the notch
+// clip the badge row. Mirrors teacher-app's TOP_INSET.
+const AUTH_TOP_INSET =
+  Platform.OS === 'android'
+    ? RNStatusBar.currentHeight || 24
+    : Platform.OS === 'ios'
+      ? 44
+      : 0;
 import { useFonts } from 'expo-font';
 import {
   Nunito_700Bold,
@@ -125,11 +134,15 @@ function Shell() {
   }
 
   if (!user) {
+    // No top padding here on purpose: the auth hero is a full-bleed gradient
+    // that runs under the status bar, so it takes the inset itself and keeps
+    // its own content clear of it. Status-bar text is always light because the
+    // hero is dark in both themes.
     return (
-      <SafeAreaView style={[styles.root, { backgroundColor: colors.bg, paddingTop: ANDROID_TOP }]}>
-        <StatusBar style={colors.text === '#0F172A' ? 'dark' : 'light'} />
-        <Auth onSignedIn={setUser} />
-      </SafeAreaView>
+      <View style={[styles.root, { backgroundColor: colors.bg }]}>
+        <StatusBar style="light" />
+        <Auth onSignedIn={setUser} topInset={AUTH_TOP_INSET} />
+      </View>
     );
   }
 

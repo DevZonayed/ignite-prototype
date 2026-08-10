@@ -81,9 +81,29 @@ export class CurriculumService {
   }
 
   /**
-   * List all curriculum versions, ordered by version descending.
+   * List curriculum versions, ordered by version descending.
+   *
+   * A teacher must only ever see the version their own school is assigned.
+   * Returning every version let the teacher app pick "the first published one"
+   * platform-wide, so a school assigned version B was taught version A.
    */
-  async findAll(): Promise<CurriculumVersion[]> {
+  async findAll(currentUser?: any): Promise<CurriculumVersion[]> {
+    if (currentUser?.role === 'teacher' || currentUser?.role === 'learner') {
+      if (!currentUser.schoolId) return [];
+
+      const school = await this.schoolRepository.findOne({
+        where: { id: currentUser.schoolId },
+      });
+      if (!school?.curriculumVersionId) return [];
+
+      const assigned = await this.curriculumVersionRepository.findOne({
+        where: { id: school.curriculumVersionId },
+      });
+      // A draft is not teachable: it is still being authored.
+      if (!assigned || assigned.status !== CurriculumVersionStatus.PUBLISHED) return [];
+      return [assigned];
+    }
+
     return this.curriculumVersionRepository.find({
       order: { version: 'DESC' },
     });

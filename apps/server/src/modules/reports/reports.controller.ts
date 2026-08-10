@@ -6,8 +6,10 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -19,6 +21,7 @@ import {
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ReportsService } from './reports.service';
 import { CreateProgressReportDto } from './dto/create-progress-report.dto';
 import { UpdateProgressReportDto } from './dto/update-progress-report.dto';
@@ -102,17 +105,33 @@ export class ReportsController {
   @Roles('platform_admin', 'curriculum_admin', 'principal')
   @ApiOperation({ summary: 'Generate a school report' })
   @ApiResponse({ status: 201, description: 'School report created' })
-  async createSchoolReport(@Body() dto: CreateSchoolReportDto) {
-    return this.reportsService.createSchoolReport(dto);
+  async createSchoolReport(
+    @Body() dto: CreateSchoolReportDto,
+    @CurrentUser() user: any,
+  ) {
+    // A principal only ever reports on their own school, whatever they post.
+    const schoolId =
+      user.role === 'principal' ? user.schoolId : dto.schoolId;
+    return this.reportsService.createSchoolReport(
+      { ...dto, schoolId },
+      user.id,
+    );
   }
 
   @Get('school/:id/download')
   @Roles('platform_admin', 'curriculum_admin', 'principal')
-  @ApiOperation({ summary: 'Download school report as PDF' })
+  @ApiOperation({ summary: 'Download school report as CSV' })
   @ApiParam({ name: 'id', description: 'Report UUID' })
-  @ApiResponse({ status: 200, description: 'PDF download' })
+  @ApiResponse({ status: 200, description: 'CSV download' })
   @ApiResponse({ status: 404, description: 'Report not found' })
-  async downloadSchoolReport(@Param('id') id: string) {
-    return this.reportsService.downloadSchoolReport(id);
+  async downloadSchoolReport(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const { filename, content } =
+      await this.reportsService.downloadSchoolReport(id);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(content);
   }
 }

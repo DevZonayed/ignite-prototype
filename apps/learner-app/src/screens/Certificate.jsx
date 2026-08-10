@@ -27,7 +27,7 @@ export default function Certificate({ user, onBack, onToast }) {
     return (
       <View>
         <SubHead title="Certificate" onBack={onBack} />
-        <Loading label="Loading certificate…" />
+        <Loading label="Loading certificate…" variant="text" lines={5} />
       </View>
     );
   }

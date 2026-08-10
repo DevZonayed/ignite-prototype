@@ -30,6 +30,20 @@ export class MediaLibrary {
   @Column({ type: 'varchar', nullable: true })
   fileName: string;
 
+  // Where the bytes actually live, relative to the storage root. Null means the
+  // record predates file storage (uploads used to be discarded entirely).
+  @Column({ type: 'varchar', nullable: true })
+  storageKey: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  mimeType: string | null;
+
+  @Column({ type: 'int', nullable: true })
+  sizeBytes: number | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  uploadedById: string | null;
+
   @Column({ type: 'varchar', nullable: true })
   unitId: string;
 

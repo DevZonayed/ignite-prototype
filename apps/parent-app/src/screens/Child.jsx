@@ -56,7 +56,7 @@ export default function Child() {
     skip: !activeChildId,
   });
 
-  if (childrenLoading && !activeChild) return <Loading label="Loading…" />;
+  if (childrenLoading && !activeChild) return <Loading label="Loading…" variant="tiles" />;
   if (!activeChild) {
     return (
       <EmptyState
@@ -81,7 +81,7 @@ export default function Child() {
 
       {tab === 'att' &&
         (attendance.loading && !attendance.data ? (
-          <Loading label="Loading attendance…" />
+          <Loading label="Loading attendance…" variant="cards" count={2} avatar={false} />
         ) : attendance.error ? (
           <ErrorState error={attendance.error} onRetry={attendance.reload} />
         ) : (
@@ -154,7 +154,7 @@ export default function Child() {
 
       {tab === 'sk' &&
         (skills.loading && !dims.length ? (
-          <Loading label="Loading skills…" />
+          <Loading label="Loading skills…" variant="bars" rows={4} />
         ) : skills.error ? (
           <ErrorState error={skills.error} onRetry={skills.reload} />
         ) : !dims.length ? (

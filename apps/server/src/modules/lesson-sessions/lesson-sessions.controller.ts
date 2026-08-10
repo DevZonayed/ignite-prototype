@@ -14,6 +14,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../database/entities/user.entity';
 import { LessonSessionsService } from './lesson-sessions.service';
@@ -27,7 +28,10 @@ import { CompleteSessionDto } from './dto/complete-session.dto';
 export class LessonSessionsController {
   constructor(private readonly lessonSessionsService: LessonSessionsService) {}
 
+  // Only the teacher delivering the lesson opens/updates a session — these
+  // records feed the 'lessons delivered' metrics, so anyone may not write them.
   @Post()
+  @Roles('teacher', 'platform_admin')
   @ApiOperation({ summary: 'Start a new lesson session' })
   @ApiResponse({ status: 201, description: 'Lesson session created' })
   @ApiResponse({ status: 409, description: 'Active session already exists' })
@@ -56,6 +60,7 @@ export class LessonSessionsController {
   }
 
   @Patch(':id')
+  @Roles('teacher', 'platform_admin')
   @ApiOperation({ summary: 'Update session (pause/resume, elapsed time, sync status)' })
   @ApiParam({ name: 'id', description: 'Lesson session UUID' })
   @ApiResponse({ status: 200, description: 'Session updated' })
@@ -68,6 +73,7 @@ export class LessonSessionsController {
   }
 
   @Patch(':id/complete')
+  @Roles('teacher', 'platform_admin')
   @ApiOperation({ summary: 'Mark session as complete' })
   @ApiParam({ name: 'id', description: 'Lesson session UUID' })
   @ApiResponse({ status: 200, description: 'Session marked as complete' })

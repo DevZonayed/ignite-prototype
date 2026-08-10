@@ -182,17 +182,25 @@ export class PortfolioService {
       }
     }
 
-    // Term progress: how many distinct lessons the learner attended vs total lessons
+    // Term progress: distinct *lessons* attended vs total lessons.
+    //
+    // This counted distinct lesson *sessions*, which is a different number: a
+    // lesson taught twice produces two sessions, so a learner who attended
+    // both was credited twice for one lesson and the figure ran past 100%
+    // (150% on a two-lesson curriculum). Count the lesson behind each session,
+    // and clamp — re-teaching a lesson cannot take a learner beyond the end of
+    // the curriculum.
     const totalLessons = await this.lessonRepository.count();
-    const attendedSessions = await this.attendanceRepository
+    const attendedLessons = await this.attendanceRepository
       .createQueryBuilder('a')
-      .select('COUNT(DISTINCT a.lessonSessionId)', 'count')
+      .innerJoin('lesson_sessions', 'ls', 'ls.id = a.lessonSessionId')
+      .select('COUNT(DISTINCT ls.lessonId)', 'count')
       .where('a.learnerId = :learnerId', { learnerId })
       .andWhere('a.status = :status', { status: AttendanceStatus.PRESENT })
       .getRawOne();
-    const attendedCount = Number(attendedSessions?.count || 0);
+    const attendedCount = Number(attendedLessons?.count || 0);
     const termProgressPercent = totalLessons > 0
-      ? Math.round((attendedCount / totalLessons) * 100)
+      ? Math.min(100, Math.round((attendedCount / totalLessons) * 100))
       : 0;
 
     // Total badges earned

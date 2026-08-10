@@ -43,7 +43,7 @@ export default function Media({ active, onToast }) {
         <span className="count">{media.data?.total ?? 0} item{(media.data?.total ?? 0) === 1 ? '' : 's'}</span>
       </div>
 
-      {media.loading && !media.data ? <Loading label="Loading media library…" /> : null}
+      {media.loading && !media.data ? <Loading label="Loading media library…" variant="rows" /> : null}
       {media.error ? <ErrorState error={media.error} onRetry={media.reload} /> : null}
       {media.data && items.length === 0 ? (
         <EmptyState

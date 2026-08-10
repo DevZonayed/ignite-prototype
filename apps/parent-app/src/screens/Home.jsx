@@ -35,7 +35,7 @@ export default function Home({ onNavigate }) {
     initial: [],
   });
 
-  if (childrenLoading && !activeChild) return <Loading label="Loading your children…" />;
+  if (childrenLoading && !activeChild) return <Loading label="Loading your children…" variant="screen" />;
   if (childrenError) return <ErrorState error={childrenError} onRetry={reload} />;
   if (!activeChild) {
     return (
@@ -67,7 +67,7 @@ export default function Home({ onNavigate }) {
           This week
         </Text>
         {summary.loading && !stats ? (
-          <Loading label="Loading this week…" />
+          <Loading label="Loading this week…" variant="tiles" />
         ) : (
           <View style={styles.wk}>
             <WeekStat

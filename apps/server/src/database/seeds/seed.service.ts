@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import {
@@ -51,6 +51,7 @@ export class SeedService {
   private readonly logger = new Logger(SeedService.name);
 
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     @InjectRepository(School) private readonly schoolRepo: Repository<School>,
     @InjectRepository(Class) private readonly classRepo: Repository<Class>,
@@ -75,12 +76,51 @@ export class SeedService {
     @InjectRepository(Announcement) private readonly announcementRepo: Repository<Announcement>,
   ) {}
 
+  /**
+   * Seed the demo dataset.
+   *
+   * The whole thing runs in one transaction. Without it a failure part-way
+   * through left a half-seeded database, and because the guard below only
+   * checks whether *any* user exists, the next boot saw those users and
+   * skipped — leaving the install permanently broken with no way back but
+   * wiping the volume.
+   */
   async seed(): Promise<void> {
+    // Guard runs outside the transaction on the injected repository.
     const userCount = await this.userRepo.count();
     if (userCount > 0) {
       this.logger.log('Database already seeded, skipping.');
       return;
     }
+
+    await this.dataSource.transaction(async (manager) => {
+      await this.seedAll(manager);
+    });
+  }
+
+  private async seedAll(manager: EntityManager): Promise<void> {
+    const userRepo = manager.getRepository(User);
+    const schoolRepo = manager.getRepository(School);
+    const classRepo = manager.getRepository(Class);
+    const curriculumVersionRepo = manager.getRepository(CurriculumVersion);
+    const unitRepo = manager.getRepository(Unit);
+    const lessonRepo = manager.getRepository(Lesson);
+    const lessonMediaRepo = manager.getRepository(LessonMedia);
+    const lessonActivityRepo = manager.getRepository(LessonActivity);
+    const lqsDimensionRepo = manager.getRepository(LqsDimension);
+    const lqsScoreRepo = manager.getRepository(LqsScore);
+    const badgeRepo = manager.getRepository(Badge);
+    const badgeAwardRepo = manager.getRepository(BadgeAward);
+    const certificateRepo = manager.getRepository(Certificate);
+    const projectRepo = manager.getRepository(Project);
+    const parentChildRepo = manager.getRepository(ParentChild);
+    const homeworkRepo = manager.getRepository(Homework);
+    const homeworkSubmissionRepo = manager.getRepository(HomeworkSubmission);
+    const homeworkMessageRepo = manager.getRepository(HomeworkMessage);
+    const progressReportRepo = manager.getRepository(ProgressReport);
+    const aiConfigRepo = manager.getRepository(AiConfig);
+    const auditLogRepo = manager.getRepository(AuditLog);
+    const announcementRepo = manager.getRepository(Announcement);
 
     this.logger.log('Seeding database...');
     // Every seeded account shares this password. It stays out of the source so
@@ -96,8 +136,8 @@ export class SeedService {
 
     // ── 1. Curriculum Version ──────────────────────────────────────────
     this.logger.log('Seeding curriculum version...');
-    const curriculumV4 = await this.curriculumVersionRepo.save(
-      this.curriculumVersionRepo.create({
+    const curriculumV4 = await curriculumVersionRepo.save(
+      curriculumVersionRepo.create({
         name: 'IGNITE Curriculum',
         version: 4,
         status: CurriculumVersionStatus.PUBLISHED,
@@ -133,8 +173,8 @@ export class SeedService {
 
     const schools: School[] = [];
     for (const s of schoolData) {
-      const school = await this.schoolRepo.save(
-        this.schoolRepo.create({
+      const school = await schoolRepo.save(
+        schoolRepo.create({
           name: s.name,
           region: s.region,
           status: SchoolStatus.ACTIVE,
@@ -174,8 +214,8 @@ export class SeedService {
       avatarBg?: string;
       avatarColor?: string;
     }): Promise<User> => {
-      return this.userRepo.save(
-        this.userRepo.create({
+      return userRepo.save(
+        userRepo.create({
           firstName: data.firstName,
           lastName: data.lastName,
           email: data.email,
@@ -353,8 +393,8 @@ export class SeedService {
     // ── 4. Classes ─────────────────────────────────────────────────────
     this.logger.log('Seeding classes...');
 
-    const classJSS1 = await this.classRepo.save(
-      this.classRepo.create({
+    const classJSS1 = await classRepo.save(
+      classRepo.create({
         name: 'JSS 1',
         gradeLevel: 'JSS 1',
         subject: 'Coding & Robotics',
@@ -365,8 +405,8 @@ export class SeedService {
       }),
     );
 
-    const classJSS2 = await this.classRepo.save(
-      this.classRepo.create({
+    const classJSS2 = await classRepo.save(
+      classRepo.create({
         name: 'JSS 2',
         gradeLevel: 'JSS 2',
         subject: 'Coding & Robotics',
@@ -377,8 +417,8 @@ export class SeedService {
       }),
     );
 
-    const classJSS3 = await this.classRepo.save(
-      this.classRepo.create({
+    const classJSS3 = await classRepo.save(
+      classRepo.create({
         name: 'JSS 3',
         gradeLevel: 'JSS 3',
         subject: 'Coding & Robotics',
@@ -389,8 +429,8 @@ export class SeedService {
       }),
     );
 
-    const classP4 = await this.classRepo.save(
-      this.classRepo.create({
+    const classP4 = await classRepo.save(
+      classRepo.create({
         name: 'P 4',
         gradeLevel: 'Primary 4',
         subject: 'Coding & Robotics',
@@ -401,8 +441,8 @@ export class SeedService {
       }),
     );
 
-    const classP5 = await this.classRepo.save(
-      this.classRepo.create({
+    const classP5 = await classRepo.save(
+      classRepo.create({
         name: 'P 5',
         gradeLevel: 'Primary 5',
         subject: 'Coding & Robotics',
@@ -413,8 +453,8 @@ export class SeedService {
       }),
     );
 
-    const classP6 = await this.classRepo.save(
-      this.classRepo.create({
+    const classP6 = await classRepo.save(
+      classRepo.create({
         name: 'P 6',
         gradeLevel: 'Primary 6',
         subject: 'Coding & Robotics',
@@ -429,8 +469,8 @@ export class SeedService {
     this.logger.log('Seeding units and lessons...');
 
     // Unit 1: Getting Started with Scratch (4 lessons, done)
-    const unit1 = await this.unitRepo.save(
-      this.unitRepo.create({
+    const unit1 = await unitRepo.save(
+      unitRepo.create({
         curriculumVersionId: curriculumV4.id,
         order: 1,
         title: 'Getting Started with Scratch',
@@ -445,8 +485,8 @@ export class SeedService {
       'Saving & Sharing Projects',
     ];
     for (let i = 0; i < unit1Lessons.length; i++) {
-      await this.lessonRepo.save(
-        this.lessonRepo.create({
+      await lessonRepo.save(
+        lessonRepo.create({
           unitId: unit1.id,
           order: i + 1,
           title: unit1Lessons[i],
@@ -457,8 +497,8 @@ export class SeedService {
     }
 
     // Unit 2: Sprites & Events (4 lessons, done)
-    const unit2 = await this.unitRepo.save(
-      this.unitRepo.create({
+    const unit2 = await unitRepo.save(
+      unitRepo.create({
         curriculumVersionId: curriculumV4.id,
         order: 2,
         title: 'Sprites & Events',
@@ -473,8 +513,8 @@ export class SeedService {
       'Interactive Stories',
     ];
     for (let i = 0; i < unit2Lessons.length; i++) {
-      await this.lessonRepo.save(
-        this.lessonRepo.create({
+      await lessonRepo.save(
+        lessonRepo.create({
           unitId: unit2.id,
           order: i + 1,
           title: unit2Lessons[i],
@@ -485,8 +525,8 @@ export class SeedService {
     }
 
     // Unit 3: Loops & Motion (6 lessons, done)
-    const unit3 = await this.unitRepo.save(
-      this.unitRepo.create({
+    const unit3 = await unitRepo.save(
+      unitRepo.create({
         curriculumVersionId: curriculumV4.id,
         order: 3,
         title: 'Loops & Motion',
@@ -503,8 +543,8 @@ export class SeedService {
       'Loop Challenges',
     ];
     for (let i = 0; i < unit3Lessons.length; i++) {
-      await this.lessonRepo.save(
-        this.lessonRepo.create({
+      await lessonRepo.save(
+        lessonRepo.create({
           unitId: unit3.id,
           order: i + 1,
           title: unit3Lessons[i],
@@ -515,8 +555,8 @@ export class SeedService {
     }
 
     // Unit 4: Intro to Python (4 lessons, done)
-    const unit4 = await this.unitRepo.save(
-      this.unitRepo.create({
+    const unit4 = await unitRepo.save(
+      unitRepo.create({
         curriculumVersionId: curriculumV4.id,
         order: 4,
         title: 'Intro to Python',
@@ -531,8 +571,8 @@ export class SeedService {
       'Simple Loops in Python',
     ];
     for (let i = 0; i < unit4Lessons.length; i++) {
-      await this.lessonRepo.save(
-        this.lessonRepo.create({
+      await lessonRepo.save(
+        lessonRepo.create({
           unitId: unit4.id,
           order: i + 1,
           title: unit4Lessons[i],
@@ -543,8 +583,8 @@ export class SeedService {
     }
 
     // Unit 5: Robotics - Little Genius Lab (6 lessons, 5 done + 1 current)
-    const unit5 = await this.unitRepo.save(
-      this.unitRepo.create({
+    const unit5 = await unitRepo.save(
+      unitRepo.create({
         curriculumVersionId: curriculumV4.id,
         order: 5,
         title: 'Robotics · Little Genius Lab™',
@@ -560,8 +600,8 @@ export class SeedService {
       'Servo Motor Control',
     ];
     for (let i = 0; i < unit5DoneTitles.length; i++) {
-      await this.lessonRepo.save(
-        this.lessonRepo.create({
+      await lessonRepo.save(
+        lessonRepo.create({
           unitId: unit5.id,
           order: i + 1,
           title: unit5DoneTitles[i],
@@ -573,8 +613,8 @@ export class SeedService {
     }
 
     // Lesson 5 (current) — Build a Smart Reading Lamp — full detail
-    const smartLampLesson = await this.lessonRepo.save(
-      this.lessonRepo.create({
+    const smartLampLesson = await lessonRepo.save(
+      lessonRepo.create({
         unitId: unit5.id,
         order: 5,
         title: 'Build a Smart Reading Lamp',
@@ -609,8 +649,8 @@ export class SeedService {
       { title: 'Challenge: 5-second timer', duration: '2:35', type: MediaType.MP4, order: 6 },
     ];
     for (const m of mediaItems) {
-      await this.lessonMediaRepo.save(
-        this.lessonMediaRepo.create({
+      await lessonMediaRepo.save(
+        lessonMediaRepo.create({
           lessonId: smartLampLesson.id,
           type: m.type,
           title: m.title,
@@ -628,8 +668,8 @@ export class SeedService {
       'Save .sb3 project',
     ];
     for (let a = 0; a < activityTitles.length; a++) {
-      await this.lessonActivityRepo.save(
-        this.lessonActivityRepo.create({
+      await lessonActivityRepo.save(
+        lessonActivityRepo.create({
           lessonId: smartLampLesson.id,
           title: activityTitles[a],
           orderIndex: a + 1,
@@ -638,8 +678,8 @@ export class SeedService {
     }
 
     // Lesson 6 (locked)
-    await this.lessonRepo.save(
-      this.lessonRepo.create({
+    await lessonRepo.save(
+      lessonRepo.create({
         unitId: unit5.id,
         order: 6,
         title: 'Robotics Showcase Prep',
@@ -667,8 +707,8 @@ export class SeedService {
 
     const dimensions: LqsDimension[] = [];
     for (const d of dimensionData) {
-      const dim = await this.lqsDimensionRepo.save(
-        this.lqsDimensionRepo.create({
+      const dim = await lqsDimensionRepo.save(
+        lqsDimensionRepo.create({
           name: d.name,
           color: d.color,
           weight: d.weight,
@@ -705,8 +745,8 @@ export class SeedService {
     ];
 
     for (const s of amaraScores) {
-      await this.lqsScoreRepo.save(
-        this.lqsScoreRepo.create({
+      await lqsScoreRepo.save(
+        lqsScoreRepo.create({
           learnerId: amaraEze.id,
           dimensionId: dimByName(s.dimensionName).id,
           score: s.score,
@@ -719,8 +759,8 @@ export class SeedService {
     // ── 8. Badges ──────────────────────────────────────────────────────
     this.logger.log('Seeding badges...');
 
-    const badgeFirstScratch = await this.badgeRepo.save(
-      this.badgeRepo.create({
+    const badgeFirstScratch = await badgeRepo.save(
+      badgeRepo.create({
         name: 'First Scratch',
         description: '1st .sb3 saved',
         iconType: 'scratch',
@@ -728,8 +768,8 @@ export class SeedService {
       }),
     );
 
-    const badgeLoopMaster = await this.badgeRepo.save(
-      this.badgeRepo.create({
+    const badgeLoopMaster = await badgeRepo.save(
+      badgeRepo.create({
         name: 'Loop Master',
         description: 'Loops project done',
         iconType: 'loop',
@@ -737,8 +777,8 @@ export class SeedService {
       }),
     );
 
-    const badgeRoboticsRookie = await this.badgeRepo.save(
-      this.badgeRepo.create({
+    const badgeRoboticsRookie = await badgeRepo.save(
+      badgeRepo.create({
         name: 'Robotics Rookie',
         description: '1st robotics build',
         iconType: 'robotics',
@@ -746,8 +786,8 @@ export class SeedService {
       }),
     );
 
-    const badgePythonStarter = await this.badgeRepo.save(
-      this.badgeRepo.create({
+    const badgePythonStarter = await badgeRepo.save(
+      badgeRepo.create({
         name: 'Python Starter',
         description: '1st .py program',
         iconType: 'python',
@@ -758,8 +798,8 @@ export class SeedService {
     // ── 9. Projects for Amara ──────────────────────────────────────────
     this.logger.log('Seeding projects for Amara Eze...');
 
-    const projectMazeGame = await this.projectRepo.save(
-      this.projectRepo.create({
+    const projectMazeGame = await projectRepo.save(
+      projectRepo.create({
         title: 'Maze Game',
         learnerId: amaraEze.id,
         fileType: ProjectFileType.SCRATCH,
@@ -769,8 +809,8 @@ export class SeedService {
       }),
     );
 
-    const projectNumberGuesser = await this.projectRepo.save(
-      this.projectRepo.create({
+    const projectNumberGuesser = await projectRepo.save(
+      projectRepo.create({
         title: 'Number Guesser',
         learnerId: amaraEze.id,
         fileType: ProjectFileType.PYTHON,
@@ -780,8 +820,8 @@ export class SeedService {
       }),
     );
 
-    const projectLineRobot = await this.projectRepo.save(
-      this.projectRepo.create({
+    const projectLineRobot = await projectRepo.save(
+      projectRepo.create({
         title: 'Line Robot',
         learnerId: amaraEze.id,
         fileType: ProjectFileType.ROBOTICS,
@@ -791,8 +831,8 @@ export class SeedService {
       }),
     );
 
-    const projectDigitalHero = await this.projectRepo.save(
-      this.projectRepo.create({
+    const projectDigitalHero = await projectRepo.save(
+      projectRepo.create({
         title: 'My Digital Hero',
         learnerId: amaraEze.id,
         fileType: ProjectFileType.DESIGN,
@@ -802,8 +842,8 @@ export class SeedService {
       }),
     );
 
-    const projectCatchStar = await this.projectRepo.save(
-      this.projectRepo.create({
+    const projectCatchStar = await projectRepo.save(
+      projectRepo.create({
         title: 'Catch the Star',
         learnerId: amaraEze.id,
         fileType: ProjectFileType.SCRATCH,
@@ -813,8 +853,8 @@ export class SeedService {
       }),
     );
 
-    const projectRobotDemo = await this.projectRepo.save(
-      this.projectRepo.create({
+    const projectRobotDemo = await projectRepo.save(
+      projectRepo.create({
         title: 'Robot Demo',
         learnerId: amaraEze.id,
         fileType: ProjectFileType.VIDEO,
@@ -827,8 +867,8 @@ export class SeedService {
     // ── 10. Badge Awards for Amara ─────────────────────────────────────
     this.logger.log('Seeding badge awards for Amara Eze...');
 
-    await this.badgeAwardRepo.save(
-      this.badgeAwardRepo.create({
+    await badgeAwardRepo.save(
+      badgeAwardRepo.create({
         badgeId: badgeFirstScratch.id,
         learnerId: amaraEze.id,
         linkedProjectId: projectMazeGame.id,
@@ -836,8 +876,8 @@ export class SeedService {
       }),
     );
 
-    await this.badgeAwardRepo.save(
-      this.badgeAwardRepo.create({
+    await badgeAwardRepo.save(
+      badgeAwardRepo.create({
         badgeId: badgeLoopMaster.id,
         learnerId: amaraEze.id,
         linkedProjectId: projectCatchStar.id,
@@ -845,8 +885,8 @@ export class SeedService {
       }),
     );
 
-    await this.badgeAwardRepo.save(
-      this.badgeAwardRepo.create({
+    await badgeAwardRepo.save(
+      badgeAwardRepo.create({
         badgeId: badgeRoboticsRookie.id,
         learnerId: amaraEze.id,
         linkedProjectId: projectLineRobot.id,
@@ -854,8 +894,8 @@ export class SeedService {
       }),
     );
 
-    await this.badgeAwardRepo.save(
-      this.badgeAwardRepo.create({
+    await badgeAwardRepo.save(
+      badgeAwardRepo.create({
         badgeId: badgePythonStarter.id,
         learnerId: amaraEze.id,
         linkedProjectId: projectNumberGuesser.id,
@@ -866,8 +906,8 @@ export class SeedService {
     // ── 11. Certificate for Amara ──────────────────────────────────────
     this.logger.log('Seeding certificate for Amara Eze...');
 
-    await this.certificateRepo.save(
-      this.certificateRepo.create({
+    await certificateRepo.save(
+      certificateRepo.create({
         id: 'IGN-2026-0148',
         learnerId: amaraEze.id,
         course: 'Digital Innovation',
@@ -881,16 +921,16 @@ export class SeedService {
     // ── 12. Parent-Child Links ─────────────────────────────────────────
     this.logger.log('Seeding parent-child links...');
 
-    await this.parentChildRepo.save(
-      this.parentChildRepo.create({
+    await parentChildRepo.save(
+      parentChildRepo.create({
         parentId: tundeEze.id,
         childId: amaraEze.id,
         verificationStatus: VerificationStatus.VERIFIED,
       }),
     );
 
-    await this.parentChildRepo.save(
-      this.parentChildRepo.create({
+    await parentChildRepo.save(
+      parentChildRepo.create({
         parentId: tundeEze.id,
         childId: kelechiEze.id,
         verificationStatus: VerificationStatus.VERIFIED,
@@ -900,8 +940,8 @@ export class SeedService {
     // ── 13. Homework ───────────────────────────────────────────────────
     this.logger.log('Seeding homework...');
 
-    const homework = await this.homeworkRepo.save(
-      this.homeworkRepo.create({
+    const homework = await homeworkRepo.save(
+      homeworkRepo.create({
         lessonId: smartLampLesson.id,
         classId: classJSS1.id,
         title: 'Smart Reading Lamp',
@@ -914,8 +954,8 @@ export class SeedService {
     );
 
     // Submission from Amara
-    const submission = await this.homeworkSubmissionRepo.save(
-      this.homeworkSubmissionRepo.create({
+    const submission = await homeworkSubmissionRepo.save(
+      homeworkSubmissionRepo.create({
         homeworkId: homework.id,
         learnerId: amaraEze.id,
         submittedAt: new Date('2026-07-15T14:30:00Z'),
@@ -928,8 +968,8 @@ export class SeedService {
     );
 
     // Messages on the submission
-    await this.homeworkMessageRepo.save(
-      this.homeworkMessageRepo.create({
+    await homeworkMessageRepo.save(
+      homeworkMessageRepo.create({
         submissionId: submission.id,
         senderType: SenderType.TEACHER,
         senderName: 'Mrs. Okafor',
@@ -937,8 +977,8 @@ export class SeedService {
       }),
     );
 
-    await this.homeworkMessageRepo.save(
-      this.homeworkMessageRepo.create({
+    await homeworkMessageRepo.save(
+      homeworkMessageRepo.create({
         submissionId: submission.id,
         senderType: SenderType.PARENT,
         senderName: 'Mr. Eze',
@@ -949,8 +989,8 @@ export class SeedService {
     // ── 14. Progress Report for Amara ──────────────────────────────────
     this.logger.log('Seeding progress report for Amara Eze...');
 
-    await this.progressReportRepo.save(
-      this.progressReportRepo.create({
+    await progressReportRepo.save(
+      progressReportRepo.create({
         childId: amaraEze.id,
         term: 'Term 2',
         programme: 'IGNITE Coding & Robotics',
@@ -969,8 +1009,8 @@ export class SeedService {
     // ── 15. AI Config ──────────────────────────────────────────────────
     this.logger.log('Seeding AI config...');
 
-    await this.aiConfigRepo.save(
-      this.aiConfigRepo.create({
+    await aiConfigRepo.save(
+      aiConfigRepo.create({
         schoolId: brightFuture.id,
         modelTier: ModelTier.SMALL,
         monthlyCallCap: 80000,
@@ -1025,8 +1065,8 @@ export class SeedService {
     ];
 
     for (const entry of auditEntries) {
-      await this.auditLogRepo.save(
-        this.auditLogRepo.create({
+      await auditLogRepo.save(
+        auditLogRepo.create({
           event: entry.event,
           actorId: entry.actorName === 'Zonayed Ahamad' ? zonayed.id : entry.actorName === 'Emeka Obi' ? emeka.id : undefined,
           actorName: entry.actorName,
@@ -1040,8 +1080,8 @@ export class SeedService {
     // ── 17. Announcements ──────────────────────────────────────────────
     this.logger.log('Seeding announcements...');
 
-    await this.announcementRepo.save(
-      this.announcementRepo.create({
+    await announcementRepo.save(
+      announcementRepo.create({
         title: 'Term 3 kits ready for collection',
         message:
           'All Term 3 robotics kits are now available for collection at the school admin office. Please pick up your kit before lessons begin next week.',
@@ -1051,8 +1091,8 @@ export class SeedService {
       }),
     );
 
-    await this.announcementRepo.save(
-      this.announcementRepo.create({
+    await announcementRepo.save(
+      announcementRepo.create({
         title: 'Robotics showcase on 30 July',
         message:
           'We are excited to announce the end-of-term Robotics Showcase on 30 July. Learners will present their Smart Reading Lamp projects. Parents are welcome to attend.',

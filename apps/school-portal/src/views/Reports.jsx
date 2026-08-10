@@ -100,7 +100,7 @@ export default function Reports({ active, schoolId, onToast }) {
       </div>
 
       <div className="panel" style={{ padding: '6px 8px' }}>
-        {reports.loading && !reports.data ? <Loading /> : null}
+        {reports.loading && !reports.data ? <Loading variant="rows" /> : null}
         {reports.error ? <ErrorState error={reports.error} onRetry={reports.reload} /> : null}
         {reports.data && rows.length === 0 ? (
           <EmptyState

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useResource, useAction } from '../api/useResource.js'
 import { getAiConfig, updateAiConfig, getAiUsage, getAiSchoolUsage } from '../api/endpoints.js'
-import { Loading, ErrorState, EmptyState } from '../components/States.jsx'
+import { Loading, ErrorState, EmptyState, Skel } from '../components/States.jsx'
 import { fmtNumber } from '../lib/format.js'
 
 export default function AIServices({ active, onToast }) {
@@ -52,22 +52,22 @@ export default function AIServices({ active, onToast }) {
       <div className="tiles">
         <div className="tile">
           <div className="th"><span className="tl">Calls this month</span></div>
-          <div className="tn">{usage.loading && !usage.data ? '…' : fmtNumber(u.callsThisMonth)}</div>
+          <div className="tn">{usage.loading && !usage.data ? <Skel w={72} h={24} /> : fmtNumber(u.callsThisMonth)}</div>
           <div className="tf">{capPercent}% of cap</div>
         </div>
         <div className="tile">
           <div className="th"><span className="tl">Estimated spend</span></div>
-          <div className="tn">{usage.loading && !usage.data ? '…' : `$${fmtNumber(u.estimatedSpend)}`}</div>
+          <div className="tn">{usage.loading && !usage.data ? <Skel w={72} h={24} /> : `$${fmtNumber(u.estimatedSpend)}`}</div>
           <div className="tf">this billing period</div>
         </div>
         <div className="tile">
           <div className="th"><span className="tl">Reports published</span></div>
-          <div className="tn">{usage.loading && !usage.data ? '…' : fmtNumber(u.reportsPublished)}</div>
+          <div className="tn">{usage.loading && !usage.data ? <Skel w={72} h={24} /> : fmtNumber(u.reportsPublished)}</div>
           <div className="tf">AI-assisted</div>
         </div>
         <div className="tile">
           <div className="th"><span className="tl">Teacher review rate</span></div>
-          <div className="tn">{usage.loading && !usage.data ? '…' : `${u.teacherReviewRate ?? 0}%`}</div>
+          <div className="tn">{usage.loading && !usage.data ? <Skel w={72} h={24} /> : `${u.teacherReviewRate ?? 0}%`}</div>
           <div className="tf">reviewed before publish</div>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function AIServices({ active, onToast }) {
       <div className="grid2">
         <div className="panel">
           <div className="ph"><h3>Configuration</h3></div>
-          {config.loading && !config.data ? <Loading /> : null}
+          {config.loading && !config.data ? <Loading variant="form" /> : null}
           {config.error ? <ErrorState error={config.error} onRetry={config.reload} /> : null}
 
           {draft ? (
@@ -124,7 +124,7 @@ export default function AIServices({ active, onToast }) {
 
         <div className="panel">
           <div className="ph"><h3>Usage by school</h3></div>
-          {perSchool.loading && !perSchool.data ? <Loading /> : null}
+          {perSchool.loading && !perSchool.data ? <Loading variant="form" /> : null}
           {perSchool.error ? <ErrorState error={perSchool.error} onRetry={perSchool.reload} /> : null}
           {perSchool.data && (perSchool.data.data ?? []).length === 0 ? (
             <EmptyState title="No per-school usage recorded" hint="Usage appears once schools start making AI calls." />

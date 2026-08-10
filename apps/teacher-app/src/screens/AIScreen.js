@@ -42,7 +42,7 @@ export default function AIScreen({ params }) {
     <View>
       <PageTitle>Lesson assistant</PageTitle>
 
-      {thread.loading && !messages.length ? <Loading label="Loading conversation…" /> : null}
+      {thread.loading && !messages.length ? <Loading label="Loading conversation…" variant="text" lines={4} /> : null}
       {thread.error && !messages.length ? (
         <ErrorState error={thread.error} onRetry={thread.reload} />
       ) : null}
@@ -71,7 +71,7 @@ export default function AIScreen({ params }) {
         );
       })}
 
-      {send.pending ? <Loading label="Thinking…" /> : null}
+      {send.pending ? <Loading label="Thinking…" variant="text" lines={2} /> : null}
       {send.error ? <ErrorState error={send.error} /> : null}
 
       <View style={{ flexDirection: 'row', gap: 9, alignItems: 'flex-start', backgroundColor: withAlpha(colors.warning, 0.1), borderWidth: 1, borderColor: withAlpha(colors.warning, 0.34), borderRadius: 12, padding: 11, marginBottom: 12, marginTop: 6 }}>

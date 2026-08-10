@@ -31,6 +31,12 @@ export const deleteUser = (id) => api.del(`/users/${id}`)
 export const listClasses = (params) => api.get(`/classes${qs(params)}`)
 export const getClass = (id) => api.get(`/classes/${id}`)
 export const getClassLearners = (id) => api.get(`/classes/${id}/learners`)
+export const getEnrollableLearners = (id) =>
+  api.get(`/classes/${id}/enrollable-learners`)
+export const enrolLearners = (id, learnerIds) =>
+  api.post(`/classes/${id}/learners`, { learnerIds })
+export const unenrolLearner = (id, learnerId) =>
+  api.del(`/classes/${id}/learners/${learnerId}`)
 export const createClass = (body) => api.post('/classes', body)
 export const updateClass = (id, body) => api.patch(`/classes/${id}`, body)
 

@@ -30,7 +30,7 @@ export default function HomeScreen({ navTo, user }) {
 
   function renderCurrent() {
     if (classesError) return <ErrorState error={classesError} />;
-    if (classesLoading || session.loading) return <Loading label="Checking for a lesson…" />;
+    if (classesLoading || session.loading) return <Loading label="Checking for a lesson…" variant="tiles" />;
     if (!activeClassId) {
       return (
         <EmptyState

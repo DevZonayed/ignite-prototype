@@ -18,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CurriculumService } from './curriculum.service';
 import { CreateCurriculumDto } from './dto/create-curriculum.dto';
 import { CreateUnitDto } from './dto/create-unit.dto';
@@ -42,8 +43,8 @@ export class CurriculumController {
   @Roles('platform_admin', 'curriculum_admin', 'principal', 'teacher')
   @ApiOperation({ summary: 'List all curriculum versions' })
   @ApiResponse({ status: 200, description: 'List of curriculum versions' })
-  async findAll() {
-    return this.curriculumService.findAll();
+  async findAll(@CurrentUser() user: any) {
+    return this.curriculumService.findAll(user);
   }
 
   @Post()

@@ -1,18 +1,23 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ScrollView,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Animated, AccessibilityInfo } from 'react-native';
 
 import { useTheme } from '../ThemeContext';
-import { fonts, igniteGradient } from '../theme';
-import Gradient from '../components/Gradient';
+import { fonts } from '../theme';
 import { signIn, activateAccount, lookupInvite, storeSession, ApiError } from '../api/auth';
+import {
+  AuthLayout,
+  AuthHero,
+  AuthHeading,
+  AuthField,
+  AuthButton,
+  AuthNotice,
+  AuthTextLink,
+  AuthFootnote,
+  IconUser,
+  IconLock,
+  IconKey,
+  IconCheck,
+} from '../components/auth-ui';
 
 /** Mirrors the server's ActivateDto rules so a bad password fails before the round trip. */
 function passwordProblem(password, confirm) {
@@ -24,45 +29,64 @@ function passwordProblem(password, confirm) {
   return null;
 }
 
-function Field({ label, hint, children }) {
-  const { colors } = useTheme();
-  return (
-    <View style={{ marginBottom: 13 }}>
-      <Text style={[styles.label, { color: colors.textSubtle }]}>{label}</Text>
-      {children}
-      {hint ? <Text style={[styles.hint, { color: colors.textSubtle }]}>{hint}</Text> : null}
-    </View>
-  );
-}
-
 /**
  * Sign in, or redeem an invite code to set a password for the first time.
  *
  * Both live in one screen because a learner arrives at exactly one of them once
- * and never thinks about the difference again.
+ * and never thinks about the difference again. The chrome is the teacher app's
+ * — same hero, same sheet — so the three apps read as one product.
  */
-export default function Auth({ onSignedIn }) {
-  const { colors } = useTheme();
-  const [mode, setMode] = useState('signin'); // 'signin' | 'activate'
+export default function Auth({ onSignedIn, topInset = 0 }) {
+  const { colors, mode, toggleTheme } = useTheme();
+  const [screen, setScreen] = useState('signin'); // 'signin' | 'activate'
 
   const [identifier, setIdentifier] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [reveal, setReveal] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [focus, setFocus] = useState(null);
+
+  const passwordRef = useRef(null);
+  const confirmRef = useRef(null);
+  const enter = useRef(new Animated.Value(0)).current;
 
   // Set once the email came from a code lookup rather than the keyboard, so a
   // later lookup may replace it but anything typed by hand is never overwritten.
   const emailWasFilled = useRef(false);
   const [lookingUp, setLookingUp] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((reduced) => {
+        if (cancelled) return;
+        if (reduced) {
+          enter.setValue(1);
+          return;
+        }
+        Animated.timing(enter, {
+          toValue: 1,
+          duration: 460,
+          delay: 60,
+          useNativeDriver: true,
+        }).start();
+      })
+      .catch(() => enter.setValue(1));
+    return () => {
+      cancelled = true;
+    };
+  }, [enter]);
+
   // Codes are 12 characters; look up as soon as one is complete and fill in the
   // address it was issued to. Debounced so pasting does not fire a request per
   // keystroke, and silent on failure — a wrong code is the button's job to
   // report, not something to nag about mid-typing.
   useEffect(() => {
-    if (mode !== 'activate') return undefined;
+    if (screen !== 'activate') return undefined;
     const code = inviteCode.trim();
     if (code.length < 12) return undefined;
     if (identifier.trim() && !emailWasFilled.current) return undefined;
@@ -89,13 +113,14 @@ export default function Auth({ onSignedIn }) {
       clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inviteCode, mode]);
+  }, [inviteCode, screen]);
 
   const swap = useCallback((next) => {
-    setMode(next);
+    setScreen(next);
     setErr('');
     setPassword('');
     setConfirm('');
+    setFocus(null);
   }, []);
 
   const submit = useCallback(async () => {
@@ -105,7 +130,7 @@ export default function Auth({ onSignedIn }) {
       return;
     }
 
-    if (mode === 'activate') {
+    if (screen === 'activate') {
       if (!inviteCode.trim()) {
         setErr('Enter the invite code from your email.');
         return;
@@ -124,7 +149,7 @@ export default function Auth({ onSignedIn }) {
     setBusy(true);
     try {
       const res =
-        mode === 'activate'
+        screen === 'activate'
           ? await activateAccount(id, inviteCode, password)
           : await signIn(id, password);
       await storeSession(res.accessToken, res.user);
@@ -134,210 +159,190 @@ export default function Auth({ onSignedIn }) {
     } finally {
       setBusy(false);
     }
-  }, [mode, identifier, inviteCode, password, confirm, onSignedIn]);
+  }, [screen, identifier, inviteCode, password, confirm, onSignedIn]);
 
-  const activating = mode === 'activate';
+  const activating = screen === 'activate';
+  const rise = enter.interpolate({ inputRange: [0, 1], outputRange: [22, 0] });
 
-  const input = (extra) => [
-    styles.input,
-    {
-      backgroundColor: colors.surface2,
-      borderColor: colors.border,
-      color: colors.text,
-      fontFamily: fonts.ui,
-    },
-    extra,
-  ];
+  const revealToggle = (
+    <Pressable
+      onPress={() => setReveal((r) => !r)}
+      hitSlop={8}
+      accessibilityRole="button"
+      style={{
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        borderRadius: 999,
+        backgroundColor: colors.brandSoft,
+      }}
+    >
+      <Text
+        style={{
+          fontFamily: fonts.uiBold,
+          fontWeight: '700',
+          fontSize: 11.5,
+          color: colors.brand,
+        }}
+      >
+        {reveal ? 'Hide' : 'Show'}
+      </Text>
+    </Pressable>
+  );
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ padding: 20, paddingBottom: 48 }}
-      keyboardShouldPersistTaps="handled"
+    <AuthLayout
+      topInset={topInset}
+      hero={
+        <Animated.View
+          style={{ flex: 1, opacity: enter, transform: [{ translateY: rise }] }}
+        >
+          <AuthHero badge="Learner app" mode={mode} onToggleTheme={toggleTheme} />
+        </Animated.View>
+      }
     >
-      <View style={{ alignItems: 'center', marginTop: 18, marginBottom: 22 }}>
-        <Gradient colors={igniteGradient} borderRadius={18} style={styles.mark}>
-          <Text style={styles.markStar}>★</Text>
-        </Gradient>
-        <Text style={[styles.brand, { color: colors.text }]}>IGNITE</Text>
-        <Text style={[styles.brandSub, { color: colors.textMuted }]}>
-          Digital Innovation Learning
-        </Text>
-      </View>
+      <AuthHeading
+        title={activating ? 'Set your password' : 'Welcome back'}
+        sub={
+          activating
+            ? 'Enter the code from your invite email, then choose a password.'
+            : 'Sign in to see your projects, skills and badges.'
+        }
+      />
 
-      <Text style={[styles.title, { color: colors.text }]}>
-        {activating ? 'Set your password' : 'Welcome back'}
-      </Text>
-      <Text style={[styles.sub, { color: colors.textMuted }]}>
-        {activating
-          ? 'Enter the code from your invite email, then choose a password.'
-          : 'Sign in to see your projects, skills and badges.'}
-      </Text>
-
-      <View style={{ height: 18 }} />
-
-      {activating ? (
-        <Field label="INVITE CODE">
-          <TextInput
-            style={input()}
+      <View style={{ gap: 16 }}>
+        {activating ? (
+          <AuthField
+            label="Invite code"
+            icon={<IconKey />}
             value={inviteCode}
             onChangeText={(t) => {
               setInviteCode(t.toUpperCase());
               if (err) setErr('');
             }}
             placeholder="Type invite code"
-            placeholderTextColor={colors.textSubtle}
             autoCapitalize="characters"
             autoCorrect={false}
+            returnKeyType="next"
+            focused={focus === 'code'}
+            onFocus={() => setFocus('code')}
+            onBlur={() => setFocus(null)}
           />
-        </Field>
-      ) : null}
+        ) : null}
 
-      <Field label="EMAIL">
-        <View>
-          <TextInput
-            style={input()}
-            value={identifier}
-            onChangeText={(t) => {
-              setIdentifier(t);
-              emailWasFilled.current = false;
-              if (err) setErr('');
-            }}
-            placeholder={lookingUp ? 'Finding your account…' : 'Type email'}
-            placeholderTextColor={colors.textSubtle}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-          />
-          {lookingUp ? (
-            <ActivityIndicator
-              size="small"
-              color={colors.brand}
-              style={{ position: 'absolute', right: 12, top: 14 }}
-            />
-          ) : null}
-        </View>
-      </Field>
+        <AuthField
+          label="Email"
+          icon={<IconUser />}
+          value={identifier}
+          onChangeText={(t) => {
+            setIdentifier(t);
+            emailWasFilled.current = false;
+            if (err) setErr('');
+          }}
+          placeholder={lookingUp ? 'Finding your account…' : 'Type email'}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          returnKeyType="next"
+          focused={focus === 'id'}
+          onFocus={() => setFocus('id')}
+          onBlur={() => setFocus(null)}
+          onSubmitEditing={() => passwordRef.current?.focus()}
+          trailing={lookingUp ? <ActivityIndicator size="small" color={colors.brand} /> : null}
+        />
 
-      <Field label={activating ? 'CREATE PASSWORD' : 'PASSWORD'}>
-        <TextInput
-          style={input()}
+        <AuthField
+          label={activating ? 'Create password' : 'Password'}
+          icon={<IconLock />}
+          inputRef={passwordRef}
           value={password}
           onChangeText={(t) => {
             setPassword(t);
             if (err) setErr('');
           }}
           placeholder="Type password"
-          placeholderTextColor={colors.textSubtle}
-          secureTextEntry
+          secureTextEntry={!reveal}
           autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType={activating ? 'next' : 'go'}
+          focused={focus === 'pw'}
+          onFocus={() => setFocus('pw')}
+          onBlur={() => setFocus(null)}
+          onSubmitEditing={() => (activating ? confirmRef.current?.focus() : submit())}
+          trailing={revealToggle}
         />
-      </Field>
 
-      {activating ? (
-        <Field label="CONFIRM PASSWORD" hint="At least 8 characters, including a letter and a number.">
-          <TextInput
-            style={input()}
+        {activating ? (
+          <AuthField
+            label="Confirm password"
+            icon={<IconLock />}
+            inputRef={confirmRef}
             value={confirm}
             onChangeText={(t) => {
               setConfirm(t);
               if (err) setErr('');
             }}
             placeholder="Retype password"
-            placeholderTextColor={colors.textSubtle}
-            secureTextEntry
+            secureTextEntry={!reveal}
             autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="go"
+            focused={focus === 'confirm'}
+            onFocus={() => setFocus('confirm')}
+            onBlur={() => setFocus(null)}
+            onSubmitEditing={submit}
+            hint="At least 8 characters, including a letter and a number."
           />
-        </Field>
+        ) : null}
+      </View>
+
+      {!activating ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 18 }}>
+          <Pressable
+            onPress={() => setRemember((r) => !r)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: remember }}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}
+            hitSlop={6}
+          >
+            <View
+              style={{
+                width: 21,
+                height: 21,
+                borderRadius: 7,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1.5,
+                borderColor: remember ? colors.brand : colors.border,
+                backgroundColor: remember ? colors.brand : 'transparent',
+              }}
+            >
+              {remember ? <IconCheck size={13} color="#fff" strokeWidth={3} /> : null}
+            </View>
+            <Text style={{ fontFamily: fonts.uiMedium, fontSize: 13.5, color: colors.textMuted }}>
+              Keep me signed in
+            </Text>
+          </Pressable>
+        </View>
       ) : null}
 
-      {err ? (
-        <Text
-          style={[
-            styles.err,
-            { color: colors.danger, borderColor: colors.danger, backgroundColor: colors.surface },
-          ]}
-        >
-          {err}
-        </Text>
-      ) : null}
+      {err ? <AuthNotice style={{ marginTop: 18 }}>{err}</AuthNotice> : null}
 
-      <Pressable
+      <AuthButton
+        label={activating ? 'Activate and sign in' : 'Sign in'}
+        busy={busy}
         onPress={submit}
-        disabled={busy}
-        style={({ pressed }) => [
-          styles.cta,
-          { backgroundColor: colors.brand, opacity: busy || pressed ? 0.75 : 1 },
-        ]}
-      >
-        <Text style={styles.ctaText}>
-          {busy
-            ? 'Please wait…'
-            : activating
-              ? 'Activate and sign in'
-              : 'Sign in'}
-        </Text>
-      </Pressable>
+        style={{ marginTop: 22 }}
+      />
 
-      <Pressable onPress={() => swap(activating ? 'signin' : 'activate')} style={{ marginTop: 18 }}>
-        <Text style={[styles.link, { color: colors.brand }]}>
-          {activating ? 'Back to sign in' : 'Have an invite code? Activate your account'}
-        </Text>
-      </Pressable>
-    </ScrollView>
+      <AuthTextLink
+        label={activating ? 'Back to sign in' : 'Have an invite code? Activate your account'}
+        onPress={() => swap(activating ? 'signin' : 'activate')}
+        style={{ marginTop: 18 }}
+      />
+
+      <AuthFootnote caption="Three devices per account">
+        Accounts are created by your school. Ask your teacher if you cannot get in.
+      </AuthFootnote>
+    </AuthLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  mark: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  markStar: { fontSize: 26, color: '#FFFFFF' },
-  brand: { fontFamily: fonts.display, fontWeight: '900', fontSize: 26, letterSpacing: 1 },
-  brandSub: { fontSize: 12.5, marginTop: 2 },
-  title: { fontFamily: fonts.display, fontWeight: '900', fontSize: 25 },
-  sub: { fontSize: 13.5, marginTop: 5, lineHeight: 20 },
-  label: {
-    fontFamily: fonts.uiSemibold,
-    fontSize: 10.5,
-    letterSpacing: 0.8,
-    marginBottom: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 13,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    fontSize: 15,
-  },
-  hint: { fontSize: 11.5, marginTop: 6 },
-  err: {
-    borderWidth: 1,
-    borderRadius: 11,
-    padding: 11,
-    fontSize: 13,
-    marginBottom: 13,
-  },
-  cta: {
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: 'center',
-  },
-  ctaText: {
-    color: '#FFFFFF',
-    fontFamily: fonts.uiBold,
-    fontWeight: '700',
-    fontSize: 15.5,
-  },
-  link: {
-    textAlign: 'center',
-    fontFamily: fonts.uiSemibold,
-    fontWeight: '600',
-    fontSize: 13.5,
-  },
-});

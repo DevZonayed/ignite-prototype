@@ -113,9 +113,9 @@ export default function Announcements({ active, onToast }) {
       <div className="panel">
         <div className="ph">
           <h3>Posted announcements</h3>
-          <span className="link" onClick={posts.reload}>Refresh</span>
+          <button type="button" className="linkbtn" onClick={posts.reload}>Refresh</button>
         </div>
-        {posts.loading && !posts.data ? <Loading /> : null}
+        {posts.loading && !posts.data ? <Loading variant="rows" /> : null}
         {posts.error ? <ErrorState error={posts.error} onRetry={posts.reload} /> : null}
         {posts.data && rows.length === 0 ? (
           <EmptyState

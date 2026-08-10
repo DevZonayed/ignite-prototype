@@ -12,6 +12,7 @@ import { HomeworkSubmission, ReviewStatus } from '../../database/entities/homewo
 import { HomeworkMessage } from '../../database/entities/homework-message.entity';
 import { ParentChild } from '../../database/entities/parent-child.entity';
 import { Class } from '../../database/entities/class.entity';
+import { User } from '../../database/entities/user.entity';
 import { CreateHomeworkDto } from './dto/create-homework.dto';
 import { UpdateHomeworkDto } from './dto/update-homework.dto';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
@@ -32,7 +33,19 @@ export class HomeworkService {
     private readonly parentChildRepository: Repository<ParentChild>,
     @InjectRepository(Class)
     private readonly classRepository: Repository<Class>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
+
+  /** Class ids belonging to one school — the unit of tenancy for homework. */
+  private async classIdsForSchool(schoolId?: string): Promise<string[]> {
+    if (!schoolId) return [];
+    const classes = await this.classRepository.find({
+      where: { schoolId },
+      select: ['id'],
+    });
+    return classes.map((c) => c.id);
+  }
 
   /**
    * List homework with pagination and optional filters.
@@ -53,7 +66,12 @@ export class HomeworkService {
       where.status = status;
     }
 
-    // Role-based scoping
+    // Role-based scoping.
+    //
+    // Every branch below must narrow `where.classId`, because homework carries
+    // no schoolId of its own — the school is only reachable through the class.
+    // A role that falls through this block unscoped reads *every school's*
+    // homework, which is how a principal came to see another school's rows.
     if (currentUser.role === 'teacher') {
       // TODO: For more precise filtering, join through Class entity where teacherId = currentUser.id.
       // For now, filter by classes assigned to this teacher.
@@ -89,10 +107,52 @@ export class HomeworkService {
         }
       }
 
-      // For parents, we need homework that has submissions from their children,
-      // or homework assigned to classes their children belong to.
-      // For simplicity, return published homework and let the frontend filter.
+      // Parents see published homework for the classes their children are in.
+      const children = await this.userRepository.find({
+        where: { id: In(targetChildId ? [targetChildId] : childIds) },
+        select: ['id', 'classId'],
+      });
+      const childClassIds = children
+        .map((c) => c.classId)
+        .filter((id): id is string => !!id);
+
+      if (childClassIds.length === 0) {
+        return { data: [], total: 0, page, limit };
+      }
+
       where.status = HomeworkStatus.PUBLISHED;
+      where.classId =
+        classId && childClassIds.includes(classId) ? classId : In(childClassIds);
+    } else if (currentUser.role === 'learner') {
+      // A learner sees published homework for their own class only.
+      const learner = await this.userRepository.findOne({
+        where: { id: currentUser.id },
+        select: ['id', 'classId'],
+      });
+      if (!learner?.classId) {
+        return { data: [], total: 0, page, limit };
+      }
+      if (classId && classId !== learner.classId) {
+        throw new ForbiddenException('You are not enrolled in this class');
+      }
+      where.status = HomeworkStatus.PUBLISHED;
+      where.classId = learner.classId;
+    } else if (currentUser.role === 'principal') {
+      // A principal sees only their own school's classes.
+      const schoolClassIds = await this.classIdsForSchool(currentUser.schoolId);
+      if (schoolClassIds.length === 0) {
+        return { data: [], total: 0, page, limit };
+      }
+      if (classId && !schoolClassIds.includes(classId)) {
+        throw new ForbiddenException('This class belongs to another school');
+      }
+      where.classId = classId || In(schoolClassIds);
+    } else if (
+      currentUser.role !== 'platform_admin' &&
+      currentUser.role !== 'curriculum_admin'
+    ) {
+      // Unknown role: deny by default rather than leak the whole table.
+      return { data: [], total: 0, page, limit };
     }
 
     const [data, total] = await this.homeworkRepository.findAndCount({

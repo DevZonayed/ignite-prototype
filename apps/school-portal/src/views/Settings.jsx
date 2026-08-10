@@ -15,7 +15,7 @@ export default function Settings({ active, schoolId, user }) {
       <div className="grid2">
         <div className="panel">
           <div className="ph"><h3>School record</h3></div>
-          {school.loading && !school.data ? <Loading /> : null}
+          {school.loading && !school.data ? <Loading variant="form" /> : null}
           {school.error ? <ErrorState error={school.error} onRetry={school.reload} /> : null}
           {school.data ? (
             <div className="dlist">
@@ -37,7 +37,7 @@ export default function Settings({ active, schoolId, user }) {
 
         <div className="panel">
           <div className="ph"><h3>Term and configuration</h3></div>
-          {settings.loading && !settings.data ? <Loading /> : null}
+          {settings.loading && !settings.data ? <Loading variant="form" /> : null}
           {settings.error ? <ErrorState error={settings.error} onRetry={settings.reload} /> : null}
           {settings.data ? (
             <div className="dlist">

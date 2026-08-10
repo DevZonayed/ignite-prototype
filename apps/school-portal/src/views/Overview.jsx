@@ -28,7 +28,7 @@ export default function Overview({ schoolId, onNavigate }) {
   const news = useResource(() => listAnnouncements({ limit: 5 }), [])
 
   if (dash.loading && !dash.data) {
-    return <section className="view active"><Loading label="Loading your school…" /></section>
+    return <section className="view active"><Loading label="Loading your school…" variant="page" /></section>
   }
   if (dash.error) {
     return <section className="view active"><ErrorState error={dash.error} onRetry={dash.reload} /></section>
@@ -71,9 +71,9 @@ export default function Overview({ schoolId, onNavigate }) {
         <div className="panel">
           <div className="ph">
             <h3>Lessons delivered (last 7 days)</h3>
-            <span className="link" onClick={delivered.reload}>Refresh</span>
+            <button type="button" className="linkbtn" onClick={delivered.reload}>Refresh</button>
           </div>
-          {delivered.loading && !delivered.data ? <Loading /> : null}
+          {delivered.loading && !delivered.data ? <Loading label="Loading lessons delivered…" variant="chart" /> : null}
           {delivered.error ? <ErrorState error={delivered.error} onRetry={delivered.reload} /> : null}
           {delivered.data && delivered.data.length === 0 ? (
             <EmptyState title="No lessons delivered yet" hint="Sessions your teachers complete will chart here." />
@@ -84,9 +84,9 @@ export default function Overview({ schoolId, onNavigate }) {
         <div className="panel">
           <div className="ph">
             <h3>Coverage by class</h3>
-            <span className="link" onClick={() => onNavigate('curriculum')}>Open curriculum →</span>
+            <button type="button" className="linkbtn" onClick={() => onNavigate('curriculum')}>Open curriculum →</button>
           </div>
-          {coverage.loading && !coverage.data ? <Loading /> : null}
+          {coverage.loading && !coverage.data ? <Loading label="Loading coverage…" variant="bars" /> : null}
           {coverage.error ? <ErrorState error={coverage.error} onRetry={coverage.reload} /> : null}
           {coverage.data && rows.length === 0 ? (
             <EmptyState title="No classes yet" hint="Create a class to start tracking coverage." />
@@ -116,9 +116,9 @@ export default function Overview({ schoolId, onNavigate }) {
       <div className="panel">
         <div className="ph">
           <h3>Announcements from IGNITE</h3>
-          <span className="link" onClick={news.reload}>Refresh</span>
+          <button type="button" className="linkbtn" onClick={news.reload}>Refresh</button>
         </div>
-        {news.loading && !news.data ? <Loading /> : null}
+        {news.loading && !news.data ? <Loading label="Loading announcements…" variant="rows" /> : null}
         {news.error ? <ErrorState error={news.error} onRetry={news.reload} /> : null}
         {news.data && (news.data.data ?? []).length === 0 ? (
           <EmptyState title="No announcements" hint="Notices posted by IGNITE admin appear here." />

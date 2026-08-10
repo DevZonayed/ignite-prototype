@@ -25,9 +25,9 @@ export class UploadMediaDto {
     description: 'Original file name including extension',
     example: 'intro-to-scratch.mp4',
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  fileName: string;
+  fileName?: string;
 
   @ApiPropertyOptional({
     description: 'Unit ID to associate the media with',

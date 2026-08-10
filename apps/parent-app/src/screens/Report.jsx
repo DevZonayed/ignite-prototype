@@ -21,7 +21,7 @@ export default function Report() {
     initial: [],
   });
 
-  if (childrenLoading && !activeChild) return <Loading label="Loading…" />;
+  if (childrenLoading && !activeChild) return <Loading label="Loading…" variant="tiles" />;
   if (!activeChild) {
     return (
       <EmptyState
@@ -30,7 +30,7 @@ export default function Report() {
       />
     );
   }
-  if (reports.loading && !reports.data?.length) return <Loading label="Loading report…" />;
+  if (reports.loading && !reports.data?.length) return <Loading label="Loading report…" variant="text" lines={5} />;
   if (reports.error) return <ErrorState error={reports.error} onRetry={reports.reload} />;
 
   // Parents only ever see published reports; drafts are the teacher's business.

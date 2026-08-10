@@ -57,9 +57,9 @@ export default function Homework({ active, schoolId, onToast }) {
       <div className="panel">
         <div className="ph">
           <h3>Compliance by class</h3>
-          <span className="link" onClick={compliance.reload}>Refresh</span>
+          <button type="button" className="linkbtn" onClick={compliance.reload}>Refresh</button>
         </div>
-        {compliance.loading && !compliance.data ? <Loading /> : null}
+        {compliance.loading && !compliance.data ? <Loading variant="bars" /> : null}
         {compliance.error ? <ErrorState error={compliance.error} onRetry={compliance.reload} /> : null}
         {compliance.data && rows.length === 0 ? (
           <EmptyState
@@ -103,9 +103,9 @@ export default function Homework({ active, schoolId, onToast }) {
       <div className="panel">
         <div className="ph">
           <h3>Recent homework</h3>
-          <span className="link" onClick={homework.reload}>Refresh</span>
+          <button type="button" className="linkbtn" onClick={homework.reload}>Refresh</button>
         </div>
-        {homework.loading && !homework.data ? <Loading /> : null}
+        {homework.loading && !homework.data ? <Loading variant="bars" /> : null}
         {homework.error ? <ErrorState error={homework.error} onRetry={homework.reload} /> : null}
         {homework.data && items.length === 0 ? (
           <EmptyState title="No homework set yet" hint="Homework your teachers create appears here." />

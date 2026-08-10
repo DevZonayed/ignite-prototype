@@ -69,6 +69,12 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   schoolId: string | null;
 
+  // Which class a learner is enrolled in. Null for every other role, and null
+  // for a learner who has been invited but not yet placed on a register.
+  // Deleting the class sets this back to NULL rather than removing the learner.
+  @Column({ type: 'varchar', nullable: true })
+  classId: string | null;
+
   @Column({ type: 'varchar', default: UserStatus.ACTIVE })
   status: UserStatus;
 
@@ -123,6 +129,10 @@ export class User {
   @ManyToOne('School', 'users', { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'schoolId' })
   school: any;
+
+  @ManyToOne('Class', 'learners', { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'classId' })
+  class: any;
 
   @OneToMany('LessonSession', 'teacher')
   lessonSessions: any[];

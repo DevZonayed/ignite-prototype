@@ -6,6 +6,8 @@ import { LqsScore } from '../../database/entities/lqs-score.entity';
 import { Badge } from '../../database/entities/badge.entity';
 import { BadgeAward } from '../../database/entities/badge-award.entity';
 import { Certificate } from '../../database/entities/certificate.entity';
+import { User } from '../../database/entities/user.entity';
+import { School } from '../../database/entities/school.entity';
 import { LqsService } from './lqs.service';
 import { LqsController } from './lqs.controller';
 
@@ -17,6 +19,8 @@ import { LqsController } from './lqs.controller';
       Badge,
       BadgeAward,
       Certificate,
+      User,
+      School,
     ]),
   ],
   controllers: [LqsController],

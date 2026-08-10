@@ -4,7 +4,6 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
-  ActivityIndicator,
   Platform,
   StatusBar as RNStatusBar,
 } from 'react-native';
@@ -13,6 +12,15 @@ import { StatusBar } from 'expo-status-bar';
 // RN's SafeAreaView handles the iOS notch but ignores the Android status bar,
 // so reserve its height explicitly on Android; iOS/web get it from SafeAreaView.
 const ANDROID_TOP = Platform.OS === 'android' ? RNStatusBar.currentHeight || 24 : 0;
+// The auth hero runs full-bleed under the status bar, so it needs the real
+// inset on every platform — ANDROID_TOP is 0 on iOS and would let the notch
+// clip the badge row. Mirrors teacher-app's TOP_INSET.
+const AUTH_TOP_INSET =
+  Platform.OS === 'android'
+    ? RNStatusBar.currentHeight || 24
+    : Platform.OS === 'ios'
+      ? 44
+      : 0;
 import { useFonts } from 'expo-font';
 import {
   Nunito_700Bold,
@@ -30,6 +38,7 @@ import { useTheme } from './ThemeContext';
 
 import BottomNav from './components/BottomNav';
 import Toast from './components/Toast';
+import { SkelScreen } from './components/Skeleton';
 
 import Auth from './screens/Auth';
 import { loadSession, clearSession, setUnauthorizedHandler } from './api/auth';
@@ -123,19 +132,27 @@ export default function AppRoot() {
   }, []);
 
   if (!fontsLoaded || !ready || !sessionChecked) {
+    // A skeleton of the home screen rather than a spinner: the boot wait is
+    // short, and showing the shape it is about to become makes the app feel
+    // like it is already there. No fonts are needed to draw bars, which
+    // matters because this branch also covers the font load.
     return (
-      <View style={[styles.loading, { backgroundColor: colors.bg }]}>
-        <ActivityIndicator color={colors.brand} />
+      <View style={[styles.boot, { backgroundColor: colors.bg }]}>
+        <SkelScreen />
       </View>
     );
   }
 
   if (!user) {
+    // No top padding here on purpose: the auth hero is a full-bleed gradient
+    // that runs under the status bar, so it takes the inset itself and keeps
+    // its own content clear of it. Status-bar text is always light because the
+    // hero is dark in both themes.
     return (
-      <SafeAreaView style={[styles.root, { backgroundColor: colors.bg, paddingTop: ANDROID_TOP }]}>
-        <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
-        <Auth onSignedIn={setUser} />
-      </SafeAreaView>
+      <View style={[styles.root, { backgroundColor: colors.bg }]}>
+        <StatusBar style="light" />
+        <Auth onSignedIn={setUser} topInset={AUTH_TOP_INSET} />
+      </View>
     );
   }
 
@@ -197,10 +214,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  loading: {
+  boot: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 18,
+    paddingTop: 28,
   },
   screens: {
     flex: 1,

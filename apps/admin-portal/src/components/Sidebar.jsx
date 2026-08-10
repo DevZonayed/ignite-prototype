@@ -58,19 +58,29 @@ export default function Sidebar({ view, onNavigate, user }) {
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2c1 4-2 5-2 8a4 4 0 0 0 8 0c0-1-.4-2-1-3 .3 2-1 3-1 3 .5-3-2-5-4-8z" fill="#F97316" /><path d="M12 9c.5 2-1 3-1 4.4a2.3 2.3 0 0 0 4.6 0c0-1.4-1.1-2.1-1.4-3.6-.5 1.2-1.7 1.3-2.2-.8z" fill="#FBBF24" /></svg>{' '}
         <span>IGNITE Admin</span>
       </div>
+      {/*
+        A real href, not a bare onClick. Without one these were anchors with no
+        destination: not focusable, not reachable by keyboard, and invisible to
+        assistive tech. The app already listens for hashchange, so the href does
+        the navigating and onClick just saves the round trip.
+      */}
       {navItems.map((n) => (
         <a
           key={n.view}
+          href={`#${n.view}`}
           className={view === n.view ? 'on' : undefined}
-          onClick={() => onNavigate(n.view)}
+          aria-current={view === n.view ? 'page' : undefined}
+          onClick={(e) => { e.preventDefault(); onNavigate(n.view) }}
         >
           {n.icon}
           <span>{n.label}</span>
         </a>
       ))}
       <div className="sep"></div>
-      <a className="lock"><LockIcon /><span>Analytics</span><span className="p3">Phase 3</span></a>
-      <a className="lock"><LockIcon /><span>Benchmarking</span><span className="p3">Phase 3</span></a>
+      {/* Phase 3 placeholders: inert on purpose, and said out loud rather than
+          left as dead anchors a screen reader would announce as navigable. */}
+      <span className="lock" aria-disabled="true"><LockIcon /><span>Analytics</span><span className="p3">Phase 3</span></span>
+      <span className="lock" aria-disabled="true"><LockIcon /><span>Benchmarking</span><span className="p3">Phase 3</span></span>
       <button
         type="button"
         className={'userchip' + (view === 'profile' ? ' on' : '')}

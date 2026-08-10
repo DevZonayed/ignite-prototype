@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { useResource, useAction } from '../api/useResource.js'
-import { listUsers, listSchools, inviteUser, updateUser, updateUserStatus, deleteUser } from '../api/endpoints.js'
-import { ErrorState, EmptyState, TableSkeleton } from '../components/States.jsx'
+import {
+  listUsers, listSchools, inviteUser, updateUser, updateUserStatus, deleteUser,
+  listLinkedChildren, linkChildren, unlinkChild,
+} from '../api/endpoints.js'
+import { ErrorState, EmptyState, TableSkeleton, Loading } from '../components/States.jsx'
 import Modal, { ModalActions, Field } from '../components/Modal.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 import IconButton, { Actions } from '../components/IconButton.jsx'
@@ -12,6 +15,119 @@ const ROLES = ['platform_admin', 'curriculum_admin', 'principal', 'teacher', 'le
 const PAGE_SIZE = 20
 
 const EMPTY_USER = { firstName: '', lastName: '', email: '', phone: '', role: 'teacher', schoolId: '' }
+
+
+/**
+ * Family links.
+ *
+ * `parent_children` had no write path anywhere — only the demo seed created a
+ * row — so a real parent signed in to an app with no children in it. This is
+ * where a link gets made.
+ */
+function ChildrenModal({ parent, schools, onClose, onToast }) {
+  const [picked, setPicked] = useState([])
+  const linked = useResource(() => listLinkedChildren(parent.id), [parent.id])
+  const candidates = useResource(
+    () => listUsers({ role: 'learner', schoolId: parent.schoolId || undefined, limit: 100 }),
+    [parent.schoolId],
+  )
+  const add = useAction()
+  const remove = useAction()
+
+  const linkedRows = linked.data ?? []
+  const linkedIds = new Set(linkedRows.map((c) => c.id))
+  const available = (candidates.data?.data ?? []).filter((c) => !linkedIds.has(c.id))
+  const busy = add.busy || remove.busy
+  const schoolName = schools.find((s) => s.id === parent.schoolId)?.name
+
+  function toggle(id) {
+    setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
+  }
+
+  async function link() {
+    const res = await add.run(() => linkChildren(parent.id, picked))
+    if (res.ok) {
+      onToast(`${picked.length} child${picked.length === 1 ? '' : 'ren'} linked`)
+      setPicked([])
+      linked.reload()
+    }
+  }
+
+  async function drop(child) {
+    const res = await remove.run(() => unlinkChild(parent.id, child.id))
+    if (res.ok) {
+      onToast(`${fullName(child)} unlinked`)
+      linked.reload()
+    }
+  }
+
+  return (
+    <Modal
+      title="Children"
+      subtitle={`${fullName(parent)}${schoolName ? ` · ${schoolName}` : ''}`}
+      onClose={onClose}
+      busy={busy}
+    >
+      <div className="modal-section-title">Linked ({linkedRows.length})</div>
+      {linked.error ? <ErrorState error={linked.error} onRetry={linked.reload} /> : null}
+      {linked.loading && !linked.data ? <Loading variant="list" rows={3} /> : null}
+      {!linked.loading && linkedRows.length === 0 ? (
+        <EmptyState title="No children linked" hint="Pick from the list below." />
+      ) : (
+        <ul className="rosterlist">
+          {linkedRows.map((c) => (
+            <li key={c.id}>
+              <span>{fullName(c)}</span>
+              <span className="fm">{c.email || '-'}</span>
+              <IconButton
+                label={`Unlink ${fullName(c)}`}
+                tone="danger"
+                icon={<IconTrash />}
+                disabled={busy}
+                onClick={() => drop(c)}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="modal-section-title" style={{ marginTop: 18 }}>
+        Learners at this school ({available.length})
+      </div>
+      {candidates.loading && !candidates.data ? <Loading variant="list" rows={3} /> : null}
+      {!candidates.loading && available.length === 0 ? (
+        <EmptyState title="No other learners" hint="Every learner here is already linked." />
+      ) : (
+        <ul className="rosterlist">
+          {available.map((c) => (
+            <li key={c.id}>
+              <label className="rosterpick">
+                <input
+                  type="checkbox"
+                  checked={picked.includes(c.id)}
+                  onChange={() => toggle(c.id)}
+                  disabled={busy}
+                />
+                <span>{fullName(c)}</span>
+              </label>
+              <span className="fm">{c.email || '-'}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {add.error ? <div className="signin-err">{add.error.message}</div> : null}
+      {remove.error ? <div className="signin-err">{remove.error.message}</div> : null}
+
+      <div className="rosterbar">
+        <button type="button" className="btnO" onClick={onClose} disabled={busy}>Done</button>
+        <button type="button" className="btnP" onClick={link} disabled={busy || !picked.length}>
+          {add.busy ? 'Linking…' : `Link ${picked.length || ''}`.trim()}
+        </button>
+      </div>
+    </Modal>
+  )
+}
 
 /**
  * One form for both invite and edit. `user` null means invite.
@@ -132,6 +248,7 @@ export default function Users({ active, onOpenDetail, onToast }) {
   // null = closed, { user: null } = invite, { user } = edit
   const [formFor, setFormFor] = useState(null)
   const [deleting, setDeleting] = useState(null)
+  const [childrenFor, setChildrenFor] = useState(null)
   const removal = useAction()
 
   const schools = useResource(() => listSchools({ limit: 100 }), [], { enabled: active })
@@ -208,6 +325,13 @@ export default function Users({ active, onOpenDetail, onToast }) {
                             icon={<IconPencil />}
                             onClick={() => setFormFor({ user: u })}
                           />
+                          {u.role === 'parent' ? (
+                            <IconButton
+                              label="Manage children"
+                              icon={<IconUserCheck />}
+                              onClick={() => setChildrenFor(u)}
+                            />
+                          ) : null}
                           <IconButton
                             label={u.status === 'active' ? 'Suspend account' : 'Activate account'}
                             tone={u.status === 'active' ? 'danger' : 'default'}
@@ -254,6 +378,15 @@ export default function Users({ active, onOpenDetail, onToast }) {
           schools={schoolList}
           onClose={() => setFormFor(null)}
           onSaved={users.reload}
+          onToast={onToast}
+        />
+      ) : null}
+
+      {childrenFor ? (
+        <ChildrenModal
+          parent={childrenFor}
+          schools={schoolList}
+          onClose={() => setChildrenFor(null)}
           onToast={onToast}
         />
       ) : null}

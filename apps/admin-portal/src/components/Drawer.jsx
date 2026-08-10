@@ -15,17 +15,20 @@ function SchoolBody({ school, curriculum }) {
 
   return (
     <>
-      {dash.loading && !dash.data ? <Loading /> : null}
+      {dash.loading && !dash.data ? <Loading label="Loading school detail…" variant="rows" rows={3} /> : null}
       {dash.error ? <ErrorState error={dash.error} onRetry={dash.reload} /> : null}
       {dash.data ? (
         <div className="dstat">
+          {/* The dashboard endpoint returns learnerCount/teacherCount. This
+              read used to look for totalLearners/totalTeachers, which the API
+              has never sent, so both tiles always rendered a dash. */}
           <div className="ds">
             <div className="dsl">Learners</div>
-            <div className="dsv">{fmtNumber(dash.data.totalLearners ?? dash.data.learners)}</div>
+            <div className="dsv">{fmtNumber(dash.data.learnerCount)}</div>
           </div>
           <div className="ds">
             <div className="dsl">Teachers</div>
-            <div className="dsv">{fmtNumber(dash.data.totalTeachers ?? dash.data.teachers)}</div>
+            <div className="dsv">{fmtNumber(dash.data.teacherCount)}</div>
           </div>
         </div>
       ) : null}

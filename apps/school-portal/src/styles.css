@@ -106,8 +106,11 @@ tr:hover td{background:var(--surface-2)}.strong{font-weight:700}
 @media(max-width:1000px){.tiles{grid-template-columns:repeat(2,1fr)}.grid2,.grid2.even{grid-template-columns:1fr}.app{grid-template-columns:64px 1fr}.side .brand span,.side a span,.side .userchip .un,.side .userchip .ur{display:none}.search{display:none}}
 .drawerback{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;z-index:60}
 .drawerback.on{display:block}
-.drawer{position:fixed;top:0;right:0;height:100vh;width:430px;max-width:94vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-16px 0 44px rgba(15,23,42,.18);z-index:61;transform:translateX(102%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
-.drawer.on{transform:none}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:430px;max-width:94vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-16px 0 44px rgba(15,23,42,.18);z-index:61;transform:translateX(102%);transition:transform .3s cubic-bezier(.2,.8,.2,1),visibility .3s;display:flex;flex-direction:column;visibility:hidden}
+/* Closed drawer stays mounted for the slide transition, so it must be taken
+   out of the tab order too — off-screen is not the same as hidden, and a
+   keyboard user could otherwise tab into a panel nobody can see. */
+.drawer.on{transform:none;visibility:visible}
 .drawer .dh{display:flex;align-items:center;gap:12px;padding:20px 22px;border-bottom:1px solid var(--border)}
 .drawer .dav{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:16px;flex:none}
 .drawer .dn{font-family:var(--fd);font-weight:900;font-size:19px}
@@ -219,6 +222,14 @@ textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
 .modal-section-title{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text)}
 .modal-section-note{font-size:11.5px;color:var(--text-subtle);line-height:1.45}
 
+/* Class register */
+.rosterlist{list-style:none;margin:10px 0 0;padding:0;max-height:210px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--r-md)}
+.rosterlist li{display:grid;grid-template-columns:1fr auto 30px;align-items:center;gap:12px;padding:9px 12px;font-size:13px;border-bottom:1px solid var(--border)}
+.rosterlist li:last-child{border-bottom:none}
+.rosterpick{display:flex;align-items:center;gap:9px;cursor:pointer}
+.rosterpick input{width:15px;height:15px;accent-color:var(--brand);cursor:pointer}
+.rosterbar{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+
 /* Icon-only row actions */
 .act-group{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
 .iconact{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--text-subtle);cursor:pointer;transition:background .12s,color .12s,border-color .12s}
@@ -257,3 +268,38 @@ textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
 .profile-avatar{width:56px;height:56px;flex:none;border-radius:50%;display:grid;place-items:center;font-family:var(--fd);font-weight:900;font-size:19px}
 .profile-name{font-family:var(--fd);font-weight:900;font-size:22px;color:var(--text)}
 .profile-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px}
+
+/* Text-styled buttons.
+   These were <span onClick> — they looked like links but no keyboard user
+   could reach them. A real <button> keeps the appearance and restores focus,
+   Enter/Space and the a11y tree. */
+.linkbtn{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--brand);cursor:pointer;background:none;border:none;padding:0;font-family:inherit}
+.linkbtn:hover{text-decoration:underline}
+.linkbtn:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+.tnode .linkbtn{margin-left:0;margin-top:7px;display:inline-block}
+
+/* Skeletons -----------------------------------------------------------------
+   Loading states are skeletons rather than spinners: they hold the shape of the
+   content that is coming, so the page does not jump when it lands. `.skel` is
+   the primitive; the wrappers below assemble it into the shapes the views use. */
+.skel-line{display:block;height:11px;border-radius:6px;background:var(--surface-2);position:relative;overflow:hidden}
+.skel-line::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--border) 70%,transparent),transparent);animation:shimmer 1.3s infinite}
+@media (prefers-reduced-motion:reduce){.skel-line::after{animation:none}}
+.skel-stack{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+.skel-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--border)}
+.skel-row:first-child{border-top:none}
+.skel-avatar{flex:none;border-radius:10px;background:var(--surface-2);position:relative;overflow:hidden}
+.skel-avatar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--border) 70%,transparent),transparent);animation:shimmer 1.3s infinite}
+@media (prefers-reduced-motion:reduce){.skel-avatar::after{animation:none}}
+.skel-rowmain{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
+.skel-bars{display:flex;align-items:flex-end;gap:9px;height:132px;padding-top:8px}
+.skel-bar{flex:1;border-radius:7px 7px 0 0;background:var(--surface-2);position:relative;overflow:hidden}
+.skel-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--border) 70%,transparent),transparent);animation:shimmer-y 1.5s infinite}
+@keyframes shimmer-y{from{transform:translateY(100%)}to{transform:translateY(-100%)}}
+@media (prefers-reduced-motion:reduce){.skel-bar::after{animation:none}}
+.skel-tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.skel-tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:17px;display:flex;flex-direction:column;gap:10px}
+.skel-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:18px;box-shadow:var(--shadow);margin-bottom:18px}
+
+/* Screen-reader-only: keeps the loading announcement without showing text. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}

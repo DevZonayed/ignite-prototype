@@ -120,7 +120,14 @@ export async function request(method, path, body) {
     throw new ApiError(message, { status: response.status, fieldErrors });
   }
 
-  return payload?.data ?? payload ?? {};
+  // `data: null` is a real answer — "no current lesson session", "no active
+  // child" — so it must not fall through to the raw envelope. `?? payload`
+  // did exactly that, handing callers `{ data: null, meta }`, which is truthy
+  // and made every "nothing here" read as "something here".
+  if (payload && typeof payload === 'object' && 'data' in payload) {
+    return payload.data;
+  }
+  return payload ?? {};
 }
 
 export const get = (path) => request('GET', path);

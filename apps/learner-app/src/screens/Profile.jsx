@@ -43,6 +43,7 @@ export default function Profile({ user, onOpenCertificate }) {
       <AsyncList
         state={badges}
         loadingLabel="Loading badges…"
+        loadingVariant="tiles"
         empty={{ title: 'No badges yet', sub: 'Badges arrive as you finish projects.' }}
       >
         {(rows) => (
@@ -77,7 +78,7 @@ export default function Profile({ user, onOpenCertificate }) {
 
       <SecTitle>Certificate</SecTitle>
       {certificate.loading && !cert ? (
-        <Loading label="Loading certificate…" />
+        <Loading label="Loading certificate…" variant="cards" count={1} avatar={false} />
       ) : cert ? (
         <Pressable
           onPress={onOpenCertificate}

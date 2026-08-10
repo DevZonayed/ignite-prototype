@@ -6,9 +6,11 @@ import {
   Param,
   Post,
   Query,
+  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
@@ -39,16 +41,33 @@ export class MediaController {
   }
 
   @Post('upload')
+  @Roles('platform_admin', 'curriculum_admin', 'teacher')
   @ApiOperation({ summary: 'Upload a media file' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Media item created' })
   @UseInterceptors(FileInterceptor('file'))
+  @ApiResponse({ status: 400, description: 'No file received' })
   async upload(
     @Body() dto: UploadMediaDto,
     @CurrentUser('id') userId: string,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.mediaService.upload(dto, userId);
+    return this.mediaService.upload(dto, userId, file);
+  }
+
+  @Get(':id/file')
+  @ApiOperation({ summary: 'Download the stored file for a media item' })
+  @ApiParam({ name: 'id', description: 'Media item UUID' })
+  @ApiResponse({ status: 200, description: 'File stream' })
+  @ApiResponse({ status: 404, description: 'Media item or file not found' })
+  async downloadFile(@Param('id') id: string, @Res() res: Response) {
+    const { stream, item } = await this.mediaService.openFile(id);
+    res.setHeader('Content-Type', item.mimeType || 'application/octet-stream');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${item.fileName || item.name}"`,
+    );
+    stream.pipe(res);
   }
 
   @Get(':id')

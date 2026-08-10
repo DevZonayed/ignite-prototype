@@ -1,10 +1,14 @@
 import {
+  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   FindOptionsWhere,
+  In,
+  IsNull,
   MoreThanOrEqual,
   Repository,
 } from 'typeorm';
@@ -35,6 +39,7 @@ export class ClassesService {
    */
   async findAll(
     filters: ClassFilterDto,
+    currentUser?: any,
   ): Promise<{ data: Class[]; total: number; page: number; limit: number }> {
     const { schoolId, teacherId, page = 1, limit = 20 } = filters;
 
@@ -45,6 +50,22 @@ export class ClassesService {
     }
     if (teacherId) {
       where.teacherId = teacherId;
+    }
+
+    // Tenancy. The teacher app calls `GET /classes` with no filter at all, and
+    // with none applied here that returned every class on the platform — a
+    // teacher saw other schools' classes, and the home screen picked one of
+    // them as the "active" class. Narrow by role before querying.
+    if (currentUser?.role === 'teacher') {
+      where.teacherId = currentUser.id;
+    } else if (currentUser?.role === 'principal') {
+      if (!currentUser.schoolId) {
+        return { data: [], total: 0, page, limit };
+      }
+      if (schoolId && schoolId !== currentUser.schoolId) {
+        throw new ForbiddenException('That school is not yours');
+      }
+      where.schoolId = currentUser.schoolId;
     }
 
     const [data, total] = await this.classRepository.findAndCount({
@@ -142,24 +163,127 @@ export class ClassesService {
 
   /**
    * Get learners enrolled in a class.
-   * Returns users with the same schoolId as the class and role='learner'.
+   *
+   * This used to match on `schoolId` alone, so every class in a school returned
+   * the same roster and no register could be class-specific. It now reads the
+   * enrolment itself.
    */
   async getLearners(id: string): Promise<User[]> {
-    const classEntity = await this.classRepository.findOne({
-      where: { id },
-    });
+    await this.findOrFail(id);
 
-    if (!classEntity) {
-      throw new NotFoundException(`Class with ID "${id}" not found`);
-    }
+    return this.userRepository.find({
+      where: { classId: id, role: UserRole.LEARNER },
+      order: { firstName: 'ASC', lastName: 'ASC' },
+    });
+  }
+
+  /**
+   * Learners at the class's school who are not yet on any register — the
+   * candidate list a principal picks from when enrolling.
+   */
+  async getEnrollableLearners(id: string): Promise<User[]> {
+    const classEntity = await this.findOrFail(id);
 
     return this.userRepository.find({
       where: {
         schoolId: classEntity.schoolId,
         role: UserRole.LEARNER,
+        classId: IsNull(),
       },
       order: { firstName: 'ASC', lastName: 'ASC' },
     });
+  }
+
+  /**
+   * Enrol learners into a class.
+   *
+   * A learner belongs to exactly one class, so this moves them if they were
+   * already on another register. Cross-school moves are refused: a class only
+   * ever holds learners from its own school.
+   */
+  async enrolLearners(id: string, learnerIds: string[]): Promise<User[]> {
+    const classEntity = await this.findOrFail(id);
+
+    const learners = await this.userRepository.find({
+      where: { id: In(learnerIds) },
+    });
+
+    const missing = learnerIds.filter(
+      (learnerId) => !learners.some((l) => l.id === learnerId),
+    );
+    if (missing.length) {
+      throw new NotFoundException(`Learner(s) not found: ${missing.join(', ')}`);
+    }
+
+    for (const learner of learners) {
+      if (learner.role !== UserRole.LEARNER) {
+        throw new BadRequestException(
+          `User "${learner.id}" is a ${learner.role}, not a learner`,
+        );
+      }
+      if (learner.schoolId !== classEntity.schoolId) {
+        throw new BadRequestException(
+          `Learner "${learner.id}" belongs to a different school`,
+        );
+      }
+    }
+
+    const previousClassIds = new Set(
+      learners.map((l) => l.classId).filter((c): c is string => !!c),
+    );
+
+    await this.userRepository.update(
+      { id: In(learnerIds) },
+      { classId: id },
+    );
+
+    await this.refreshLearnerCounts([id, ...previousClassIds]);
+
+    return this.getLearners(id);
+  }
+
+  /** Remove one learner from a class register. */
+  async unenrolLearner(id: string, learnerId: string): Promise<User[]> {
+    await this.findOrFail(id);
+
+    const learner = await this.userRepository.findOne({
+      where: { id: learnerId },
+    });
+    if (!learner) {
+      throw new NotFoundException(`Learner with ID "${learnerId}" not found`);
+    }
+    if (learner.classId !== id) {
+      throw new BadRequestException('That learner is not in this class');
+    }
+
+    learner.classId = null;
+    await this.userRepository.save(learner);
+    await this.refreshLearnerCounts([id]);
+
+    return this.getLearners(id);
+  }
+
+  /**
+   * Recount `learnerCount` from the register itself.
+   *
+   * The column is a cache for list views; deriving it here means it can never
+   * drift from the enrolments the way a hand-maintained counter would.
+   */
+  private async refreshLearnerCounts(classIds: string[]): Promise<void> {
+    for (const classId of new Set(classIds)) {
+      const learnerCount = await this.userRepository.count({
+        where: { classId, role: UserRole.LEARNER },
+      });
+      await this.classRepository.update({ id: classId }, { learnerCount });
+    }
+  }
+
+  private async findOrFail(id: string): Promise<Class> {
+    const classEntity = await this.classRepository.findOne({ where: { id } });
+    if (!classEntity) {
+      throw new NotFoundException(`Class with ID "${id}" not found`);
+    }
+    return classEntity;
   }
 
   /**

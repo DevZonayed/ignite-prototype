@@ -8,6 +8,7 @@ import { Badge } from '../../database/entities/badge.entity';
 import { BadgeAward } from '../../database/entities/badge-award.entity';
 import { Certificate } from '../../database/entities/certificate.entity';
 import { User } from '../../database/entities/user.entity';
+import { School } from '../../database/entities/school.entity';
 
 /**
  * The LQS scale. Everything downstream — the level words on the parent and
@@ -44,6 +45,7 @@ describe('LqsService scoring', () => {
         { provide: getRepositoryToken(BadgeAward), useValue: noopRepo },
         { provide: getRepositoryToken(Certificate), useValue: noopRepo },
         { provide: getRepositoryToken(User), useValue: noopRepo },
+        { provide: getRepositoryToken(School), useValue: noopRepo },
       ],
     }).compile();
 

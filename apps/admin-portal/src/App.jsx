@@ -130,7 +130,13 @@ export default function App() {
   // Decide between first-run setup and the sign-in form before showing either.
   if (!user) {
     if (bootstrap.loading && bootstrap.data == null) {
-      return <div className="signin"><Loading label="Contacting the IGNITE API…" /></div>
+      return (
+        <div className="signin">
+          <div className="signin-card">
+            <Loading label="Contacting the IGNITE API…" variant="form" fields={2} />
+          </div>
+        </div>
+      )
     }
     if (bootstrap.error) {
       return (

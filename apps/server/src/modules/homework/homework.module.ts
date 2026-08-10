@@ -6,6 +6,7 @@ import { HomeworkSubmission } from '../../database/entities/homework-submission.
 import { HomeworkMessage } from '../../database/entities/homework-message.entity';
 import { ParentChild } from '../../database/entities/parent-child.entity';
 import { Class } from '../../database/entities/class.entity';
+import { User } from '../../database/entities/user.entity';
 import { HomeworkController } from './homework.controller';
 import { HomeworkService } from './homework.service';
 
@@ -17,6 +18,7 @@ import { HomeworkService } from './homework.service';
       HomeworkMessage,
       ParentChild,
       Class,
+      User,
     ]),
   ],
   controllers: [HomeworkController],
