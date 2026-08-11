@@ -47,7 +47,8 @@ a{color:inherit;text-decoration:none}
 .side a.lock .p3{margin-left:auto;font-size:9px;font-weight:700;background:rgba(255,255,255,.08);padding:2px 7px;border-radius:6px}
 .side .sep{height:1px;background:rgba(255,255,255,.08);margin:12px 10px}
 .side .userchip{margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:rgba(255,255,255,.05)}
-.side .userchip .ua{width:34px;height:34px;border-radius:50%;background:var(--ignite);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:13px}
+.side .userchip .ua{width:34px;height:34px;flex:none;border-radius:50%;background:var(--ignite);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-weight:900;font-size:13px}
+.side .brand svg{flex:none}
 .side .userchip .un{font-size:13px;font-weight:700;color:#fff}
 .side .userchip .ur{font-size:11px;color:var(--sidebar-text)}
 
@@ -196,6 +197,18 @@ tr:hover td{background:var(--surface-2)}
 .mcard .mm{padding:9px 11px}.mcard .mn{font-size:12.5px;font-weight:700}.mcard .ms{font-size:10.5px;color:var(--text-subtle);font-family:ui-monospace,Menlo,monospace}
 
 @media(max-width:1000px){.tiles{grid-template-columns:repeat(2,1fr)}.grid2,.grid2.even{grid-template-columns:1fr}.auth{grid-template-columns:1fr}.app{grid-template-columns:64px 1fr}.side .brand span,.side a span,.side .navlabel,.side .userchip .un,.side .userchip .ur,.side a .p3{display:none}.search{width:150px}}
+/* Collapsed rail: 64px minus ~10px of scrollbar and 24px of padding leaves
+   about 30px for a 34px avatar, so it spilled out of its own chip. Hiding
+   .un/.ur is not enough either — their wrapper stays a flex item at zero width
+   and still eats the 10px gap. */
+@media(max-width:1000px){
+  .side{padding:16px 8px}
+  .side .brand{padding:8px 0 18px;gap:0;justify-content:center}
+  .side a{padding:10px 0;gap:0;justify-content:center}
+  .side .userchip{padding:4px;gap:0;justify-content:center}
+  .side .userchip>div{display:none}
+  .side .userchip .ua{width:30px;height:30px;font-size:12px}
+}
 .drawerback{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;z-index:60}
 .drawerback.on{display:block}
 .drawer{position:fixed;top:0;right:0;height:100vh;width:430px;max-width:94vw;background:var(--surface);border-left:1px solid var(--border);box-shadow:-16px 0 44px rgba(15,23,42,.2);z-index:61;transform:translateX(102%);transition:transform .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}

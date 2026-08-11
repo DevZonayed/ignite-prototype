@@ -264,7 +264,22 @@ textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
 .side .userchip .uinfo{min-width:0;flex:1}
 .side .userchip .un,.side .userchip .ur{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .side .userchip .uchev{flex:none;opacity:.5}
-@media(max-width:1000px){.side .userchip .uchev{display:none}}
+/* Collapsed rail: the 64px column is not 64px of usable space. The sidebar
+   scrolls, so its scrollbar claims ~10px, and 12px of padding each side takes
+   another 24 — leaving about 30px for items sized 34px (avatar) and 24px
+   (logo). The avatar spilled out of its own chip. Hiding .un/.ur was also not
+   enough on its own: .uinfo stays a flex item at zero width and still eats the
+   10px gap. So trim the padding, drop the hidden block outright, and centre
+   what is left. */
+@media(max-width:1000px){
+  .side{padding:16px 8px}
+  .side .brand{padding:8px 0 18px;gap:0;justify-content:center}
+  .side a{padding:10px 0;gap:0;justify-content:center}
+  .side .userchip{padding:4px;gap:0;justify-content:center}
+  .side .userchip .uinfo{display:none}
+  .side .userchip .uchev{display:none}
+  .side .userchip .ua{width:30px;height:30px;font-size:12px}
+}
 
 /* Profile page */
 .profile-head{display:flex;align-items:center;gap:16px;margin-bottom:18px}
