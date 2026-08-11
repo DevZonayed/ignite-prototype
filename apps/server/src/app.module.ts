@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 
 import { getDatabaseConfig } from './config/database.config';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 
 // Feature modules
 import { MailModule } from './modules/mail/mail.module';
@@ -85,6 +86,13 @@ import { SeedModule } from './database/seeds/seed.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    // Global audit interceptor — writes one row per action, for every app.
+    // Registered here rather than in main.ts because it needs AuditService
+    // injected, which useGlobalInterceptors() cannot provide.
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
   ],
 })

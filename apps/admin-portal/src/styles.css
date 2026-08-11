@@ -90,6 +90,16 @@ tr:hover td{background:var(--surface-2)}
 .b-amber{color:var(--warning);background:color-mix(in srgb,var(--warning) 15%,transparent)}
 .b-blue{color:var(--brand);background:var(--brand-soft)}
 .b-grey{color:var(--text-subtle);background:var(--surface-3)}
+.b-red{color:var(--danger);background:color-mix(in srgb,var(--danger) 14%,transparent)}
+
+/* Audit log. A row is a whole record rather than a line of text, so the
+   secondary detail sits under the primary and the whole row opens the panel. */
+.sub{font-size:11.5px;color:var(--text-subtle)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.rowlink{cursor:pointer}
+.auditjson{margin:0 0 4px;padding:11px 13px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.55;color:var(--text-muted);white-space:pre-wrap;word-break:break-word;max-height:280px;overflow:auto}
+.auditjson.err{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+.auditnote{margin-top:18px;font-size:11.5px;line-height:1.5;color:var(--text-subtle)}
 .cbar{width:84px;height:8px;background:var(--surface-3);border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:8px}
 .cbar i{display:block;height:100%;background:var(--success);border-radius:99px}
 .rowbtn{font-size:12px;font-weight:600;color:var(--brand);cursor:pointer;padding:5px 9px;border-radius:7px}
@@ -463,6 +473,9 @@ textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
   .whoami{display:none}
   .iconbtn{width:38px;height:38px;flex:none}
   .search{display:none}
+  /* …except the audit log's, which is the only way to find an entry among
+     thousands. Hiding it here would make the page useless on a phone. */
+  #view-security .toolbar input.search{display:flex;width:100%}
 
   .content{padding:14px}
   .tiles{grid-template-columns:1fr}
