@@ -306,8 +306,15 @@ export class AuditInterceptor implements NestInterceptor {
         actorSchoolId: user?.schoolId ?? null,
         source: resolveSource(request.headers?.origin, role),
         target: `${method} ${path.split('?')[0]}`,
+        // Split the query off first, or `GET /api/users?page=1` records its
+        // resource as `users?page=1&limit=20` and every distinct query string
+        // becomes its own resource in the filters.
         targetType:
-          path.replace(/^\/api\/?/, '').split('/').filter(Boolean)[0] ?? null,
+          path
+            .split('?')[0]
+            .replace(/^\/api\/?/, '')
+            .split('/')
+            .filter(Boolean)[0] ?? null,
         targetId: idFromPath(path) ?? undefined,
         method,
         path: path.split('?')[0],
