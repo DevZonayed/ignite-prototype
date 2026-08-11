@@ -1,15 +1,24 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AuditFilterDto {
   @ApiPropertyOptional({
-    description: 'Filter by event type',
-    example: 'user.login',
+    description: 'Filter by exact event name',
+    example: 'users.create',
   })
   @IsOptional()
   @IsString()
   event?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Free text match across event, actor name, actor email, path and target',
+    example: 'principal@ignite.test',
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
 
   @ApiPropertyOptional({
     description: 'Start date as ISO 8601 string',
@@ -34,6 +43,41 @@ export class AuditFilterDto {
   @IsOptional()
   @IsUUID()
   actorId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by the role the actor held',
+    example: 'teacher',
+  })
+  @IsOptional()
+  @IsString()
+  actorRole?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by originating app',
+    example: 'admin-portal',
+  })
+  @IsOptional()
+  @IsString()
+  source?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by HTTP method', example: 'POST' })
+  @IsOptional()
+  @IsIn(['GET', 'POST', 'PATCH', 'PUT', 'DELETE'])
+  method?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter by outcome',
+    example: 'blocked',
+  })
+  @IsOptional()
+  @IsIn(['ok', 'blocked', 'failed'])
+  result?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by HTTP status code', example: 403 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  statusCode?: number;
 
   @ApiPropertyOptional({ description: 'Page number (1-based)', example: 1, default: 1 })
   @IsOptional()
