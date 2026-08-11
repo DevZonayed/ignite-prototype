@@ -83,6 +83,8 @@ export const getAiSchoolUsage = (params) => api.get(`/ai/usage/schools${qs(param
 
 /* audit */
 export const listAudit = (params) => api.get(`/audit${qs(params)}`)
+export const getAuditEntry = (id) => api.get(`/audit/${id}`)
+export const getAuditFacets = () => api.get('/audit/facets')
 
 /* imports */
 export const getImportTemplate = () => api.get('/imports/template')

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -23,15 +23,10 @@ export class AuditController {
   @ApiResponse({ status: 200, description: 'Paginated list of audit log entries' })
   @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async findAll(@Query() filters: AuditFilterDto) {
-    // Default to last 7 days if no dates specified
-    if (!filters.startDate && !filters.endDate) {
-      const now = new Date();
-      const sevenDaysAgo = new Date(now);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      filters.startDate = sevenDaysAgo.toISOString();
-      filters.endDate = now.toISOString();
-    }
-
+    // No implicit date window. This used to default to the last 7 days when no
+    // dates were given, which meant a search for an event from last month
+    // returned nothing and looked like the action was never logged. The caller
+    // asks for the range it wants.
     return this.auditService.findAll(filters);
   }
 
@@ -50,5 +45,24 @@ export class AuditController {
   @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
   async export(@Query() filters: AuditFilterDto) {
     return this.auditService.export(filters);
+  }
+
+  @Get('facets')
+  @ApiOperation({ summary: 'Distinct values available to filter on' })
+  @ApiResponse({ status: 200, description: 'Events, roles, sources, methods and actors' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
+  async facets() {
+    return this.auditService.facets();
+  }
+
+  // Declared last on purpose: ':id' would otherwise swallow '/export' and
+  // '/facets' before their own handlers are reached.
+  @Get(':id')
+  @ApiOperation({ summary: 'One audit entry in full, including request detail' })
+  @ApiResponse({ status: 200, description: 'The audit entry' })
+  @ApiResponse({ status: 403, description: 'Forbidden, insufficient role' })
+  @ApiResponse({ status: 404, description: 'No such entry' })
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.auditService.findOne(id);
   }
 }
