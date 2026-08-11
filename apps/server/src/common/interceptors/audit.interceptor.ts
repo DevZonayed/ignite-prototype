@@ -23,8 +23,9 @@ import { AuditResult } from '../../database/entities/audit-log.entity';
  *    and its failures are swallowed; auditing must not be able to take the
  *    platform down.
  *  - It never stores a credential. Bodies pass through `redact()` first.
- *  - It never logs itself. Reading the audit log would otherwise append to the
- *    audit log, which makes the page unreadable and grows without bound.
+ *  - It does not log successful reads of itself. Reading the audit log would
+ *    otherwise append to the audit log, which makes the page churn and grows
+ *    without bound. Refused reads of it are always recorded.
  */
 
 /** Keys whose values are replaced wholesale, matched case-insensitively. */
@@ -43,7 +44,11 @@ const SECRET_KEYS = [
   'apikey',
 ];
 
-/** Paths that would otherwise bury real activity under polling noise. */
+/**
+ * Paths whose *successful* calls would bury real activity under polling noise
+ * (and, for /api/audit, make reading the log append to the log). Failures on
+ * them are still recorded — see the note in intercept().
+ */
 const SKIP_PREFIXES = ['/api/audit', '/api/monitoring'];
 
 const MAX_BODY_CHARS = 4000;
@@ -228,14 +233,21 @@ export class AuditInterceptor implements NestInterceptor {
     const path: string = request.originalUrl ?? request.url ?? '';
     const method: string = request.method ?? 'GET';
 
-    if (SKIP_PREFIXES.some((p) => path.startsWith(p))) return next.handle();
     if (method === 'OPTIONS') return next.handle();
     if (method === 'GET' && !this.logReads) return next.handle();
+
+    // Quiet paths are exempt from *success* only. Skipping them outright also
+    // swallowed the one event on them worth keeping: somebody being refused
+    // access to the audit log itself. A denied read of the security log is
+    // precisely what a security log is for, so failures are always recorded.
+    const successExempt = SKIP_PREFIXES.some((p) => path.startsWith(p));
 
     const startedAt = Date.now();
 
     return next.handle().pipe(
       tap((payload) => {
+        if (successExempt) return;
+
         this.write(request, method, path, startedAt, {
           statusCode: http.getResponse()?.statusCode ?? 200,
           result: AuditResult.OK,
