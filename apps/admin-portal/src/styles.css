@@ -388,27 +388,102 @@ textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
 /* Screen-reader-only: keeps the loading announcement without showing text. */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
-/* ── phones ──────────────────────────────────────────────────────────────
-   See the school portal for the full reasoning. In short: the topbar is a
-   nowrap flex row whose items default to min-width:auto, so the title
-   refused to shrink and pushed the sign-out button off-screen; and data
-   tables are width:100% with no scroll container, so wide tables widened
-   the whole document instead of scrolling inside their card. */
+/* ── responsive tiers ────────────────────────────────────────────────────
+   Ordered widest to narrowest. These are all max-width queries at equal
+   specificity, so source order decides the winner: a narrower rule placed
+   above a wider one silently loses. (That is exactly how the 400px
+   single-column badge grid stopped applying once a 1200px rule was added
+   after it.) Keep new rules in the right tier rather than appending.
+
+   The recurring root cause below is that grid and flex children default to
+   min-width:auto, so a child wider than its track refuses to shrink and drags
+   the layout past the screen edge. Because .content resolves to
+   overflow-x:auto (setting only overflow-y leaves the other axis auto), that
+   showed up as a sideways-scrolling pane with controls stranded off-screen
+   rather than as an obviously broken page. */
+
+/* Tablet landscape. The old 1000px breakpoint left 1001–1200px on the desktop
+   layout: full sidebar plus a two-column .grid2, which gives the badge panel
+   ~290px for four cards. */
+@media(max-width:1200px){
+  .grid2,.grid2.even{grid-template-columns:1fr}
+  .badgegrid{grid-template-columns:repeat(3,1fr)}
+}
+
+@media(max-width:1000px){
+  .grid2>*,.grid2.even>*,.app>*{min-width:0}
+
+  /* Action rows never wrapped, so filters pushed "Add school" / "Invite user"
+     off-screen. .sp keeps flex:1, so the primary action still sits right when
+     everything fits and only drops a line when it genuinely does not. */
+  .toolbar{flex-wrap:wrap;row-gap:10px}
+  .toolbar .filter,.toolbar select.filter{max-width:100%;min-width:0}
+
+  /* Wide tables scroll inside their card at every width where they do not fit.
+     At 768px the icon rail leaves ~650px — still narrower than a 7-column
+     table — so scoping this to phones stranded row actions on tablets. */
+  .panel:has(table){overflow-x:auto}
+  .panel table{min-width:520px}
+
+  .skel-tiles{grid-template-columns:repeat(2,1fr)}
+
+}
+
 @media(max-width:640px){
+  /* .topbar is a nowrap flex row: the title would not shrink and pushed the
+     sign-out button off-screen while the buttons themselves were squeezed to
+     half width. Hiding only .whoami-name left the role badge clipped
+     mid-word, so the whole chip goes — the sidebar avatar already identifies
+     the signed-in user. */
   .topbar{padding:12px 14px;gap:8px}
   .topbar>div:first-child{min-width:0}
   .topbar h1{font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .topbar .crumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  /* Hiding just the name left the role badge to be crushed into the icon
-     buttons and clipped mid-word. The sidebar avatar already identifies the
-     signed-in user, so the whole chip goes. */
   .whoami{display:none}
   .iconbtn{width:38px;height:38px;flex:none}
   .search{display:none}
 
   .content{padding:14px}
   .tiles{grid-template-columns:1fr}
+  .badgegrid{grid-template-columns:repeat(2,1fr)}
+  .skel-tiles{grid-template-columns:1fr}
 
-  .panel:has(table){overflow-x:auto}
-  .panel table{min-width:520px}
+  /* Scoring rows put the weight field and delete button ~380px off-screen.
+     Reflow to a deliberate two-line row — swatch + name, then slider, weight
+     and delete. The ::after is a zero-height flex line break, which keeps that
+     grouping stable instead of letting each control wrap where it lands. */
+  .matrow{row-gap:10px}
+  .matrow .dimcolor{order:1}
+  .matrow .dimname{order:2;flex:1 1 0;width:auto;min-width:0}
+  .matrow::after{content:'';order:3;flex:0 0 100%;height:0;margin:0}
+  .matrow .dimtrack{order:4;flex:1 1 60px;min-width:40px}
+  .matrow .dimw{order:5;flex:none}
+  .matrow .iconact{order:6;flex:none}
+
+  /* Two lines per dimension needs a separator, or the slider row reads as
+     belonging to the next one. (.dimlist .dimrow never applies — the rows
+     carry .matrow.) */
+  .dimlist>.matrow{padding:12px 0;border-top:1px solid var(--border)}
+  .dimlist>.matrow:first-child{border-top:none;padding-top:4px}
+
+
+  /* Long unbroken tokens — an email address, a badge's snake_case code — set
+     a min-content wider than their column and pushed the pane sideways. */
+  .profile-head,.profile-head>*{min-width:0}
+  .profile-name,.profile-meta,.profile-meta .fm{overflow-wrap:anywhere}
+  .bcard .bn,.bcard .bc,.bcard .badge{overflow-wrap:anywhere}
+}
+
+/* Two badge columns still cannot fit a 320px screen. */
+@media(max-width:400px){
+  .badgegrid{grid-template-columns:1fr}
+}
+
+/* Tap targets key off the input device, not the screen width: an iPad in
+   landscape is 1024px wide and still a finger. Text-styled buttons rendered
+   15px tall and a default checkbox ~13px. The width clause is a fallback for
+   engines that do not report a pointer type. */
+@media (pointer:coarse),(max-width:1200px){
+  .linkbtn{min-height:32px;display:inline-flex;align-items:center}
+  .chkitem input[type=checkbox],input[type=checkbox]{width:20px;height:20px;flex:none}
 }

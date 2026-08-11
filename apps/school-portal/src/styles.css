@@ -304,32 +304,69 @@ textarea.signin-input{resize:vertical;min-height:96px;font-family:inherit}
 /* Screen-reader-only: keeps the loading announcement without showing text. */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
-/* ── phones ──────────────────────────────────────────────────────────────
-   The 1000px breakpoint above only collapses the sidebar to a 64px icon
-   rail. Below that nothing else adapts, and two things pushed the page
-   wider than the screen at 375px:
+/* ── responsive tiers ────────────────────────────────────────────────────
+   Ordered widest to narrowest. These are all max-width queries at equal
+   specificity, so source order decides the winner — a narrower rule placed
+   above a wider one silently loses. Keep new rules in the right tier rather
+   than appending to the end.
 
-   1. .topbar is a nowrap flex row whose items default to min-width:auto, so
-      the title block refused to shrink and shoved the sign-out button ~37px
-      past the viewport. min-width:0 restores normal flex shrinking; the
-      icon buttons get flex:none so they keep their touch target instead of
-      being squeezed to half width.
-   2. Data tables are width:100% with no scroll container, so a 7-column
-      table widens the whole document. They now scroll inside their card. */
+   The recurring root cause below is that grid and flex children default to
+   min-width:auto, so a child wider than its track refuses to shrink and drags
+   the layout past the screen edge. Because .content resolves to
+   overflow-x:auto (setting only overflow-y leaves the other axis auto), that
+   showed up as a sideways-scrolling pane with controls stranded off-screen
+   rather than as an obviously broken page. */
+
+@media(max-width:1000px){
+  .grid2>*,.grid2.even>*,.app>*{min-width:0}
+
+  /* Action rows never wrapped, so filters pushed the primary button
+     off-screen. .sp keeps flex:1, so that button still sits right when
+     everything fits and only drops a line when it genuinely does not. */
+  .toolbar{flex-wrap:wrap;row-gap:10px}
+  .toolbar .filter,.toolbar select.filter{max-width:100%;min-width:0}
+
+  /* Wide tables scroll inside their card at every width where they do not fit.
+     At 768px the icon rail leaves ~650px — still narrower than a 7-column
+     table — so scoping this to phones stranded row actions on tablets. */
+  .panel:has(table){overflow-x:auto}
+  .panel table{min-width:520px}
+
+  /* .skel-tiles (the loading skeleton) was pinned to repeat(4,1fr) at every
+     width, so it flashed an overflowing row on every page load. */
+  .skel-tiles{grid-template-columns:repeat(2,1fr)}
+
+}
+
 @media(max-width:640px){
+  /* .topbar is a nowrap flex row: the title would not shrink and pushed the
+     sign-out button ~37px past the viewport while the buttons themselves were
+     squeezed to half width. Hiding only .whoami-name left the role badge
+     clipped mid-word, so the whole chip goes — the sidebar avatar already
+     identifies the signed-in user. */
   .topbar{padding:12px 14px;gap:8px}
   .topbar>div:first-child{min-width:0}
   .topbar h1{font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .topbar .crumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  /* Hiding just the name left the role badge to be crushed into the icon
-     buttons and clipped mid-word. The sidebar avatar already identifies the
-     signed-in user, so the whole chip goes. */
   .whoami{display:none}
   .iconbtn{width:38px;height:38px;flex:none}
 
   .content{padding:14px}
   .tiles{grid-template-columns:1fr}
+  .skel-tiles{grid-template-columns:1fr}
 
-  .panel:has(table){overflow-x:auto}
-  .panel table{min-width:520px}
+
+  /* Long unbroken tokens — an email address — set a min-content wider than
+     their column and pushed the pane sideways. */
+  .profile-head,.profile-head>*{min-width:0}
+  .profile-name,.profile-meta,.profile-meta .fm{overflow-wrap:anywhere}
+}
+
+/* Tap targets key off the input device, not the screen width: an iPad in
+   landscape is 1024px wide and still a finger. Text-styled buttons rendered
+   15px tall and a default checkbox ~13px. The width clause is a fallback for
+   engines that do not report a pointer type. */
+@media (pointer:coarse),(max-width:1200px){
+  .linkbtn{min-height:32px;display:inline-flex;align-items:center}
+  input[type=checkbox]{width:20px;height:20px;flex:none}
 }
