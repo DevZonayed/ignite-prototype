@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { SeedService } from './database/seeds/seed.service';
 
@@ -41,8 +40,9 @@ async function bootstrap() {
     }),
   );
 
-  // Global filters
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // The exception filter is registered as APP_FILTER in AppModule instead, so
+  // it can have AuditService injected — a hand-constructed one here would have
+  // no injector and every refused request would go unlogged.
 
   // Global interceptors
   app.useGlobalInterceptors(new TransformInterceptor());

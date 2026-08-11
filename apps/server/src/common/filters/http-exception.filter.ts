@@ -4,9 +4,15 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Injectable,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+
+import { AuditService } from '../../modules/audit/audit.service';
+import { AuditResult } from '../../database/entities/audit-log.entity';
+import { buildAuditEntry } from '../audit/audit-entry';
 
 interface ErrorResponse {
   statusCode: number;
@@ -16,9 +22,18 @@ interface ErrorResponse {
   timestamp: string;
 }
 
+@Injectable()
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
+
+  /**
+   * Optional so the filter still works when constructed by hand (tests, or
+   * `useGlobalFilters`) without an injector to supply the service.
+   */
+  constructor(
+    @Optional() private readonly auditService?: AuditService,
+  ) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
@@ -61,6 +76,42 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
     };
 
+    this.audit(request, statusCode, message);
+
     response.status(statusCode).json(errorResponse);
+  }
+
+  /**
+   * Every failed request is an audit entry, including the ones a guard refused
+   * before the handler ran. 401 and 403 are recorded as `blocked` rather than
+   * `failed`: somebody being turned away is a different event from something
+   * breaking, and it is the one the security log is really for.
+   *
+   * Unlike the success path, /audit and /monitoring are not exempt here — a
+   * refused read of the audit log is exactly what must not go unrecorded.
+   */
+  private audit(
+    request: Request,
+    statusCode: number,
+    message: string | string[],
+  ): void {
+    if (!this.auditService) return;
+
+    void this.auditService
+      .record(
+        buildAuditEntry(request, {
+          statusCode,
+          result:
+            statusCode === 401 || statusCode === 403
+              ? AuditResult.BLOCKED
+              : AuditResult.FAILED,
+          errorMessage: (Array.isArray(message) ? message.join('; ') : message)
+            ?.toString()
+            .slice(0, 500),
+        }),
+      )
+      .catch(() => {
+        /* An audit write must never mask the error being returned. */
+      });
   }
 }
